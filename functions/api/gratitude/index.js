@@ -16,7 +16,7 @@
 // site hasn't taken its DAILY_CAP today and the review queue isn't full; and
 // this address (hashed with a salt and the day, never stored) hasn't left one
 // today. Only then is Workers AI asked, once.
-import { json, clean, listFlags, aiCheck, sha256, ensure, addToTally, hostAllowed, addressKey } from '../../../lib/gratitude.js';
+import { json, clean, listFlags, aiCheck, sha256, ensure, addToTally, hostAllowed, addressKey, readCapped, isJson } from '../../../lib/gratitude.js';
 
 const SHOWN = 80;
 const PENDING_MAX = 500;
@@ -46,10 +46,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB || !env.TURNSTILE_SECRET || !env.SALT) return json({ error: 'closed' }, 503);
-  if (!(request.headers.get('content-type') || '').includes('application/json')) return json({ error: 'bad request' }, 415);
-  if (Number(request.headers.get('content-length') || 0) > 4096) return json({ error: 'too long' }, 413);
-  const raw = await request.text();
-  if (raw.length > 4096) return json({ error: 'too long' }, 413);
+  // JSON and nothing else (a "simple" cross-site content type never gets this far), and small
+  if (!isJson(request)) return json({ error: 'bad request' }, 415);
+  const raw = await readCapped(request, 4096);
+  if (raw === null) return json({ error: 'too long' }, 413);
   let body;
   try {
     body = JSON.parse(raw);

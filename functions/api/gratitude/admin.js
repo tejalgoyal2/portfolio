@@ -5,16 +5,16 @@
 // Cloudflare Access too if you like; this check stays either way.
 import { json, same, ensure, addToTally } from '../../../lib/gratitude.js';
 
-const allowed = (request, env) => {
+const allowed = async (request, env) => {
   const auth = request.headers.get('authorization') || '';
-  return !!env.ADMIN_SECRET && env.ADMIN_SECRET.length >= 24 && same(auth.replace(/^Bearer\s+/i, ''), env.ADMIN_SECRET);
+  return !!env.ADMIN_SECRET && env.ADMIN_SECRET.length >= 24 && (await same(auth.replace(/^Bearer\s+/i, ''), env.ADMIN_SECRET));
 };
 // a wrong guess costs a moment, so guessing is slow as well as hopeless
 const no = () => new Promise((r) => setTimeout(() => r(json({ error: 'no' }, 401)), 600));
 
 export async function onRequestGet({ request, env }) {
   if (!env.DB) return json({ error: 'closed' }, 503);
-  if (!allowed(request, env)) return no();
+  if (!(await allowed(request, env))) return no();
   await ensure(env);
   const { results: pending } = await env.DB.prepare(
     `SELECT id, word, created_at FROM words WHERE status = 'pending' ORDER BY created_at DESC LIMIT 200`
@@ -25,9 +25,14 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPost({ request, env }) {
   if (!env.DB) return json({ error: 'closed' }, 503);
-  if (!allowed(request, env)) return no();
+  if (!(await allowed(request, env))) return no();
   await ensure(env);
   const body = await request.json().catch(() => ({}));
+  // a flood of junk waiting for a look: bin the lot
+  if (body?.action === 'reject-all') {
+    await env.DB.prepare("UPDATE words SET status = 'rejected' WHERE status = 'pending'").run();
+    return json({ ok: true });
+  }
   // take a printed word down: every stamp of it, off the sheet
   if (body?.action === 'remove' && typeof body.word === 'string') {
     await env.DB.batch([

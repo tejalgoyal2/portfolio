@@ -26,43 +26,11 @@
   <h1>The gratitude sheet</h1>
   <form id="auth"><input id="key" type="password" placeholder="admin secret" autocomplete="current-password"> <button>Open</button></form>
   <p id="msg"></p>
+  <p><button id="binall" class="no" hidden>Bin everything waiting</button></p>
   <ul id="list"></ul>
   <h2>On the sheet</h2>
   <ul id="printed"></ul>
 </main>
-<script>
-  // Words flagged by the check wait here. The secret stays in this tab only.
-  const key = () => sessionStorage.getItem('letters-key') || '';
-  const api = (opts = {}) => fetch('/api/gratitude/admin', { ...opts, headers: { authorization: 'Bearer ' + key(), 'content-type': 'application/json' } });
-  const msg = (t) => (document.getElementById('msg').textContent = t);
-  async function load() {
-    const r = await api();
-    if (!r.ok) return msg(r.status === 401 ? 'Wrong secret.' : 'Not set up yet.');
-    const { pending, printed } = await r.json();
-    const list = document.getElementById('list');
-    list.textContent = '';
-    msg(pending.length ? pending.length + ' waiting for a look.' : 'Nothing waiting.');
-    const row = (text, buttons) => {
-      const li = document.createElement('li');
-      const w = document.createElement('span');
-      w.textContent = text;
-      li.append(w);
-      for (const [label, cls, body] of buttons) {
-        const b = document.createElement('button');
-        b.textContent = label;
-        b.className = cls;
-        b.onclick = async () => { await api({ method: 'POST', body: JSON.stringify(body) }); load(); };
-        li.append(b);
-      }
-      return li;
-    };
-    for (const p of pending) list.append(row(p.word, [['Print it', 'ok', { id: p.id, action: 'approve' }], ['Bin it', 'no', { id: p.id, action: 'reject' }]]));
-    const on = document.getElementById('printed');
-    on.textContent = '';
-    for (const p of printed) on.append(row(p.n > 1 ? p.word + ' ×' + p.n : p.word, [['Take it down', 'no', { action: 'remove', word: p.word }]]));
-  }
-  document.getElementById('auth').onsubmit = (e) => { e.preventDefault(); sessionStorage.setItem('letters-key', document.getElementById('key').value); load(); };
-  if (key()) load();
-</script>
+<script src="/letters-admin.js"></script>
 </body>
 </html>

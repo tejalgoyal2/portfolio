@@ -187,7 +187,8 @@ export default function GratefulFor() {
 
   const stamp = async (at) => {
     if (!canStamp) return;
-    if (!/^\p{L}+(?:[ '’-]\p{L}+)?$/u.test(word)) {
+    // letters in any language, accents and all (the same rule the server keeps)
+    if (!/^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)?$/u.test(word)) {
       setState('error');
       setNote('One or two words, letters only.');
       return;
