@@ -85,8 +85,10 @@ export default function Experience() {
     let total = 1;
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
-    // a snake's path: long, easy S-bends, never a kink
-    const wave = (y) => CX + Math.sin(y * 0.0118) * 15 + Math.sin(y * 0.0047 + 1) * 6;
+    // a snake's path: long, easy S-bends, never a kink; on a phone it keeps to a
+    // narrow lane of its own beside the text (amp, set in build)
+    let amp = 1;
+    const wave = (y) => CX + (Math.sin(y * 0.0118) * 15 + Math.sin(y * 0.0047 + 1) * 6) * amp;
     let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
     const bez = (a, b, c, e, t) => {
       const u = 1 - t;
@@ -100,6 +102,7 @@ export default function Experience() {
     const build = () => {
       const H = ledger.offsetHeight;
       const Wd = ledger.clientWidth;
+      amp = window.matchMedia('(max-width: 720px)').matches ? 0.3 : 1;
       // the strip sits out in the margin (SVG has no offsetLeft: measure the boxes)
       const lr = ledger.getBoundingClientRect();
       const left = svg.getBoundingClientRect().left - lr.left;

@@ -1468,9 +1468,13 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   }
   .led-period { padding-top: 0; }
 }
-/* phones: the gutter is too narrow for the margin rule, so the entries step in clear of it */
+/* phones: the gutter is too narrow for the margin, so the line gets a lane of
+   its own inside the ledger (a gentler snake, see Experience.jsx) and the
+   entries are set clear of it */
 @media (max-width: 720px) {
-  .led-entry { padding-left: 0.85rem; }
+  .led-rule { left: 9px; }
+  .led-ink { left: calc(9px - 40px); }
+  .led-entry { padding-left: 1.9rem; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -1884,6 +1888,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   --on: 0;
   position: absolute;
   left: 0;
+  transform-origin: 0 50%;
   bottom: 30px;
   width: 260px;
   height: 90px;
@@ -1908,11 +1913,15 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   pointer-events: none;
 }
 .car-note.is-on { opacity: 1; translate: 0 0; }
-.car-note-text { display: inline-block; rotate: var(--tilt, -1deg); transform-origin: left center; }
+.car-note-text { display: inline-block; translate: -100% 0; rotate: var(--tilt, -1deg); transform-origin: right center; }
 @media (max-width: 720px) {
   .contact-road { height: 190px; }
   .car-hit { height: 90px; width: 170px; }
   .car-note { bottom: 120px; }
+}
+/* on a phone the throw never lines up with lamps that small: just the lamps wink */
+@media (max-width: 720px), (hover: none) {
+  .car-beam { display: none; }
 }
 /* The paper's grain shows through the ink: a coarse tooth (overlay, so it both
    lifts and deepens the red) and the fine fibre from the cream sheets above */
@@ -1984,23 +1993,25 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   opacity: 0.8;
 }
 
-/* the cube's last stop: its own square to the right of the finale */
+/* Let's talk beside the cube's last stop: the headline and the ways in on the
+   left, the cube in its own square on the right, finishing its solve here */
+.contact-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 860px) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: center;
+}
 .contact-cube {
-  position: absolute;
-  right: clamp(1.5rem, 6vw, 7rem);
-  /* low enough to stay whole at the very bottom of the page, high enough to finish its solve in view */
-  top: 55%;
+  justify-self: center;
   width: min(27vw, 25rem);
   aspect-ratio: 1;
-  translate: 0 -50%;
   pointer-events: none;
 }
 @media (max-width: 1100px) {
+  .contact-lead { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .contact-cube {
-    position: relative;
-    right: auto;
-    top: auto;
-    translate: none;
+    order: -1;
+    align-self: center;
     width: min(56vw, 15rem);
     margin: 0 auto clamp(2rem, 5vh, 3rem);
   }
