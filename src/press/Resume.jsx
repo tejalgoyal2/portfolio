@@ -70,7 +70,7 @@ export default function Resume() {
           <path className="ra-bar" d="M12 100h58M12 107h40" />
         </svg>
         <span className="resume-tip" aria-hidden="true">
-          my resume, have a look<span className="resume-tip-arrow">↗</span>
+          my resume<span className="resume-tip-arrow">↗</span>
         </span>
       </a>
 

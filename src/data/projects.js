@@ -37,7 +37,7 @@ export const PROJECTS = [
     tier: 1, name: "Claubi", status: "OFFLINE", color: "#f97316",
     why: "I like AI writing code. I’m less keen on it running questionable commands on my machine without asking. So I’m building one that runs offline, has to ask first, and writes down every answer.",
     facts: [["0", "cloud calls: models run locally"], ["1", "append-only audit log"], ["Every", "command asks first"]],
-    wave: "crt",
+    wave: "scan",
     eli5: "A coding helper that lives on your own computer and has to ask permission before it touches anything.",
     desc: "A coding agent in Rust that lives on your own machine, treats AI-written code as untrusted, and asks before it acts.",
     long: "Any model runs locally through Ollama, so nothing leaves the laptop and no vendor holds the keys. Permissions are deny-first, modelled on AWS IAM and CrowdStrike prevention policies: the agent has to ask, and every ask and answer goes into an append-only audit log (JSONL). Today it has a full Ollama client with streaming chat, model switching and a CLI REPL. Next: routing between models, a planner, executor and reviewer pipeline, a Ratatui TUI, and a local MCP server.",

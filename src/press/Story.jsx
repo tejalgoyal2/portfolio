@@ -19,14 +19,11 @@ import { prefs } from '../life/prefs';
  *   rows    Dime — row by row, left to right, like a receipt printing
  *   spread  IAM Threat Mapper — out from the click, unevenly, node to node,
  *           the way an attacker moves through a network
- *   crt     Claubi — no scales at all: the face switches off like an old
- *           monitor (it squeezes down to a bright line, the line to a dot),
- *           and the other side powers up out of the dot the same way
+ *   scan    Claubi — top to bottom, a line at a time, like a terminal printing
  * The scales exist only while the tile turns, and only move by transform and
  * opacity (a CSS animation each, on the compositor). The face being left is
  * cut away under them through an SVG clip path, a square at a time, exactly
- * where each scale covers it. Claubi's faces just scale, by transform alone.
- * Reduced motion: the faces simply swap.
+ * where each scale covers it. Reduced motion: the faces simply swap.
  */
 const LINK_LABEL = { live: 'Live site', github: 'Source', youtube: 'Demo' };
 const STAMP_TONE = { LIVE: 'red' };
@@ -35,7 +32,6 @@ const CELL = 44; // px: the size of one scale, about
 const MAX_CELLS = 150;
 const LIFE = 540; // ms one scale takes to turn over
 const COVER = 0.42; // how far through its turn a scale is when it hides the face beneath
-const CRT = 720; // ms Claubi's switch-off and back on takes (sections.css keeps the same timing)
 
 // a small seeded random, so a wave is the same every time
 const rand = (i) => {
@@ -46,6 +42,7 @@ const rand = (i) => {
 const WAVES = {
   rows: { spread: 640, axis: () => 'x', at: (c, r, C, R) => (r + (c / C) * 0.9) / (R + 0.9) },
   ripple: { spread: 560, axis: () => 'y', at: (c, r, C, R, o) => Math.hypot((c + 0.5) / C - o.x, ((r + 0.5) / R - o.y) * (R / C)) },
+  scan: { spread: 600, axis: () => 'x', at: (c, r, C, R) => (r + rand(c) * 0.35) / (R + 0.35) },
   spread: {
     spread: 620,
     axis: (i) => (rand(i) > 0.5 ? 'x' : 'y'),
@@ -91,7 +88,7 @@ export default function Story({ project, lead = false, index }) {
       focusOther();
       return;
     }
-    setMorph({ from: side, ...(wave === 'crt' ? { kind: 'crt', total: CRT } : plan(ref.current, wave, origin)) });
+    setMorph({ from: side, ...plan(ref.current, wave, origin) });
     setSide(to);
     focusOther();
   };
@@ -116,7 +113,7 @@ export default function Story({ project, lead = false, index }) {
       }
       if (left > 0) raf = requestAnimationFrame(step);
     };
-    if (morph.kind !== 'crt') raf = requestAnimationFrame(step);
+    raf = requestAnimationFrame(step);
     const done = setTimeout(() => setMorph(null), morph.total + 40);
     return () => {
       cancelAnimationFrame(raf);
@@ -178,7 +175,7 @@ export default function Story({ project, lead = false, index }) {
   return (
     <article
       ref={ref}
-      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}${morph?.kind === 'crt' ? ' is-crt' : ''}`}
+      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
       data-arrive="rise"
       data-name={name}
       data-pen="rotate-cw"
@@ -189,7 +186,7 @@ export default function Story({ project, lead = false, index }) {
     >
       <div className="tile-lean">
         <div className="tile-turn">
-          <div className={faceClass('front')} inert={side !== 'front'} style={morph?.from === 'front' && morph.kind !== 'crt' ? { clipPath: `url(#${clipId})` } : undefined}>
+          <div className={faceClass('front')} inert={side !== 'front'} style={morph?.from === 'front' ? { clipPath: `url(#${clipId})` } : undefined}>
             <span className="tile-glow" aria-hidden="true" />
             <div className="tile-main">
               <p className="tile-kicker">
@@ -218,7 +215,7 @@ export default function Story({ project, lead = false, index }) {
             </div>
           </div>
 
-          <div className={faceClass('back')} inert={side !== 'back'} style={morph?.from === 'back' && morph.kind !== 'crt' ? { clipPath: `url(#${clipId})` } : undefined}>
+          <div className={faceClass('back')} inert={side !== 'back'} style={morph?.from === 'back' ? { clipPath: `url(#${clipId})` } : undefined}>
             <span className="tile-glow" aria-hidden="true" />
             <p className="tile-kicker">
               <span className="tile-no">{no}</span>
@@ -242,9 +239,7 @@ export default function Story({ project, lead = false, index }) {
             </div>
           </div>
 
-          {/* Claubi's: the bright line it squeezes down to */}
-          {morph?.kind === 'crt' && <span className="tile-crt" aria-hidden="true" />}
-          {morph && morph.kind !== 'crt' && (
+          {morph && (
             <>
               {/* the scales, in a wave */}
               <div

@@ -2,16 +2,10 @@ import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import OffTheClock from '../press/OffTheClock';
 import CountUp from '../press/CountUp';
-import Hand from '../press/Hand';
 import { startCar } from '../life/car';
 import { afterPrint } from '../life/idle';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
-import claudeMark from '../life/brands/claude.svg?url';
-
-// months on Claude Pro, counted from February 2026, so the figure keeps itself current
-const now = new Date();
-const CLAUDE_MONTHS = Math.max(1, (now.getFullYear() - 2026) * 12 + now.getMonth() - 1);
 
 /**
  * The Profile, set as a feature: one paragraph in the standfirst's voice
@@ -83,10 +77,10 @@ export default function About() {
             <p className="about-standfirst">
               I&rsquo;m Tejal. I build software that feels obvious: AI agents that
               talk to real systems, data pipelines that hold up, and small things
-              that are fun to use. I like problems that fight back, the kind that
-              take three attempts and a walk around the block before they give in,
-              and I&rsquo;m usually happiest a little out of my depth. Weekends are for
-              things nobody asked for (well, I did):{' '}
+              that are fun to use. Making something feel that simple is usually the
+              hard part, and the hard part is what I like: the problem that takes
+              three attempts and a walk around the block before it gives in. So my
+              weekends go to it too, on things nobody asked for (well, I did):{' '}
               <a className="about-link" href="https://type.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 type<span className="about-link-arrow" aria-hidden="true">↗</span>
               </a>,{' '}
@@ -100,7 +94,7 @@ export default function About() {
             {/* a note in the margin, in pen */}
             <p className="about-aside">
               <span className="about-aside-label">Favourite subjects</span>
-              <Hand className="about-aside-pen">math &amp; quantum physics (and computers, obviously)</Hand>
+              <span className="about-aside-pen">math &amp; quantum physics (and computers, obviously)</span>
             </p>
           </div>
 
@@ -129,11 +123,11 @@ export default function About() {
                 </dd>
               </div>
               <div className="about-num">
-                <dt className="about-num-label">On Claude Pro, since Feb &rsquo;26</dt>
+                {/* the cube in the margin: an untouched one is solved by the foot of the page */}
+                <dt className="about-num-label">To solve the cube on this page</dt>
                 <dd className="about-num-fig">
-                  <img className="about-num-mark" src={claudeMark} alt="" width="30" height="30" />
-                  <CountUp value={String(CLAUDE_MONTHS)} />
-                  <span className="about-num-of">months</span>
+                  <CountUp value="44" />
+                  <span className="about-num-of">moves</span>
                 </dd>
               </div>
             </dl>

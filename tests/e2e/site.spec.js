@@ -64,7 +64,7 @@ test('the press: a scroll during the opening skips ahead, and the page waits for
   expect(errors).toEqual([]);
 });
 
-test('projects: each tile is dog-eared at the top right; Claubi switches off and on like an old monitor', async ({ page }) => {
+test('projects: each tile is dog-eared at the top right; Claubi turns over line by line', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.tile--lead', -80);
   const lead = page.locator('.tile--lead');
@@ -75,9 +75,8 @@ test('projects: each tile is dog-eared at the top right; Claubi switches off and
   const claubi = page.locator('.tile[data-name="Claubi"]');
   await scrollTo(page, '.tile[data-name="Claubi"]', -200);
   await claubi.click({ position: { x: 60, y: 60 } });
-  await expect(claubi.locator('.tile-crt')).toBeAttached();
-  await expect(claubi.locator('.tile-scale')).toHaveCount(0);
-  await expect(claubi.locator('.tile-crt')).toHaveCount(0, { timeout: 3000 });
+  await expect(claubi.locator('.tile-scale--x').first()).toBeAttached();
+  await expect(claubi.locator('.tile-scale')).toHaveCount(0, { timeout: 3000 });
   await expect(claubi).toHaveClass(/is-back/);
   await expect(claubi.locator('.tile-flip:focus')).toHaveCount(0);
 });
@@ -164,9 +163,7 @@ test('profile: one paragraph with type, Dime and the Sudoku linked, a box of num
   await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
   await expect(sudoku).toHaveAttribute('target', '_blank');
   await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
-  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', 'months']);
-  // the plan's own mark says whose it is
-  await expect(about.locator('.about-num-mark')).toHaveCount(1);
+  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', '44']);
   await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
   await expect(about.locator('.weekend-desk')).toHaveCount(4);
   await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);
