@@ -38,11 +38,14 @@ export default function Hero() {
       if (!reduced) {
         intro
           .fromTo('.mast-meta', { opacity: 0 }, { opacity: 1, duration: 0.4 })
+          // the deck is printed from the start (under the loader's sheet, it's the
+          // page's first real paint); it only settles into place as the sheet lifts
+          .fromTo('.mast-deck', { y: 14 }, { y: 0, duration: 0.6, ease: 'power2.out' }, 0.1)
           .fromTo(
-            '.mast-deck, .mast-byline-row, .mast-cue',
+            '.mast-byline-row, .mast-cue',
             { opacity: 0, y: 14 },
             { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out' },
-            0.1
+            0.22
           );
       } else {
         intro.set('.mast-meta, .mast-deck, .mast-byline-row, .mast-cue', { opacity: 1, y: 0 });

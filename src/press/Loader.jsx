@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { fireImpact } from './PressImpacts';
+import { fontsReady } from '../life/fonts';
 
 /**
  * Press start — a blank cream sheet feeds in, an ink roller lays the nameplate
@@ -98,7 +99,9 @@ export default function Loader() {
         return;
       }
 
-      const tl = gsap.timeline({ onComplete: finish });
+      // the press waits on a blank sheet until the type has arrived (a second at most)
+      const tl = gsap.timeline({ onComplete: finish, paused: true });
+      fontsReady(1000).then(() => tl.play());
       tl.to('.loader-kicker', { opacity: 1, duration: 0.3, ease: 'power1.out' })
         // ink roller lays the nameplate left → right
         .fromTo(

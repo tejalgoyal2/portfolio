@@ -5,6 +5,7 @@ import { prefs } from '../life/prefs';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
 import { handHTML } from '../life/hand';
+import { afterPrint } from '../life/idle';
 
 /**
  * "Some broke." — so there's a bug loose in the empty paper beside the
@@ -51,8 +52,11 @@ export default function Bug() {
     if (!zone || !bug) return;
     let alive = true;
     let cancelled = false;
-    import('../life/icons').then(({ ICON }) => {
-      if (!cancelled) bug.insertAdjacentHTML('afterbegin', ICON.bug || '');
+    // its drawing comes from the icon set, a big file: fetched once the page has printed
+    const stopIcons = afterPrint(() => {
+      import('../life/icons').then(({ ICON }) => {
+        if (!cancelled) bug.insertAdjacentHTML('afterbegin', ICON.bug || '');
+      });
     });
 
     let W = 1;
@@ -228,6 +232,7 @@ export default function Bug() {
 
     return () => {
       cancelled = true;
+      stopIcons();
       gsap.ticker.remove(tick);
       io.disconnect();
       offLayout();

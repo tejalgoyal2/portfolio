@@ -7,6 +7,7 @@ import { SECTIONS } from '../data/sections';
 import { nib, nextNib, onNib } from '../life/nib';
 import PageSettings from './PageSettings';
 import { scroll } from '../life/scroll';
+import { afterPrint } from '../life/idle';
 
 /**
  * The running head — a band of glass across the top of the page, ruled off
@@ -71,12 +72,19 @@ export default function Contents() {
 
   // the pen chip (and the little pen drawing the rule) shows your cursor's icon
   useEffect(() => {
-    import('../life/icons').then(({ ICON }) => setIcons(ICON));
-    return onNib((n) => {
+    // the icon set is a big file: fetched once the page has printed, not with it
+    const stopIcons = afterPrint(() => {
+      import('../life/icons').then(({ ICON }) => setIcons(ICON));
+    });
+    const offNib = onNib((n) => {
       setPen(n);
       changedPen.current = true;
       setHint(null);
     });
+    return () => {
+      stopIcons();
+      offNib();
+    };
   }, []);
   const penSvg = icons?.[pen.tip ? pen.name : 'pencil'] || '';
 

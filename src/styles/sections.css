@@ -254,7 +254,6 @@ html.np-handoff .mast-plate { visibility: hidden; }
   font-size: clamp(1.05rem, 1.5vw, 1.3rem);
   line-height: 1.5;
   color: var(--ink-soft);
-  opacity: 0;
 }
 /* an empty square the WebGL cube is drawn into — sized here, filled by the stage */
 .mast-cube {

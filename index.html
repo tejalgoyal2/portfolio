@@ -28,7 +28,9 @@
     <!-- Fonts — Fraunces (nameplate/heads), Newsreader (body), Anton (impact), JetBrains Mono (data), Caveat (pen) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Anton&family=JetBrains+Mono:wght@400;500;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet" />
+    <!-- fetched early but never holding up the first paint; the loader waits for them (src/life/fonts.js) -->
+    <link id="press-fonts" rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&amp;family=Anton&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Caveat:wght@500;700&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..900&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&amp;family=Anton&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Caveat:wght@500;700&amp;display=swap" /></noscript>
 
     <!-- Theme color — newsprint cream -->
     <meta name="theme-color" content="#f4efe6" />
