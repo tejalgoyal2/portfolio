@@ -204,9 +204,10 @@ export async function startStage(canvas, hitBtn, noteHost) {
     if (director.active && director.active !== lastActive && !director.instant) onTurn(director.active, now);
     lastActive = director.active;
     // slow frames, sustained (a few seconds well under 40 fps, page in view)
-    slowAvg += (Math.min(deltaMs, 120) - slowAvg) * 0.05;
+    // (a single long stall — a screenshot, a tab coming back — isn't slowness: skip it)
+    if (deltaMs < 200) slowAvg += (deltaMs - slowAvg) * 0.05;
     slowFor = slowAvg > 26 ? slowFor + dt : Math.max(0, slowFor - dt * 2);
-    if (!askedSlow && slowFor > 4 && now - bornAt > 6000 && presence.state.seen) {
+    if (!askedSlow && slowFor > 5 && now - bornAt > 8000 && presence.state.seen) {
       if (notes.say('slow', presence.state, () => setSetting('cube', false))) {
         askedSlow = true;
         once('press-cube-slow');
