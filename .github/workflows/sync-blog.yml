@@ -11,12 +11,6 @@ on:
   # Manual trigger from the Actions tab
   workflow_dispatch:
 
-  # Instant trigger: blog repo sends this event on push to _posts/**
-  # Set up a PAT secret (PORTFOLIO_DEPLOY_TOKEN) in the blog repo and add a
-  # repository_dispatch workflow there to enable instant updates.
-  repository_dispatch:
-    types: [blog-updated]
-
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -24,22 +18,31 @@ jobs:
       contents: write
 
     steps:
+      # actions pinned to a commit, not a tag that could be moved; the push token
+      # isn't left in .git/config for every later step to find
       - name: Checkout portfolio
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
+      # no install scripts: the feed parser needs none
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Sync blog posts from feed
         run: node scripts/sync-blog.mjs
 
+      # the token is handed to this one step, only for the push
       - name: Commit updated blog.js if changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           git config user.name "Tejal Goyal"
           git config user.email "itejalgoyal@gmail.com"
@@ -48,5 +51,5 @@ jobs:
             echo "No blog changes — skipping commit."
           else
             git commit -m "Update blog posts"
-            git push
+            git push "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" HEAD:main
           fi
