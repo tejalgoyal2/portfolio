@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { PLAY_LIVE, PLAY_URL } from '../data/site';
+import Hand from './Hand';
 
 /**
  * The road along the bottom of Let's talk, and the little rally car on it
  * (src/gl/car-stage.js draws and drives it). The car is fetched only as the
- * road gets near. Over it, an invisible hit area takes the pointer: it hands
- * you the steering-wheel cursor mark, stops the car, winks its headlights,
- * and shows the pen note — a link to the driving game once it's live
+ * road gets near. Over it, an invisible hit area takes the pointer: it
+ * stops the car, winks its headlights, and shows the pen note — a link to the driving game once it's live
  * (src/data/site.js), until then just word that the garage opens soon.
  */
 export default function RoadCar() {
@@ -51,9 +51,9 @@ export default function RoadCar() {
     <div ref={roadRef} className="contact-road">
       <span className="car-beam" aria-hidden="true" />
       <canvas className="car-canvas" aria-hidden="true" />
-      <Hit className="car-hit" data-cursor="wheel" {...hitProps} />
+      <Hit className="car-hit" {...hitProps} />
       <p className="car-note" aria-hidden="true">
-        {PLAY_LIVE ? 'Want to drive it? Take it out for a spin →' : 'The garage opens soon'}
+        <Hand className="car-note-text">{PLAY_LIVE ? 'Want to drive it? Take it out for a spin →' : 'The garage opens soon'}</Hand>
       </p>
     </div>
   );

@@ -75,7 +75,7 @@ html.cursor-over-link .press-pen-icon { scale: calc(var(--flip, 1) * 1.16) 1.16;
 html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
 
 /* per-target marks, riding beside the tip: a twist arc for the cube, orbit
-   while turning it, a steering wheel for the car, a nib for the gratitude input */
+   while turning it, a nib for the gratitude line */
 .press-cursor-mark {
   width: 30px;
   height: 30px;
@@ -98,7 +98,6 @@ html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
 }
 .press-cursor-mark[data-state="twist"] .cursor-mark--twist,
 .press-cursor-mark[data-state="orbit"] .cursor-mark--orbit,
-.press-cursor-mark[data-state="wheel"] .cursor-mark--wheel,
 .press-cursor-mark[data-state="nib"] .cursor-mark--nib {
   opacity: 1;
   transform: none;
@@ -467,7 +466,8 @@ button.press-stamp {
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--red-wet);
+  /* the wet red, a shade lighter so it reads on the ink */
+  color: oklch(66% 0.215 27);
   opacity: 1;
   padding: 0;
   /* nudge the larger script onto the mono baseline */

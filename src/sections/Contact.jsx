@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import Postage from '../press/Postage';
 import RoadCar from '../press/RoadCar';
-import LettersCorner from '../press/LettersCorner';
+import GratefulFor from '../press/GratefulFor';
 // the marks themselves (src/life/brands, from thesvg — see its README.md), as plain asset URLs
 import gmailIcon from '../life/brands/gmail.svg?url';
 import githubIcon from '../life/brands/github.svg?url';
@@ -103,12 +103,11 @@ export default function Contact() {
           </ul>
         </div>
 
-        <LettersCorner />
+        <GratefulFor />
 
         <footer className="contact-colophon">
           <p className="contact-colophon-text">
-            Designed &amp; built by hand in Victoria, BC &middot; Set in Fraunces
-            &amp; Newsreader.
+            Written, set and occasionally broken by Tejal Goyal &middot; &copy; {new Date().getFullYear()}
           </p>
         </footer>
       </div>

@@ -55,7 +55,13 @@ export async function startStage(canvas, hitBtn, noteHost) {
       const last = i === SECTION_ORDER.length - 1;
       const start = Math.max(0, Math.min(b.top - vh * LINE, max - 4));
       let end = b.bottom - vh * LINE;
-      if (last) end = Math.min(end, max - 2);
+      if (last) {
+        // the last moves land as the cube settles into its spot in Let's talk (centred on
+        // the screen, src/gl/presence.js), not at the very bottom of the page, where it's half gone
+        const home = document.querySelector('[data-cube-home="contact"]')?.getBoundingClientRect();
+        if (home?.height) end = Math.min(end, home.top + sy + home.height / 2 - vh * 0.5);
+        end = Math.min(end, max - 2);
+      }
       end = Math.max(start + 1, Math.min(end, max - 1));
       next.push({ start, end, from: SECTION_MOVES[SECTION_ORDER[i - 1]], to: SECTION_MOVES[SECTION_ORDER[i]] });
     }

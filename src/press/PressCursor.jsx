@@ -11,7 +11,7 @@ import { bus } from '../life/bus';
  *
  * - Over links and buttons it lifts a touch (bigger, more upright) — no ring.
  * - Elements can ask for a small mark beside the tip with
- *   data-cursor="wheel | nib".
+ *   data-cursor="nib".
  * - A couple of places hand you a fitting pen while you're over them
  *   (data-pen: a pencil on the blog cards, a rocket in Let's talk), and over
  *   the cube — or while you turn it — the cursor is a little turning arrow,
@@ -23,7 +23,7 @@ import { bus } from '../life/bus';
  * up the tree, a paper card on the ink spread included — easing between ink
  * and cream. Fine pointers only; on touch the OS cursor stays.
  */
-const STATES = ['wheel', 'nib'];
+const STATES = ['nib'];
 const ALL_PENS = () => [...NIBS, ...LOANERS];
 const SIZE = 40; // css px
 
@@ -239,12 +239,6 @@ export default function PressCursor() {
         </div>
       </div>
       <div ref={markRef} className="press-cursor-mark">
-        {/* wheel — rim, hub and three spokes, for the car */}
-        <svg className="cursor-mark cursor-mark--wheel" viewBox="0 0 56 56">
-          <circle cx="28" cy="28" r="20" />
-          <circle cx="28" cy="28" r="5" />
-          <path d="M23 28H8.5M33 28h14.5M28 33v14.4" />
-        </svg>
         {/* nib — a pen nib with its breather hole and slit, for the gratitude input */}
         <svg className="cursor-mark cursor-mark--nib" viewBox="0 0 56 56">
           <path d="M28 49 16.5 29 22 13h12l5.5 16z" />
