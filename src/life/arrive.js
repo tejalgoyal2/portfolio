@@ -8,8 +8,8 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * How things come onto the page and leave it — the paste-up desk.
  *
- * Blocks arrive the way material lands on a layout table: case files are dealt
- * onto the desk from either side, feature files are laid down from below,
+ * Blocks arrive the way material lands on a layout table: the lead files land
+ * together, each a short way in from its own side, feature files are laid down from below,
  * skills are set into the stick sort by sort, ledger rows and classifieds are
  * pasted in from the margin, margin notes are pinned on. On the way out they're
  * cleared away just as deliberately: files are filed up and back, ledger rows
@@ -29,11 +29,13 @@ gsap.registerPlugin(ScrollTrigger);
  * comes up the page, like the section flag of a broadsheet passing under the
  * press roller. Decorative only (aria-hidden), faint, and behind the text.
  *
- * Markup: data-arrive="deal-l | deal-r | rise | from-left | from-right |
- * from-top | from-bottom | paste | pin | drop | stamp" and
+ * Nothing tilts: every move is a straight slide, a settle in scale, or ink.
+ *
+ * Markup: data-arrive="deal-l | deal-r | rise | paste | pin | drop | stamp" and
  * data-depart="file | lift | slide | peel | part-l | part-r" on a block;
  * data-arrive-items="set | pin | paste | drop | lay | tick" and data-depart-items="pi" on a
- * container, which moves its children with a stagger.
+ * container, which moves its children with a stagger; data-land="left | right |
+ * top | bottom" on the lead files, which play in time rather than with the scroll.
  */
 
 const IN = { start: 'top 98%', end: 'top 72%' };
@@ -41,22 +43,17 @@ const OUT = { start: 'bottom 22%', end: 'bottom 0%' };
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 const ARRIVE = {
-  'deal-l': () => ({ '--ax': '-120px', '--ay': '46px', '--ar': '-6deg', '--ao': 0 }),
-  'deal-r': () => ({ '--ax': '120px', '--ay': '46px', '--ar': '6deg', '--ao': 0 }),
-  rise: () => ({ '--ay': '96px', '--as': 0.94, '--ao': 0 }),
-  // the lead files, each dealt in from its own side of the desk to meet in the middle
-  'from-left': () => ({ '--ax': `${-0.46 * innerWidth}px`, '--ay': '24px', '--ar': '-5deg', '--ao': 0 }),
-  'from-right': () => ({ '--ax': `${0.46 * innerWidth}px`, '--ay': '24px', '--ar': '5deg', '--ao': 0 }),
-  'from-top': () => ({ '--ay': '-180px', '--ar': '-3deg', '--ao': 0 }),
-  'from-bottom': () => ({ '--ay': '200px', '--ar': '2deg', '--as': 0.96, '--ao': 0 }),
-  paste: () => ({ '--ax': '-72px', '--ao': 0 }),
-  pin: () => ({ '--ar': `${rnd(-16, -8)}deg`, '--as': 1.22, '--ao': 0 }),
-  drop: () => ({ '--ay': '-64px', '--ar': `${rnd(-4, 4)}deg`, '--ao': 0 }),
-  set: () => ({ '--ay': '-40px', '--ar': `${rnd(-12, 12)}deg`, '--ao': 0 }),
-  // a ledger entry: its date stamped on, its lines laid down, its figures ticked in from the margin
-  stamp: () => ({ '--as': 1.7, '--ar': `${rnd(-14, -8)}deg`, '--ao': 0 }),
-  lay: () => ({ '--ay': '34px', '--ar': `${rnd(-1.5, 1.5)}deg`, '--ao': 0 }),
-  tick: () => ({ '--ax': '36px', '--ay': '-10px', '--ar': `${rnd(3, 7)}deg`, '--ao': 0 }),
+  'deal-l': () => ({ '--ax': '-90px', '--ay': '30px', '--ao': 0 }),
+  'deal-r': () => ({ '--ax': '90px', '--ay': '30px', '--ao': 0 }),
+  rise: () => ({ '--ay': '72px', '--as': 0.96, '--ao': 0 }),
+  paste: () => ({ '--ax': '-56px', '--ao': 0 }),
+  pin: () => ({ '--as': 1.16, '--ao': 0 }),
+  drop: () => ({ '--ay': '-44px', '--ao': 0 }),
+  set: () => ({ '--ay': '-28px', '--ao': 0 }),
+  // a ledger entry: its date stamped on, its lines laid down, its figures set in from the margin
+  stamp: () => ({ '--as': 1.28, '--ao': 0 }),
+  lay: () => ({ '--ay': '22px', '--ao': 0 }),
+  tick: () => ({ '--ax': '24px', '--ao': 0 }),
 };
 const ARRIVED = { '--ax': '0px', '--ay': '0px', '--ar': '0deg', '--as': 1, '--ao': 1 };
 
@@ -64,12 +61,19 @@ const DEPART = {
   file: () => ({ '--dy': '-56px', '--ds': 0.95, '--do': 0.3 }),
   lift: () => ({ '--dy': '-72px', '--do': 0 }),
   slide: () => ({ '--dx': '-96px', '--do': 0 }),
-  // peeled off the board, a corner first
-  peel: () => ({ '--dy': '-60px', '--dr': '-2.5deg', '--ds': 0.97, '--do': 0.15 }),
-  'part-l': () => ({ '--dx': '-70px', '--dr': '-3deg', '--do': 0.2 }),
-  'part-r': () => ({ '--dx': '70px', '--dr': '3deg', '--do': 0.2 }),
-  // type pied: the sorts spill off the line and tumble down
-  pi: () => ({ '--dx': `${rnd(-60, 60)}px`, '--dy': `${rnd(24, 90)}px`, '--dr': `${rnd(-40, 40)}deg`, '--do': 0 }),
+  // lifted off the board
+  peel: () => ({ '--dy': '-48px', '--ds': 0.98, '--do': 0.15 }),
+  'part-l': () => ({ '--dx': '-70px', '--do': 0.2 }),
+  'part-r': () => ({ '--dx': '70px', '--do': 0.2 }),
+  // type pied: the sorts spill off the line
+  pi: () => ({ '--dx': `${rnd(-50, 50)}px`, '--dy': `${rnd(24, 80)}px`, '--do': 0 }),
+};
+// the lead files: a short way in from their own side, all landing at once
+const LAND = {
+  left: { '--ax': '-44px' },
+  right: { '--ax': '44px' },
+  top: { '--ay': '-36px' },
+  bottom: { '--ay': '36px' },
 };
 const HOME = { '--dx': '0px', '--dy': '0px', '--dr': '0deg', '--ds': 1, '--do': 1 };
 
@@ -94,7 +98,7 @@ export function startArrivals(root = document) {
     if (!fx || !items.length) continue;
     made.push(
       scrubbed(box, IN, (tl) =>
-        items.forEach((it, i) => tl.fromTo(it, fx(), { ...ARRIVED, ease: 'back.out(1.6)', duration: 0.5 }, (i / items.length) * 0.6))
+        items.forEach((it, i) => tl.fromTo(it, fx(), { ...ARRIVED, ease: 'power3.out', duration: 0.5 }, (i / items.length) * 0.6))
       )
     );
   }
@@ -111,6 +115,29 @@ export function startArrivals(root = document) {
         items.forEach((it, i) => tl.fromTo(it, HOME, { ...fx(), ease: 'power1.in', duration: 0.6 }, (i / items.length) * 0.4))
       )
     );
+  }
+
+  // the lead files aren't scrubbed: once their desk is coming up the page they
+  // all land together, so by the time you're reading them every one is down
+  const desks = new Set([...root.querySelectorAll('[data-land]')].map((el) => el.parentElement));
+  for (const desk of desks) {
+    const files = [...desk.children].filter((el) => el.dataset.land);
+    const tl = gsap.timeline({ paused: true });
+    files.forEach((el, i) =>
+      tl.fromTo(
+        el,
+        { ...LAND[el.dataset.land], '--as': 0.98, '--ao': 0 },
+        { ...ARRIVED, duration: 0.85, ease: 'expo.out' },
+        i * 0.07
+      )
+    );
+    ScrollTrigger.create({
+      trigger: desk,
+      start: 'top 82%',
+      onEnter: () => tl.play(),
+      onLeaveBack: () => tl.reverse(),
+    });
+    made.push(tl);
   }
 
   return () => made.forEach((tl) => tl.revert());

@@ -301,6 +301,8 @@ export default function GratefulFor() {
   else if (used === PER_DAY - 1) how = 'One more today.';
   else if (used > 0) how = 'Two more today.';
 
+  const resting = state !== 'idle' && state !== 'error';
+
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">
       <p className="grateful-kicker">The gratitude sheet</p>
@@ -308,9 +310,12 @@ export default function GratefulFor() {
         <h3 className="grateful-title" id="grateful-title">
           What are you grateful for today?
         </h3>
-        {open && (state === 'idle' || state === 'error') && (
+        {/* kept in place while a word is pressed (just hidden), so the line under
+            it and the sheet don't hop up and back down */}
+        {open && (
           <form
-            className="grateful-form"
+            className={`grateful-form${resting ? ' is-resting' : ''}`}
+            inert={resting || undefined}
             onSubmit={(e) => {
               e.preventDefault();
               stamp();

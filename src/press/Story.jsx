@@ -176,7 +176,7 @@ export default function Story({ project, lead = false, index }) {
     <article
       ref={ref}
       className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
-      data-arrive={from ? `from-${from}` : 'rise'}
+      data-land={from || 'bottom'}
       data-name={name}
       data-pen="rotate-cw"
       onPointerMove={lean}

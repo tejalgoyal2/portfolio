@@ -12,9 +12,7 @@ import KineticHeadline from '../press/KineticHeadline';
  * marquee auto-scrolls via the shared GSAP ticker (no own rAF). Each card tilts
  * in real CSS 3D toward the cursor — pointer-tracked rotateX/Y + a lift on Z,
  * composed with the static sine scatter — so the strip feels tactile, not flat.
- * Each title's punchline is the word the editor would circle: point at a
- * clipping and a loop of red pen goes round it. Drag or horizontal-scroll to
- * browse. Reduced motion → a flat static grid, no marquee, no tilt.
+ * Drag or horizontal-scroll to browse. Reduced motion → a flat static grid, no marquee, no tilt.
  *
  * The strip feels the page move: scroll speed quickens the crawl (smoothly), which
  * settles back to its idle pace as the page stops.
@@ -42,26 +40,6 @@ const towedYet = () => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The one word per title the editor circles in red pen when you point at it:
-// the *punchline*, the word that changes the meaning of the headline.
-// ─────────────────────────────────────────────────────────────────────────────
-const PUNCHLINES = {
-  "Building tgoyal.me With Claude: The Full Guide, Every Prompt Included": "Every",
-  "How to Build a Resume Skill in Claude That Tailors Itself to Every Job": "Itself",
-  "My Resume Builder Thought 120% of a Page Was 'Slightly Over'": "Slightly",
-  "WalletRIP Had a Security Problem. I Didn't Fix It. Here's the Full Story.": "Didn't",
-  "Dime: An Expense Tracker That Actually Has Opinions About Your Spending": "Opinions",
-  "Nib: A Menu Bar Scratchpad, an Apple Rant, and the State of AI and Swift": "Rant",
-  "I Built My Own Sudoku App Because an Ad Interrupted My Winning Streak": "Interrupted",
-  "I Got Tired of My Apps Looking Like Every Other AI Project, So I Built a Design Language": "Tired",
-  "I Built an Interactive Attack Path Visualizer Because Spreadsheets Aren't Scary Enough": "Scary",
-  "The Resume System Worked. So Naturally, I Broke It Trying to Make It Better.": "Broke",
-  "Building OnTop: Three Broken APIs and One Very Clever Workaround": "Clever",
-  "How I Built an AI Resume System That Actually Works": "Actually",
-  "First Post: Setting Up This Blog with GitHub Skills": "First",
-};
-
 function formatDate(d) {
   if (!d) return '';
   return new Date(`${d}T00:00:00`).toLocaleDateString('en-CA', {
@@ -69,31 +47,6 @@ function formatDate(d) {
     day: 'numeric',
     year: 'numeric',
   });
-}
-
-// Splits the title string at the punchline word and puts the pen's loop round it.
-// the synced titles have curly quotes; the keys above are typed straight
-const straight = (t) => t.replace(/[‘’]/g, "'");
-
-function MarkedTitle({ title }) {
-  const word = PUNCHLINES[straight(title)];
-  if (!word) return title;
-  const idx = straight(title).indexOf(word);
-  if (idx === -1) return title;
-  return (
-    <>
-      {title.slice(0, idx)}
-      <span className="opdesk-punch">
-        {title.slice(idx, idx + word.length)}
-        <span className="opdesk-loop" aria-hidden="true">
-          <svg viewBox="0 0 120 44" preserveAspectRatio="none">
-            <path d="M14 30C2 18 30 5 62 4c30-1 56 6 54 19-2 14-34 19-62 18C26 40 8 34 9 22 10 13 28 8 46 7" />
-          </svg>
-        </span>
-      </span>
-      {title.slice(idx + word.length)}
-    </>
-  );
 }
 
 export default function Blog() {
@@ -474,7 +427,7 @@ export default function Blog() {
             >
               <p className="opdesk-card-date">{formatDate(post.date)}</p>
               <h3 className="opdesk-card-title">
-                <MarkedTitle title={post.title} />
+                {post.title}
               </h3>
               <p className="opdesk-card-preview">{post.preview}</p>
               {post.tags?.length > 0 && (

@@ -7,7 +7,7 @@
 // two, told as a story rather than a pitch — that's the front of their tile,
 // with a few `facts` under it (only the ones worth a number: one, two or three);
 // `desc` and `long` are the back (the full file). `from` is the side of the
-// page each one is dealt in from, so the four meet in the middle.
+// page each one lands from, a short way in; they come down together.
 // `wave` is how the tile turns over (src/press/Story.jsx): rows, ripple,
 // spread or scan, each picked to suit the project.
 export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];

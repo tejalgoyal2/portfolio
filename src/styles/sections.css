@@ -320,7 +320,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 
 .about-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: clamp(1.5rem, 4vw, 4rem);
   align-items: start;
   border-top: 3px solid var(--ink);
@@ -340,10 +340,10 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* the story: one paragraph, in the standfirst's voice */
 .about-standfirst {
   margin: 0;
-  max-width: 42ch;
+  /* runs the full column, up to the rule beside the numbers */
   font-family: var(--font-read);
   font-weight: 400;
-  font-size: clamp(1.3rem, 1.95vw, 1.75rem);
+  font-size: clamp(1.32rem, 2.05vw, 1.85rem);
   line-height: 1.38;
   color: var(--ink);
   text-wrap: pretty;
@@ -1243,13 +1243,11 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   line-height: 1.6;
   color: var(--red);
 }
-/* re-set word by word when the edition changes: each word drops onto the line */
-.brief-word { display: inline-block; white-space: pre; }
-.cf-stage .brief-word { animation: brief-set 0.42s var(--ease-set, cubic-bezier(0.34, 1.56, 0.64, 1)) both; animation-delay: calc(var(--i) * 22ms); }
-@keyframes brief-set {
-  from { opacity: 0; translate: 0 -0.55em; rotate: -6deg; }
-  60% { opacity: 1; }
-}
+/* both editions set in the same slot, one over the other: the item is as tall
+   as the longer one, so flipping never moves the columns */
+.brief-copy { display: grid; }
+.brief-ed { grid-area: 1 / 1; }
+.brief-ed:not(.is-on) { visibility: hidden; }
 /* the switch: two editions, the one you're reading circled in red pen */
 .cf-edition {
   display: flex;
@@ -1292,7 +1290,6 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .cf-edition-opt:hover { color: var(--ink); }
 .cf-edition-opt:focus-visible { outline: 2px solid var(--red); outline-offset: 6px; }
 @media (prefers-reduced-motion: reduce) {
-  .cf-stage .brief-word { animation: none; }
   .cf-edition-opt::after { transition: none; }
 }
 
@@ -1669,39 +1666,6 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   margin-bottom: 0.85rem;
   flex: 1;
 }
-/* the punchline, and the editor's red loop round it when you point at the clipping:
-   the loop is wiped on left to right (two opposite slides, transforms only) */
-.opdesk-punch { position: relative; white-space: nowrap; }
-.opdesk-loop {
-  position: absolute;
-  inset: -0.42em -0.5em -0.36em -0.55em;
-  overflow: hidden;
-  translate: -101% 0;
-  transition: translate 0.45s var(--ease-set);
-  pointer-events: none;
-}
-.opdesk-loop svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  translate: 101% 0;
-  rotate: -2deg;
-  transition: translate 0.45s var(--ease-set);
-}
-.opdesk-loop path { fill: none; stroke: var(--red); stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.opdesk-card:hover .opdesk-loop,
-.opdesk-card:focus-visible .opdesk-loop,
-.opdesk-card:hover .opdesk-loop svg,
-.opdesk-card:focus-visible .opdesk-loop svg { translate: 0 0; }
-@media (hover: none) {
-  /* no pointing on touch: the words simply come circled */
-  .opdesk-loop, .opdesk-loop svg { translate: 0 0; transition: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .opdesk-loop, .opdesk-loop svg { transition: none; }
-}
-
 .opdesk-card-preview {
   font-family: var(--font-read);
   font-size: 0.82rem;
@@ -1794,6 +1758,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--paper);
 }
 .grateful-form { display: inline-flex; align-items: center; gap: 0.6rem; }
+.grateful-form.is-resting { visibility: hidden; }
 /* what you type is set like the face of a rubber stamp */
 .grateful-input {
   min-width: 0;
@@ -1830,6 +1795,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .grateful-set:focus-visible { outline: 2px dashed var(--paper); outline-offset: 4px; }
 .grateful-how {
   margin: 0.6rem 0 0.9rem;
+  min-height: 1.5em;
   font-family: var(--font-data);
   font-size: 0.64rem;
   letter-spacing: 0.1em;
@@ -2333,20 +2299,21 @@ html.cursor-hidden .resume-window.resume-window button { cursor: pointer !import
 .contact--anim .contact-line-label,
 .contact--anim .contact-line .tp { opacity: 0; }
 .contact--anim.is-in .contact-line-label {
-  animation: tp-stamp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: tp-stamp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(0.45s + var(--line) * 0.55s);
 }
 .contact--anim.is-in .contact-line .tp {
-  animation: tp-strike 0.16s ease-out both;
+  animation: tp-strike 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(0.62s + var(--line) * 0.55s + var(--i) * 17ms);
 }
+/* both end on full ink: the base above is opacity 0, so an open-ended keyframe would fade back to it */
 @keyframes tp-stamp {
-  from { opacity: 0; scale: 1.9; rotate: -16deg; }
-  45% { opacity: 1; }
+  from { opacity: 0; scale: 0.55; }
+  to { opacity: 1; scale: 1; }
 }
 @keyframes tp-strike {
-  from { opacity: 0; translate: 0 -0.3em; scale: 1.3; }
-  50% { opacity: 1; }
+  from { opacity: 0; translate: 0 0.35em; }
+  to { opacity: 1; translate: 0 0; }
 }
 /* GitHub's mark is black; on the red it's printed in its white version */
 .contact-line:nth-child(2) .contact-line-label img { filter: brightness(0) invert(0.96); }
