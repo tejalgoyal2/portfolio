@@ -3,6 +3,8 @@ import { gsap } from 'gsap';
 import { scroll } from '../life/scroll';
 import { prefs } from '../life/prefs';
 import { BLOG_POSTS } from '../data/blog';
+import { createTow } from '../life/tow';
+import { onLayout } from '../life/layout';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
 
@@ -16,8 +18,24 @@ import Redacted from '../press/Redacted';
  *
  * The strip feels the page move: scroll speed quickens the crawl (smoothly), which
  * settles back to its idle pace as the page stops.
+ *
+ * The first time the strip is well into view (once a visit), the posts are
+ * flown in: a little plane comes in at the right edge towing a banner, with the
+ * first clipping roped on behind it and the rest following, and crosses the
+ * spread (src/life/tow.js draws it). Once the first card is where it rests the
+ * plane lets go and carries on off the left edge, and the strip, still moving
+ * at the plane's speed, eases down into its crawl. Scroll away mid-flight, or
+ * grab the strip, and it lets go there and then.
  */
 const CRAWL = 27; // px/s at rest
+const TOWED_KEY = 'press-towed';
+const towedYet = () => {
+  try {
+    return !!sessionStorage.getItem(TOWED_KEY);
+  } catch {
+    return false;
+  }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The one word per title we redact. Readers lean in, hover to reveal.
@@ -78,6 +96,7 @@ export default function Blog() {
   const wheelRef = useRef(false); // true briefly after a horizontal wheel — pauses auto
   const tiltFrame = useRef(0);
   const tiltData = useRef(null);
+  const towRef = useRef(null); // the flight, while there is one: { phase, letGo() }
 
   const [reduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -113,10 +132,113 @@ export default function Blog() {
     let v = CRAWL;
     let a = 0;
     let boost = 0;
+
+    // ---- the tow: waiting for the strip to come into view, flying, letting go, gone
+    const section = container.parentElement;
+    const first = cards[0];
+    let tow = null;
+    let flight = null;
+    let geo = null;
+    // the first card's resting place in the section (its box, less the strip's current slide)
+    const measureTow = () => {
+      if (!first) return;
+      const sr = section.getBoundingClientRect();
+      const cr = first.getBoundingClientRect();
+      geo = { W: section.clientWidth, left: cr.left - sr.left + offsetRef.current, top: cr.top - sr.top, small: geo?.small ?? section.clientWidth < 720 };
+    };
+    let offTowLayout = () => {};
+    if (first && !towedYet()) {
+      measureTow();
+      offTowLayout = onLayout(measureTow);
+      flight = { phase: 'wait', t: 0, x: 0, unhook: 0 };
+      offsetRef.current = -(geo.W * 1.6 + 600); // the cards wait off to the right
+      strip.style.transform = `translateX(${-offsetRef.current}px)`;
+    }
+    const speed = () => (geo.small ? 400 : 600); // px/s
+    const takeOff = () => {
+      if (!flight || flight.phase !== 'wait') return;
+      if (!tow) tow = createTow(section, { small: geo.small });
+      flight.phase = 'tow';
+      flight.t = 0;
+      flight.x = geo.W + 24; // the tail, just past the right edge: the nose shows at once
+    };
+    const letGo = () => {
+      if (!flight || flight.phase !== 'tow') return;
+      flight.phase = 'away';
+      // the strip keeps the plane's speed, and the crawl's spring brings it down
+      v = speed();
+      a = 0;
+      try {
+        sessionStorage.setItem(TOWED_KEY, '1');
+      } catch {
+        /* private mode: it may fly again next visit */
+      }
+    };
+    const land = () => {
+      // gone: off the edge, or the section left the screen mid-flight
+      if (flight?.phase === 'wait' || flight?.phase === 'tow') {
+        offsetRef.current = 0;
+        v = CRAWL;
+        a = 0;
+        try {
+          sessionStorage.setItem(TOWED_KEY, '1');
+        } catch {
+          /* fine */
+        }
+      }
+      tow?.hide();
+      flight = null;
+    };
+    towRef.current = { letGo, get phase() { return flight?.phase; } };
+    const ready = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) takeOff();
+      },
+      { threshold: 0.5, rootMargin: '0px 0px -12% 0px' }
+    );
+    if (flight) ready.observe(container);
+
+    const flyTick = (dt) => {
+      flight.t += dt;
+      const sp = speed();
+      flight.x -= sp * dt;
+      const y = geo.top - (geo.small ? 34 : 48) + Math.sin(flight.t * 2.3) * (geo.small ? 3 : 4);
+      if (flight.phase === 'tow') {
+        // the card hangs back the rope's length behind the plane's tail
+        const cardX = flight.x + tow.size.len;
+        offsetRef.current = geo.left - cardX;
+        // it lets go a fifth of the way from the left edge (or as the card reaches
+        // its place, if that comes first), so you see the rope drop and the plane leave
+        if (offsetRef.current >= 0) offsetRef.current = 0;
+        if (offsetRef.current >= 0 || flight.x <= geo.W * 0.2) letGo();
+      } else {
+        flight.unhook = Math.min(1, flight.unhook + dt / 0.7);
+      }
+      const cardX = geo.left - offsetRef.current;
+      tow.draw({ x: flight.x, y, cardX, cardY: geo.top + 2, unhook: flight.unhook, t: flight.t });
+      // off the left edge, banner and all
+      if (flight.x + tow.size.rope + tow.size.banner + 40 < 0) land();
+    };
+
     const tick = (time, deltaMs) => {
-      if (!visibleRef.current) return;
+      if (!visibleRef.current) {
+        // scrolled away mid-flight: the posts are simply there when you come back
+        if (flight && flight.phase !== 'wait') land();
+        return;
+      }
       const dt = Math.min(0.05, deltaMs / 1000);
       if (half <= 0) return;
+      if (flight?.phase === 'wait') return;
+      if (flight?.phase === 'tow') {
+        flyTick(dt);
+        const next = `translateX(${(-offsetRef.current).toFixed(2)}px)`;
+        if (next !== wrote) {
+          wrote = next;
+          strip.style.transform = next;
+        }
+        return;
+      }
+      if (flight) flyTick(dt);
       const held = hoverRef.current || dragRef.current.active || wheelRef.current;
       boost += (Math.min(Math.abs(scroll.v) * 0.22, 320) - boost) * (1 - Math.exp(-2.5 * dt));
       const target = held ? 0 : CRAWL + boost;
@@ -160,6 +282,10 @@ export default function Blog() {
     return () => {
       gsap.ticker.remove(tick);
       io.disconnect();
+      ready.disconnect();
+      offTowLayout();
+      tow?.destroy();
+      towRef.current = null;
       sized.disconnect();
       container.removeEventListener('wheel', onWheel);
       clearTimeout(wheelIdle);
@@ -175,6 +301,8 @@ export default function Blog() {
   // killed navigation on the card links. A plain click never captures, so the
   // browser's normal click-through to the anchor is left alone.
   const onPointerDown = (e) => {
+    // grabbing the strip mid-flight: the plane lets go of it there and then
+    if (towRef.current?.phase === 'tow') towRef.current.letGo();
     dragRef.current = {
       active: true,
       startX: e.clientX,
@@ -273,7 +401,7 @@ export default function Blog() {
         onPointerLeave={reduced ? undefined : onPointerUp}
         onClickCapture={reduced ? undefined : onClickCapture}
       >
-        <div ref={stripRef} className="opdesk-strip" data-arrive-items="drop">
+        <div ref={stripRef} className="opdesk-strip">
           {displayPosts.map((post, i) => (
             <a
               key={`${post.title}-${i}`}

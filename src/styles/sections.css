@@ -2220,3 +2220,33 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--red);
 }
 
+
+/* ── The banner tow over Writing (src/life/tow.js, flown by Blog.jsx) ───── */
+.tow {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-set);
+}
+.tow.is-on { opacity: 1; }
+.tow * { vector-effect: non-scaling-stroke; }
+.tow-shell { fill: var(--paper-stock); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.tow-wing { fill: var(--paper-stock); stroke: var(--ink); stroke-width: 1.3; stroke-linejoin: round; }
+.tow-glass { fill: color-mix(in oklch, var(--ink) 14%, var(--paper-stock)); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.tow-stripe { fill: none; stroke: var(--red); stroke-width: 2.2; stroke-linecap: round; }
+.tow-strut { fill: none; stroke: var(--paper-stock); stroke-width: 1.4; stroke-linecap: round; }
+.tow-wheel { fill: var(--ink); stroke: var(--paper-stock); stroke-width: 1.2; }
+.tow-hub { fill: var(--red); stroke: var(--ink); stroke-width: 1; }
+.tow-prop { fill: oklch(95% 0.014 85 / 0.75); }
+.tow-rope { fill: none; stroke: oklch(95% 0.014 85 / 0.7); stroke-width: 1.3; stroke-linecap: round; }
+.tow-banner { fill: var(--red); stroke: oklch(20% 0.02 40 / 0.5); stroke-width: 1; stroke-linejoin: round; }
+.tow-words {
+  font-family: var(--font-impact);
+  letter-spacing: 0.08em;
+  fill: var(--paper-stock);
+}
