@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<sub>VOL.&nbsp;I &nbsp;·&nbsp; NO.&nbsp;1 &nbsp;·&nbsp; VICTORIA,&nbsp;BC &nbsp;·&nbsp; EST.&nbsp;2002 &nbsp;·&nbsp; FREE, AND WORTH EVERY PENNY</sub>
+<sub>VOL.&nbsp;I &nbsp;·&nbsp; NO.&nbsp;1 &nbsp;·&nbsp; INK STILL WET &nbsp;·&nbsp; FREE, AND WORTH EVERY PENNY</sub>
 
 # The Press
 
@@ -14,7 +14,7 @@
 
 ---
 
-**VICTORIA, BC** — Cream paper, warm ink, press red, five typefaces and more rules than a style guide (mostly the horizontal kind). Today's forecast: cream all morning, ink by the afternoon, red by evening.
+**THE PRESS** — Cream paper, warm ink, press red, five typefaces and more rules than a style guide (mostly the horizontal kind). Today's forecast: cream all morning, ink by the afternoon, red by evening.
 
 I didn't want a resume with hover states. I wanted a page that notices you're there. So your cursor is a pen, a click sends a ripple through the paper, and a Rubik's cube sits in the margin solving itself, one move at a time, as you scroll. A lot of it exists for no better reason than that it's nice to poke.
 
@@ -33,7 +33,7 @@ The site keeps this list in **Page settings** (top right of the running head) an
 - [ ] **Find the car.** Not the little line-drawn one on the rules. The other one.
 - [ ] **See the cube solved.** Read to the end. It gets there.
 
-Also in this edition: the section names hang in huge wood type on a washing line and sway when your cursor blows past (wherever the pen touches a letter, it soaks up ink). The big headlines are loose type and lift near the cursor. The lead projects are case files on tiles that lean toward you in real CSS 3D and turn over to the technical file. The wire under the masthead crawls faster while you scroll, and a red rule along the running head fills in as you read.
+Also in this edition: the section names hang in huge wood type on a washing line and sway when your cursor blows past (wherever the pen touches a letter, it soaks up ink). The big headlines are loose type and lift near the cursor. The lead projects are case files on tiles that lean toward you in real CSS 3D; click one and it turns over to the full file in a wave of little square scales, a different wave for each project. The wire under the masthead crawls faster while you scroll, and a red rule along the running head fills in as you read.
 
 <img src="docs/readme/the-ridge.webp" width="100%" alt="Where the cream page turns to black ink: a mountain ridge with pines, a camper van with a surfboard driving over it, a boulder rolling after it, and the word EXPERIENCE hung in huge outlined wood type on a string behind the heading Where I've worked">
 
