@@ -154,12 +154,13 @@ export default function Blog() {
       offsetRef.current = -(geo.W * 1.6 + 600); // the cards wait off to the right
       strip.style.transform = `translateX(${-offsetRef.current}px)`;
     }
-    const speed = () => (geo.small ? 400 : 600); // px/s
+    const speed = () => (geo.small ? 270 : 380); // px/s: quick enough to feel flown, slow enough to watch
     const takeOff = () => {
       if (!flight || flight.phase !== 'wait') return;
       if (!tow) tow = createTow(section, { small: geo.small });
       flight.phase = 'tow';
       flight.t = 0;
+      hoverRef.current = false; // a cursor resting on the strip doesn't hold the flight, or the crawl after it
       flight.x = geo.W + 24; // the tail, just past the right edge: the nose shows at once
     };
     const letGo = () => {
@@ -313,6 +314,9 @@ export default function Blog() {
     };
   };
   const onPointerMove = (e) => {
+    // the crawl holds only for a mouse actually moving over a clipping (to read it),
+    // never for a cursor that just happens to be resting where the strip runs
+    if (e.pointerType === 'mouse') hoverRef.current = !!e.target.closest?.('.opdesk-card');
     if (!dragRef.current.active) return;
     const delta = dragRef.current.startX - e.clientX;
     if (Math.abs(delta) > 5) {
@@ -393,7 +397,6 @@ export default function Blog() {
       <div
         ref={containerRef}
         className={`opdesk-strip-wrap${reduced ? ' opdesk-strip-wrap--static' : ''}`}
-        onMouseEnter={() => (hoverRef.current = true)}
         onMouseLeave={() => (hoverRef.current = false)}
         onPointerDown={reduced ? undefined : onPointerDown}
         onPointerMove={reduced ? undefined : onPointerMove}

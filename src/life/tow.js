@@ -1,7 +1,7 @@
 /**
  * The banner tow over Writing: a little line-drawn prop plane (the same hand
- * as the car and the van, src/life/car.js) flying right to left with a cloth
- * banner on a rope behind it, and the first clipping tied on behind that, so
+ * as the car and the van, src/life/car.js) flying right to left with a plain
+ * red streamer on a rope behind it, and the first clipping tied on behind that, so
  * the posts come onto the spread pulled in by the plane. Blog.jsx flies it
  * (where the plane is, where the first card is); this only draws.
  *
@@ -36,9 +36,9 @@ export function createTow(host, { small = false } = {}) {
   const size = {
     plane: PLANE_W * k,
     rope: small ? 22 : 34, // tail to banner
-    banner: small ? 160 : 260,
+    banner: small ? 120 : 200,
     tail: small ? 64 : 110, // banner to card
-    h: small ? 30 : 42,
+    h: small ? 18 : 26,
   };
   size.len = size.rope + size.banner + size.tail;
 
@@ -49,13 +49,11 @@ export function createTow(host, { small = false } = {}) {
     <path class="tow-rope" data-r="1"/>
     <path class="tow-rope" data-r="2"/>
     <path class="tow-banner"/>
-    <text class="tow-words" text-anchor="middle" dominant-baseline="central" font-size="${small ? 15 : 21}">READ ALL ABOUT IT</text>
     <g class="tow-plane"><g transform="scale(${-k} ${k})">${PLANE}</g></g>`;
   host.appendChild(svg);
   const rope1 = svg.querySelector('[data-r="1"]');
   const rope2 = svg.querySelector('[data-r="2"]');
   const cloth = svg.querySelector('.tow-banner');
-  const words = svg.querySelector('.tow-words');
   const plane = svg.querySelector('.tow-plane');
   const prop = svg.querySelector('.tow-prop');
 
@@ -88,11 +86,9 @@ export function createTow(host, { small = false } = {}) {
       top.push(`${f(px)} ${f(by - h / 2 + w)}`);
       bot.push(`${f(px)} ${f(by + h / 2 + w * 0.8)}`);
     }
-    cloth.setAttribute('d', `M${top.join('L')}L${bot.reverse().join('L')}Z`);
-    const mid = Math.sin(t * 7.5 - 3.25) * 2.6;
-    words.setAttribute('x', f(bx + size.banner / 2));
-    words.setAttribute('y', f(by + mid));
-    words.setAttribute('transform', `rotate(${(Math.cos(t * 7.5 - 3.25) * 1.2).toFixed(2)} ${f(bx + size.banner / 2)} ${f(by)})`);
+    // a swallowtail at the trailing end
+    const tail = `${f(bx + size.banner - h * 0.45)} ${f(by + Math.sin(t * 7.5 - 6.5) * 4.6)}`;
+    cloth.setAttribute('d', `M${top.join('L')}L${tail}L${bot.reverse().join('L')}Z`);
 
     // the ropes: a little sag each
     rope1.setAttribute('d', `M${f(x)} ${f(y)}Q${f(x + size.rope / 2)} ${f(y + 5)} ${f(bx)} ${f(by - h / 2 + 4)}`);
