@@ -1,16 +1,19 @@
 import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import OffTheClock from '../press/OffTheClock';
+import CountUp from '../press/CountUp';
 import { startCar } from '../life/car';
 import { afterPrint } from '../life/idle';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
 
 /**
- * The Profile: who I am in two short paragraphs and a pull quote, and beside
- * them a short rail — a few numbers and what I do off the clock. Calm on
- * purpose: nothing here animates in or out; the headline sets itself like
- * type, and a little car drives the rule under it as you scroll.
+ * The Profile, set as a feature: a standfirst and one short story with a
+ * drop cap (and the Sudoku, linked), a box of numbers beside it that count
+ * up once as they arrive, and under both the Weekend Edition — what I do off
+ * the clock, filed under the paper's own sections. Nothing else moves here:
+ * the headline sets itself like type, and a little car drives the rule under
+ * it as you scroll.
  */
 export default function About() {
   const rootRef = useRef(null);
@@ -70,44 +73,59 @@ export default function About() {
 
         <div className="about-grid">
           <div className="about-col about-col--story">
-            <p className="about-p about-p--lead">
+            <p className="about-standfirst">
               I&rsquo;m Tejal. I build software that feels obvious: AI agents that
               talk to real systems, data pipelines that hold up, and small things
               that are fun to use.
             </p>
-            <p className="about-p">
-              I started in electronics engineering, scaled federated-learning
-              experiments from fifty simulated clients to a million, and spent a
-              winter on a security desk. Weekends, I ship my own: type, Dime, a
-              Sudoku with no ads.
+            <p className="about-body">
+              Before software, there was electronics engineering. Then I scaled
+              federated-learning experiments from fifty simulated clients to a
+              million, and spent four months on a security team, hunting shadow
+              AI and untangling who can log in to what. Now I&rsquo;m teaching AI
+              agents to talk to real systems. Weekends, I ship my own: type, Dime,
+              and{' '}
+              <a className="about-link" href="https://sudoku.tgoyal.me" target="_blank" rel="noopener noreferrer">
+                a Sudoku with no ads<span className="about-link-arrow" aria-hidden="true">↗</span>
+              </a>.
             </p>
-            <blockquote className="about-pq">&ldquo;The best software feels obvious. Getting it there never is.&rdquo;</blockquote>
           </div>
 
-          <aside className="about-col about-col--rail" aria-label="By the numbers">
-            <dl className="about-stats">
-              <div className="about-stat">
-                <dt>MEng GPA</dt>
-                <dd>8.82 / 9.0</dd>
-              </div>
-              <div className="about-stat">
-                <dt>GRE — Quant</dt>
-                <dd>167 / 170</dd>
-              </div>
-              <div className="about-stat">
-                <dt>Side projects live</dt>
-                <dd>
-                  <span className="about-red">5</span> and counting
+          <aside className="about-col about-col--rail" aria-labelledby="about-numbers-title">
+            <p className="about-rail-kicker" id="about-numbers-title">By the numbers</p>
+            <dl className="about-numbers">
+              <div className="about-num">
+                <dt className="about-num-label">MEng GPA</dt>
+                <dd className="about-num-fig">
+                  <CountUp value="8.82" />
+                  <span className="about-num-of">/9.0</span>
                 </dd>
               </div>
-              <div className="about-stat">
-                <dt>Claude Pro since</dt>
-                <dd>Feb 2026</dd>
+              <div className="about-num">
+                <dt className="about-num-label">GRE, quant</dt>
+                <dd className="about-num-fig">
+                  <CountUp value="167" />
+                  <span className="about-num-of">/170</span>
+                </dd>
+              </div>
+              <div className="about-num">
+                <dt className="about-num-label">Side projects, and counting</dt>
+                <dd className="about-num-fig">
+                  <CountUp value="5" />
+                  <span className="about-num-of">live</span>
+                </dd>
+              </div>
+              <div className="about-num">
+                <dt className="about-num-label">Claude Pro, since</dt>
+                <dd className="about-num-fig">
+                  Feb <span className="about-num-yr">&rsquo;26</span>
+                </dd>
               </div>
             </dl>
-            <OffTheClock />
           </aside>
         </div>
+
+        <OffTheClock />
       </div>
     </section>
   );
