@@ -276,7 +276,7 @@ export default function GratefulFor() {
   if (saved && state === 'done' && !shown.some((s) => keyOf(s) === keyOf(saved))) shown.push({ ...saved, mine: true });
   const n = shown.length;
 
-  let how = 'No names, one a day. Type it, then press it anywhere on the sheet.';
+  let how = 'Anonymous, one a day. Type a word or two, then press it anywhere on the sheet.';
   if (note) how = note;
   else if (!open) how = 'The press is warming up. Back soon.';
   else if (state === 'done') how = 'Today’s is in. Same time tomorrow?';
@@ -284,9 +284,10 @@ export default function GratefulFor() {
 
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">
+      <p className="grateful-kicker">The gratitude sheet</p>
       <div className="grateful-head">
         <h3 className="grateful-title" id="grateful-title">
-          Any good news today?
+          What are you grateful for today?
         </h3>
         {open && (state === 'idle' || state === 'error') && (
           <form
@@ -297,7 +298,7 @@ export default function GratefulFor() {
             }}
           >
             <label className="sr-only" htmlFor="grateful-word">
-              A word or two of good news
+              A word or two you’re grateful for
             </label>
             <input
               id="grateful-word"

@@ -7,11 +7,12 @@ import GratefulFor from '../press/GratefulFor';
 import gmailIcon from '../life/brands/gmail.svg?url';
 import githubIcon from '../life/brands/github.svg?url';
 import linkedinIcon from '../life/brands/linkedin.svg?url';
+import resumeIcon from '../press/resume.svg?url';
 
 /**
  * Let's talk — the oxblood finale. The cube comes back out of the margin to
- * finish its solve beside the headline; further down, by the gratitude sheet,
- * the car pulls in from the right and parks. Reveal is pure progressive enhancement with
+ * finish its solve beside the headline; under the gratitude sheet, the car
+ * drives in along the road. Reveal is pure progressive enhancement with
  * zero ScrollTrigger dependency: the content is fully visible by default (no-JS
  * / reduced-motion). Only when JS runs with motion allowed do we add
  * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
@@ -23,6 +24,10 @@ const LINKS = [
   { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
   { name: 'GitHub', href: 'https://github.com/tejalgoyal2', text: 'github.com/tejalgoyal2', icon: githubIcon, external: true },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/in/tejalgoyal', text: 'linkedin.com/in/tejalgoyal', icon: linkedinIcon, external: true },
+  // public/resume.pdf, kept in the repo; the line appears once the file is there (vite.config.js)
+  ...(import.meta.env.VITE_HAS_RESUME
+    ? [{ name: 'Resume', href: '/resume.pdf', text: 'The resume, as a PDF', icon: resumeIcon, external: true }]
+    : []),
 ];
 
 export default function Contact() {
