@@ -7,9 +7,10 @@ import { prefs } from '../life/prefs';
  * A lead project as a case file on the desk: a tile that leans toward your
  * cursor in real CSS 3D, with a warm desk-lamp glow following the pointer.
  * The front says what it is and why I made it, with a fact or three; the back is
- * the full file, on manila. Its top-right corner is dog-eared, folded down a
- * little to show the manila underneath, and folds further on hover; click
- * anywhere on it (but a link) and it turns over.
+ * the full file, on manila. Now and then its top-right corner dog-ears,
+ * folding down a little to show the manila underneath, then lies flat again;
+ * on hover it folds right down. Click anywhere on it (but a link) and it turns
+ * over. Reduced motion: the corner simply stays turned down.
  *
  * It doesn't flip like a playing card. It changes skin: the face breaks into
  * small square scales that turn over one by one in a wave, newsprint to
@@ -67,7 +68,7 @@ function plan(el, wave, origin) {
 }
 
 export default function Story({ project, lead = false, index }) {
-  const { name, status, why, eli5, desc, long, note, tech, links, facts, wave, from } = project;
+  const { name, status, why, eli5, desc, long, note, tech, links, facts, wave } = project;
   const [side, setSide] = useState('front'); // the face that's up (or on its way up)
   const [morph, setMorph] = useState(null); // { from, cols, rows, cells, total } while it turns
   const ref = useRef(null);
@@ -92,6 +93,32 @@ export default function Story({ project, lead = false, index }) {
     setSide(to);
     focusOther();
   };
+
+  // the dog-ear isn't always down: a while after the tile is in view its corner
+  // folds over, lies there a moment, and flattens again, each tile on its own
+  // beat. A data attribute, so React's className never wipes it.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || prefs.reduced) return;
+    let t = 0;
+    const peek = (on) => {
+      el.dataset.peek = on ? '1' : '';
+      t = setTimeout(() => peek(!on), on ? 2800 : 7000 + Math.random() * 4000);
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        clearTimeout(t);
+        el.dataset.peek = '';
+        if (e.isIntersecting) t = setTimeout(() => peek(true), 2200 + (index - 1) * 1300);
+      },
+      { threshold: 0.4 }
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      clearTimeout(t);
+    };
+  }, [index]);
 
   // the face being left is cut away a square at a time, as each scale covers it
   useEffect(() => {
@@ -176,7 +203,6 @@ export default function Story({ project, lead = false, index }) {
     <article
       ref={ref}
       className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
-      data-land={from || 'bottom'}
       data-name={name}
       data-pen="rotate-cw"
       onPointerMove={lean}

@@ -17,9 +17,7 @@ import linkedinIcon from '../life/brands/linkedin.svg?url';
  * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
  * stagger them back in. Worst case is the entrance not playing — never a blank
  * red screen. The headline uses KineticHeadline's `inview` mode for the same
- * reason. Each way to reach me comes in like a wire on the teleprinter: its
- * mark stamped down, then the address struck letter by letter, one line after
- * the other.
+ * reason.
  */
 const LINKS = [
   { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
@@ -82,8 +80,8 @@ export default function Contact() {
             </div>
 
             <ul className="contact-classified">
-              {LINKS.map(({ name, href, text, icon, external }, line) => (
-                <li className="contact-line" key={name} style={{ '--line': line }}>
+              {LINKS.map(({ name, href, text, icon, external }) => (
+                <li className="contact-line" key={name}>
                   {/* the mark is a way in too (the text link carries the name for screen readers) */}
                   <a
                     href={href}
@@ -102,12 +100,7 @@ export default function Contact() {
                     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   >
                     <span className="sr-only">{name}: </span>
-                    {/* struck letter by letter, like a wire coming in on the teleprinter */}
-                    {[...text].map((ch, i) => (
-                      <span className="tp" key={i} style={{ '--i': i }}>
-                        {ch}
-                      </span>
-                    ))}
+                    {text}
                   </a>
                 </li>
               ))}

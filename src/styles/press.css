@@ -1005,7 +1005,6 @@ button.press-stamp {
 @property --ao { syntax: "<number>"; inherits: false; initial-value: 1; }
 @property --do { syntax: "<number>"; inherits: false; initial-value: 1; }
 [data-arrive],
-[data-land],
 [data-depart],
 [data-arrive-items] > *,
 [data-depart-items] > * {

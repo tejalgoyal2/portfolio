@@ -8,8 +8,8 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * How things come onto the page and leave it — the paste-up desk.
  *
- * Blocks arrive the way material lands on a layout table: the lead files land
- * together, each a short way in from its own side, feature files are laid down from below,
+ * Blocks arrive the way material lands on a layout table: the lead files are
+ * simply there, feature files are laid down from below,
  * skills are set into the stick sort by sort, ledger rows and classifieds are
  * pasted in from the margin, margin notes are pinned on. On the way out they're
  * cleared away just as deliberately: files are filed up and back, ledger rows
@@ -34,8 +34,7 @@ gsap.registerPlugin(ScrollTrigger);
  * Markup: data-arrive="deal-l | deal-r | rise | paste | pin | drop | stamp" and
  * data-depart="file | lift | slide | peel | part-l | part-r" on a block;
  * data-arrive-items="set | pin | paste | drop | lay | tick" and data-depart-items="pi" on a
- * container, which moves its children with a stagger; data-land="left | right |
- * top | bottom" on the lead files, which play in time rather than with the scroll.
+ * container, which moves its children with a stagger.
  */
 
 const IN = { start: 'top 98%', end: 'top 72%' };
@@ -67,13 +66,6 @@ const DEPART = {
   'part-r': () => ({ '--dx': '70px', '--do': 0.2 }),
   // type pied: the sorts spill off the line
   pi: () => ({ '--dx': `${rnd(-50, 50)}px`, '--dy': `${rnd(24, 80)}px`, '--do': 0 }),
-};
-// the lead files: a short way in from their own side, all landing at once
-const LAND = {
-  left: { '--ax': '-44px' },
-  right: { '--ax': '44px' },
-  top: { '--ay': '-36px' },
-  bottom: { '--ay': '36px' },
 };
 const HOME = { '--dx': '0px', '--dy': '0px', '--dr': '0deg', '--ds': 1, '--do': 1 };
 
@@ -115,29 +107,6 @@ export function startArrivals(root = document) {
         items.forEach((it, i) => tl.fromTo(it, HOME, { ...fx(), ease: 'power1.in', duration: 0.6 }, (i / items.length) * 0.4))
       )
     );
-  }
-
-  // the lead files aren't scrubbed: once their desk is coming up the page they
-  // all land together, so by the time you're reading them every one is down
-  const desks = new Set([...root.querySelectorAll('[data-land]')].map((el) => el.parentElement));
-  for (const desk of desks) {
-    const files = [...desk.children].filter((el) => el.dataset.land);
-    const tl = gsap.timeline({ paused: true });
-    files.forEach((el, i) =>
-      tl.fromTo(
-        el,
-        { ...LAND[el.dataset.land], '--as': 0.98, '--ao': 0 },
-        { ...ARRIVED, duration: 0.85, ease: 'expo.out' },
-        i * 0.07
-      )
-    );
-    ScrollTrigger.create({
-      trigger: desk,
-      start: 'top 82%',
-      onEnter: () => tl.play(),
-      onLeaveBack: () => tl.reverse(),
-    });
-    made.push(tl);
   }
 
   return () => made.forEach((tl) => tl.revert());

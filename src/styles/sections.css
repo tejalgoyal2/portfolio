@@ -844,7 +844,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   /* newsprint on the front, a manila case file on the back */
   --front-stock: var(--paper-stock);
   --back-stock: oklch(88% 0.052 84);
-  --ear: 22px;
+  --ear: 0px;
   position: relative;
   perspective: 1400px;
   cursor: pointer;
@@ -891,7 +891,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   visibility: hidden;
   /* the dog-eared corner (see .tile-ear) is cut out of the face that's up */
   clip-path: polygon(0 0, calc(100% - var(--ear)) 0, 100% var(--ear), 100% 100%, 0 100%);
-  transition: border-color 0.3s var(--ease-set), clip-path 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
+  transition: border-color 0.3s var(--ease-set), clip-path 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .tile-back { background: var(--back-stock); }
 .tile-face.is-up,
@@ -899,6 +899,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* while it turns, what's left of the old face sits over the new one */
 .tile-face.is-leaving { z-index: 2; transition: none; }
 .tile:hover .tile-face { border-color: var(--red); }
+.tile[data-peek="1"]:not(.is-morphing) { --ear: 22px; }
 .tile:hover:not(.is-morphing) { --ear: 38px; }
 /* the desk lamp: a soft pool of warm red under the pointer, soaked into the stock */
 .tile-glow {
@@ -919,8 +920,9 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .tile-face > *:not(.tile-glow) { position: relative; z-index: 1; }
 
 /* the dog-ear: the top-right corner, folded down over the tile in real 3D so
-   you see the other side's stock — the hint that it turns over. It's always
-   turned down a little, and folds further when you point at the tile. */
+   you see the other side's stock — the hint that it turns over. It folds down
+   now and then (data-peek, from Story.jsx) and right down when you point at
+   the tile; the rest of the time the corner lies flat. */
 .tile-ear {
   position: absolute;
   top: 0;
@@ -934,11 +936,13 @@ html.fonts-pending .mast-plate { visibility: hidden; }
     linear-gradient(225deg, color-mix(in oklch, var(--back-stock), oklch(20% 0.03 60) 16%) 20%, var(--back-stock) 75%);
   /* sized by scale from its corner, to match the cut in the face (--ear) */
   transform-origin: 100% 0;
-  transform: scale(calc(22 / 38));
-  transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
+  transform: scale(0);
+  /* lies flat without overshooting (past flat it would fold out of the tile) */
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
 }
-.tile:hover:not(.is-morphing) .tile-ear { transform: scale(1); }
+.tile[data-peek="1"]:not(.is-morphing) .tile-ear { transform: scale(calc(22 / 38)); transition-timing-function: cubic-bezier(0.34, 1.3, 0.5, 1); }
+.tile:hover:not(.is-morphing) .tile-ear { transform: scale(1); transition-timing-function: cubic-bezier(0.34, 1.3, 0.5, 1); }
 .tile.is-back .tile-ear {
   background:
     linear-gradient(45deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
@@ -1167,6 +1171,8 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .tile-lean { transform: none; transition: none; }
   .tile-face, .tile-ear { transition: none; }
+  .tile:not(.is-morphing) { --ear: 22px; }
+  .tile:not(:hover) .tile-ear { transform: scale(calc(22 / 38)); }
 }
 
 /* ── In brief: the rest, in still newspaper columns ──────────────────────── */
@@ -1235,62 +1241,13 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .brief-eli5 { margin: 0 0 0.6rem; font-family: var(--font-read); font-size: 1rem; line-height: 1.45; color: var(--ink-soft); max-width: 38ch; text-wrap: pretty; }
 .brief-links { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; margin: 0.2rem 0 0; }
-.brief-tech {
-  margin: -0.2rem 0 0.7rem;
-  font-family: var(--font-data);
-  font-size: 0.64rem;
-  letter-spacing: 0.06em;
-  line-height: 1.6;
+/* who the briefs are written for, said once over the columns, in red pen */
+.cf-eli5 {
+  margin: 0;
+  font-family: var(--font-pen);
+  font-size: 1.15rem;
+  line-height: 1;
   color: var(--red);
-}
-/* both editions set in the same slot, one over the other: the item is as tall
-   as the longer one, so flipping never moves the columns */
-.brief-copy { display: grid; }
-.brief-ed { grid-area: 1 / 1; }
-.brief-ed:not(.is-on) { visibility: hidden; }
-/* the switch: two editions, the one you're reading circled in red pen */
-.cf-edition {
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem 0.9rem;
-  flex-wrap: wrap;
-  font-family: var(--font-data);
-  font-size: 0.66rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.cf-edition-label { color: var(--ink-soft); }
-.cf-edition-opt {
-  position: relative;
-  padding: 0.2em 0.1em;
-  border: 0;
-  background: none;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: color 0.2s;
-}
-.cf-edition-opt::after {
-  /* a loose loop of red pen round the chosen one */
-  content: "";
-  position: absolute;
-  inset: -0.35em -0.6em;
-  border: 1.5px solid var(--red);
-  border-radius: 48% 52% 46% 54% / 60% 44% 56% 40%;
-  rotate: -3deg;
-  opacity: 0;
-  scale: 0.7;
-  transition: opacity 0.2s, scale 0.35s var(--ease-set, cubic-bezier(0.34, 1.56, 0.64, 1));
-  pointer-events: none;
-}
-.cf-edition-opt.is-on { color: var(--ink); font-weight: 700; }
-.cf-edition-opt.is-on::after { opacity: 1; scale: 1; }
-.cf-edition-opt:hover { color: var(--ink); }
-.cf-edition-opt:focus-visible { outline: 2px solid var(--red); outline-offset: 6px; }
-@media (prefers-reduced-motion: reduce) {
-  .cf-edition-opt::after { transition: none; }
 }
 
 @media (max-width: 900px) {
@@ -2294,27 +2251,6 @@ html.cursor-hidden .resume-window.resume-window button { cursor: pointer !import
   height: 26px;
 }
 .contact-line-label img { width: 24px; height: 24px; object-fit: contain; }
-/* the teleprinter: the mark stamped, then the address struck a letter at a time */
-.contact-line .tp { display: inline-block; white-space: pre; }
-.contact--anim .contact-line-label,
-.contact--anim .contact-line .tp { opacity: 0; }
-.contact--anim.is-in .contact-line-label {
-  animation: tp-stamp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(0.45s + var(--line) * 0.55s);
-}
-.contact--anim.is-in .contact-line .tp {
-  animation: tp-strike 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: calc(0.62s + var(--line) * 0.55s + var(--i) * 17ms);
-}
-/* both end on full ink: the base above is opacity 0, so an open-ended keyframe would fade back to it */
-@keyframes tp-stamp {
-  from { opacity: 0; scale: 0.55; }
-  to { opacity: 1; scale: 1; }
-}
-@keyframes tp-strike {
-  from { opacity: 0; translate: 0 0.35em; }
-  to { opacity: 1; translate: 0 0; }
-}
 /* GitHub's mark is black; on the red it's printed in its white version */
 .contact-line:nth-child(2) .contact-line-label img { filter: brightness(0) invert(0.96); }
 .contact-line-link {
