@@ -8,8 +8,8 @@ import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
 
 /**
- * The Profile, set as a feature: a standfirst and one short story with a
- * drop cap (and the Sudoku, linked), a box of numbers beside it that count
+ * The Profile, set as a feature: one paragraph in the standfirst's voice
+ * (type, Dime and the Sudoku linked from it), a box of numbers beside it that count
  * up once as they arrive, and under both the Weekend Edition — what I do off
  * the clock, filed under the paper's own sections. Nothing else moves here:
  * the headline sets itself like type, and a little car drives the rule under
@@ -74,22 +74,22 @@ export default function About() {
         <div className="about-grid">
           <div className="about-col about-col--story">
             <p className="about-standfirst">
-              I&rsquo;m Tejal. I make software feel obvious, which turns out to
-              take a lot of work: AI agents that talk to real systems, data
-              pipelines that hold up, and small things that are fun to use.
-            </p>
-            <p className="about-body">
-              I started in electronics engineering, where a bad bug can actually
-              smoke. Software seemed safer, so I moved over and stayed. I&rsquo;ve
-              taken a federated-learning experiment from fifty simulated clients
-              to a million, and spent four months on a security team tracking
-              down shadow AI and working out who could log in to what (more
-              people than you&rsquo;d hope). These days I&rsquo;m teaching AI agents
-              to work with real systems without breaking them. Weekends are for
-              things nobody asked for (well, I did): type, Dime, and{' '}
+              I&rsquo;m Tejal. I like problems that fight back: a proof that&rsquo;s
+              one step short, a bug that only shows up on Tuesdays, a qubit
+              that&rsquo;s technically both answers until you check. Math is my
+              comfort show and quantum is the plot twist I keep rewatching. The rest
+              of the time I&rsquo;m making small things feel exactly right, which is
+              how{' '}
+              <a className="about-link" href="https://type.tgoyal.me" target="_blank" rel="noopener noreferrer">
+                type<span className="about-link-arrow" aria-hidden="true">↗</span>
+              </a>,{' '}
+              <a className="about-link" href="https://dime.tgoyal.me" target="_blank" rel="noopener noreferrer">
+                Dime<span className="about-link-arrow" aria-hidden="true">↗</span>
+              </a> and{' '}
               <a className="about-link" href="https://sudoku.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 a Sudoku with no ads<span className="about-link-arrow" aria-hidden="true">↗</span>
-              </a>.
+              </a>{' '}
+              happened. Nobody asked for them. I did, no regrets.
             </p>
           </div>
 

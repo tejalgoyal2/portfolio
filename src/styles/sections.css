@@ -337,41 +337,18 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   background: var(--ink-ghost);
 }
 
-/* the story: a standfirst, then one short column with a drop cap */
+/* the story: one paragraph, in the standfirst's voice */
 .about-standfirst {
   margin: 0;
-  max-width: 32ch;
-  /* the italic at a book weight: a voice, not a shout, so the column under
-     it doesn't look thin beside it */
+  max-width: 40ch;
   font-family: var(--font-name);
-  font-style: italic;
-  font-weight: 440;
-  font-variation-settings: "opsz" 72, "SOFT" 50, "WONK" 0;
-  font-size: clamp(1.45rem, 2.2vw, 1.95rem);
-  line-height: 1.28;
+  font-weight: 600;
+  font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0;
+  font-size: clamp(1.35rem, 2.05vw, 1.85rem);
+  line-height: 1.32;
   letter-spacing: -0.005em;
   color: var(--ink);
   text-wrap: pretty;
-}
-.about-body {
-  margin: clamp(1.4rem, 2.4vw, 2rem) 0 0;
-  max-width: 58ch;
-  font-family: var(--font-read);
-  font-size: clamp(1.06rem, 1.3vw, 1.2rem);
-  line-height: 1.62;
-  color: var(--ink);
-  text-wrap: pretty;
-}
-/* a proper drop cap, three lines deep, cut from the nameplate's face */
-.about-body::first-letter {
-  float: left;
-  margin: 0.06em 0.09em -0.1em -0.02em;
-  font-family: var(--font-name);
-  font-weight: 800;
-  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
-  font-size: 4.35em;
-  line-height: 0.8;
-  color: var(--ink);
 }
 /* a link in running text: a quiet underline and a small arrow, nothing more */
 .about-link {
@@ -855,8 +832,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), scale 0.55s cubic-bezier(0.34, 1.45, 0.5, 1);
 }
-.tile:hover .tile-lean,
-.tile.is-teasing .tile-lean { scale: 1.018; }
+.tile:hover .tile-lean { scale: 1.018; }
 .tile.is-morphing .tile-lean { scale: 1.008; }
 .tile-turn { position: relative; display: grid; height: 100%; }
 /* the tile's shadow on a layer of its own, so a folded corner never clips it */
@@ -892,8 +868,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* while it turns, what's left of the old face sits over the new one */
 .tile-face.is-leaving { z-index: 2; transition: none; }
 .tile:hover .tile-face { border-color: var(--red); }
-.tile:hover:not(.is-morphing),
-.tile.is-teasing:not(.is-morphing) { --ear: 30px; }
+.tile:hover:not(.is-morphing) { --ear: 30px; }
 /* the desk lamp: a soft pool of warm red under the pointer, soaked into the stock */
 .tile-glow {
   position: absolute;
@@ -936,14 +911,11 @@ html.fonts-pending .mast-plate { visibility: hidden; }
     linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
     linear-gradient(315deg, color-mix(in oklch, var(--front-stock), oklch(20% 0.03 60) 12%) 20%, var(--front-stock) 75%);
 }
-.tile:hover:not(.is-morphing) .tile-ear,
-.tile.is-teasing:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
+.tile:hover:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
 /* no hover on a touch screen: the corner stays turned a little, so it still says "turn me" */
 @media (hover: none) {
   .tile:not(.is-morphing) { --ear: 18px; }
   .tile:not(.is-morphing) .tile-ear { width: 18px; height: 18px; transform: none; }
-  .tile.is-teasing:not(.is-morphing) { --ear: 30px; }
-  .tile.is-teasing:not(.is-morphing) .tile-ear { transform: scale(1.667); transform-origin: 100% 100%; }
 }
 
 /* the turn: the face breaks into square scales that turn over in a wave
@@ -978,6 +950,16 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .tile-scale--y::after { background: var(--to-stock); transform: rotateY(180deg); }
 .tile-scale--x::after { background: var(--to-stock); transform: rotateX(180deg); }
+/* typed, not turned: a block cursor that fills its cell from the left edge */
+.tile-scale--pop { transform-origin: 0 50%; animation-name: tile-scale-pop; animation-timing-function: steps(4, jump-start), ease; }
+.tile-scale--pop::before { display: none; }
+.tile-scale--pop::after { background: var(--to-stock); box-shadow: inset 2px 0 0 oklch(56% 0.214 27 / 0.55); }
+@keyframes tile-scale-pop {
+  0% { opacity: 1; transform: scaleX(0); }
+  42% { transform: scaleX(1); }
+  85% { opacity: 1; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1); }
+}
 @keyframes tile-scale-y {
   0% { opacity: 0; transform: translateZ(0) rotateY(0deg) scale(1); }
   10% { opacity: 1; transform: translateZ(10px) rotateY(0deg) scale(1.04); }
@@ -993,6 +975,47 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   100% { opacity: 0; transform: translateZ(0) rotateX(-180deg) scale(1); }
 }
 .tile-clip { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* the peek (Story.jsx): a few scales in the corner turn over to the other
+   side's stock and back, once, so the tile has shown what it does */
+.tile-peek {
+  position: absolute;
+  inset: 1.5px;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 3px;
+  perspective: 600px;
+  pointer-events: none;
+}
+.tile-peek-scale {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  background: var(--back-stock);
+  box-shadow: inset 0 0 0 0.5px oklch(20% 0.02 60 / 0.18);
+  opacity: 0;
+  animation: tile-peek-y 1000ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
+}
+.tile.is-back .tile-peek-scale { background: var(--front-stock); }
+.tile-peek-scale--x { animation-name: tile-peek-x; }
+.tile-peek-scale--pop { transform-origin: 0 50%; animation-name: tile-peek-pop; animation-timing-function: steps(5, jump-start); }
+@keyframes tile-peek-y {
+  0% { opacity: 1; transform: translateZ(18px) rotateY(-90deg); }
+  28% { transform: translateZ(6px) rotateY(0deg); }
+  60% { opacity: 1; transform: translateZ(0) rotateY(0deg); }
+  92%, 100% { opacity: 1; transform: translateZ(18px) rotateY(90deg); }
+}
+@keyframes tile-peek-pop {
+  0% { opacity: 1; transform: scaleX(0); }
+  30%, 62% { opacity: 1; transform: scaleX(1); }
+  63%, 100% { opacity: 0; transform: scaleX(1); }
+}
+@keyframes tile-peek-x {
+  0% { opacity: 1; transform: translateZ(18px) rotateX(90deg); }
+  28% { transform: translateZ(6px) rotateX(0deg); }
+  60% { opacity: 1; transform: translateZ(0) rotateX(0deg); }
+  92%, 100% { opacity: 1; transform: translateZ(18px) rotateX(-90deg); }
+}
 
 .tile-kicker {
   display: flex;
@@ -1114,10 +1137,8 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   cursor: inherit;
 }
 .tile-flip span { display: inline-block; font-size: 1.15em; transition: rotate 0.6s cubic-bezier(0.34, 1.4, 0.5, 1); }
-.tile:hover .tile-flip,
-.tile.is-teasing .tile-flip { color: var(--red); }
-.tile:hover .tile-flip span,
-.tile.is-teasing .tile-flip span { rotate: 180deg; }
+.tile:hover .tile-flip { color: var(--red); }
+.tile:hover .tile-flip span { rotate: 180deg; }
 .tile-flip:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 .tile-desc { margin: 0 0 0.7rem; font-family: var(--font-read); font-style: italic; font-size: 1rem; line-height: 1.5; color: var(--ink); }
 .tile-long { margin: 0 0 1rem; font-family: var(--font-read); font-size: 0.92rem; line-height: 1.55; color: var(--ink-soft); }
@@ -1335,59 +1356,46 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   margin: 0.35rem 0 0;
   color: oklch(87% 0.016 80);
 }
-.led-desc {
+.led-story {
   font-family: var(--font-read);
-  font-size: 1.02rem;
-  line-height: 1.5;
-  max-width: 64ch;
-  margin: 0.6rem 0 0;
+  font-size: clamp(1.02rem, 1.2vw, 1.12rem);
+  line-height: 1.58;
+  max-width: 62ch;
+  margin: 0.7rem 0 0;
   color: oklch(91% 0.012 85);
+  text-wrap: pretty;
 }
-
-.led-dispatches {
-  list-style: none;
+/* a few figures from the role, as a box score under the story */
+.led-figs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.9rem 1.6rem;
+  max-width: 62ch;
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px dashed oklch(58% 0.01 60 / 0.4);
+}
+.led-fig { display: flex; flex-direction: column-reverse; margin: 0; }
+.led-fig-num {
   margin: 0;
-  padding: 0.9rem 0 0;
+  font-family: var(--font-name);
+  font-weight: 900;
+  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--paper);
 }
-.led-dispatch {
-  position: relative;
-  padding-left: 1.2rem;
-  margin-bottom: 0.5rem;
-  font-family: var(--font-read);
-  font-size: 0.96rem;
-  line-height: 1.45;
-  color: oklch(89% 0.012 85);
-}
-.led-dispatch::before {
-  content: "\25B8";
-  position: absolute;
-  left: 0;
-  color: var(--red);
-}
-/* the rest of a role, folded away until asked for */
-.led-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s var(--ease-set); }
-.led-more.is-open { grid-template-rows: 1fr; }
-.led-more > .led-dispatches { overflow: hidden; min-height: 0; padding-top: 0; }
-.led-more .led-dispatch { opacity: 0; translate: 0 -6px; transition: opacity 0.3s var(--ease-set), translate 0.4s var(--ease-set); }
-.led-more.is-open .led-dispatch { opacity: 1; translate: 0 0; transition-delay: calc(0.12s + var(--k, 0) * 60ms); }
-.led-more-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45em;
+.led-fig-label {
   margin-top: 0.35rem;
-  padding: 0.3rem 0;
   font-family: var(--font-data);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
   text-transform: uppercase;
-  color: var(--red);
-  cursor: pointer;
-}
-.led-more-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
-.led-more-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) {
-  .led-more, .led-more .led-dispatch { transition: none; }
+  color: oklch(78% 0.02 60);
 }
 /* the margin rule — Experience.jsx scrubs its scaleY down the ledger */
 .led-rule {
@@ -1691,6 +1699,16 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   margin: clamp(3rem, 7vh, 5rem) 0 clamp(2.2rem, 5vh, 3.2rem);
 }
 .grateful-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.2rem; }
+.grateful-kicker {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper);
+  opacity: 0.6;
+}
 .grateful-title {
   margin: 0;
   font-family: var(--font-name);
@@ -1888,7 +1906,6 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   --on: 0;
   position: absolute;
   left: 0;
-  transform-origin: 0 50%;
   bottom: 30px;
   width: 260px;
   height: 90px;
@@ -1913,7 +1930,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   pointer-events: none;
 }
 .car-note.is-on { opacity: 1; translate: 0 0; }
-.car-note-text { display: inline-block; translate: -100% 0; rotate: var(--tilt, -1deg); transform-origin: right center; }
+.car-note-text { display: inline-block; rotate: var(--tilt, -1deg); transform-origin: left center; }
 @media (max-width: 720px) {
   .contact-road { height: 190px; }
   .car-hit { height: 90px; width: 170px; }
@@ -2245,8 +2262,3 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .tow-prop { fill: oklch(95% 0.014 85 / 0.75); }
 .tow-rope { fill: none; stroke: oklch(95% 0.014 85 / 0.7); stroke-width: 1.3; stroke-linecap: round; }
 .tow-banner { fill: var(--red); stroke: oklch(20% 0.02 40 / 0.5); stroke-width: 1; stroke-linejoin: round; }
-.tow-words {
-  font-family: var(--font-impact);
-  letter-spacing: 0.08em;
-  fill: var(--paper-stock);
-}

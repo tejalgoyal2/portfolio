@@ -120,13 +120,15 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   expect(errors).toEqual([]);
 });
 
-test('profile: a feature with a drop cap, a linked Sudoku, a box of numbers and the Weekend Edition', async ({ page }) => {
+test('profile: one paragraph with type, Dime and the Sudoku linked, a box of numbers and the Weekend Edition', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.about-grid');
   await page.waitForTimeout(1600); // the figures count up once
   const about = page.locator('.about');
   await expect(about.locator('.about-standfirst')).toContainText('I’m Tejal');
-  const sudoku = about.locator('a.about-link');
+  await expect(about.locator('.about-body')).toHaveCount(0);
+  await expect(about.locator('a.about-link')).toHaveCount(3);
+  const sudoku = about.locator('a.about-link').last();
   await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
   await expect(sudoku).toHaveAttribute('target', '_blank');
   await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
@@ -134,14 +136,6 @@ test('profile: a feature with a drop cap, a linked Sudoku, a box of numbers and 
   await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
   await expect(about.locator('.weekend-desk')).toHaveCount(4);
   await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);
-  // the full stop stays on the link's line, never alone on the next
-  const drift = await about.locator('.about-body').evaluate((p) => {
-    const link = p.querySelector('.about-link').getBoundingClientRect();
-    const r = document.createRange();
-    r.selectNodeContents(p.lastChild);
-    return Math.abs(r.getBoundingClientRect().bottom - link.bottom);
-  });
-  expect(drift).toBeLessThan(6);
 });
 
 test('projects: a tile turns over from anywhere on it, in a wave of scales, and back', async ({ page }) => {
