@@ -1,16 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Cream newsprint stock -->
-  <rect width="32" height="32" rx="3.5" fill="#f3ede3"/>
-  <!-- Hairline border — the type-case slug edge -->
-  <rect width="32" height="32" rx="3.5" fill="none" stroke="#2d2215" stroke-width="1.5" stroke-opacity="0.35"/>
-  <!-- Pilcrow ¶ — the press / paragraph mark, centred -->
-  <text
-    x="17"
-    y="24.5"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="21"
-    font-weight="900"
-    fill="#2d2215"
-    text-anchor="middle"
-    dominant-baseline="auto">¶</text>
+  <!-- a sort of type on the press: the nameplate's T (Fraunces 900, cut from the
+       face itself, so no font is needed), cream on ink, with the case files' red
+       dog-ear folded at the corner -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="#1c140e" stroke="#f4f0e6" stroke-opacity="0.16"/>
+  <path fill="#f4f0e6" transform="translate(5.805 26.6) scale(0.01512 -0.01512)" d="M190 1400H1158Q1183 1400 1204.0 1405.5Q1225 1411 1239.5 1416.5Q1254 1422 1258 1422Q1261 1422 1263.5 1418.5Q1266 1415 1268 1398L1330 950Q1332 941 1330.5 937.5Q1329 934 1326 932Q1323 931 1319.0 932.5Q1315 934 1312 940Q1224 1126 1153.5 1219.5Q1083 1313 1026.5 1344.5Q970 1376 926 1376H888V58Q888 46 900.0 39.0Q912 32 934 28L990 18Q1006 15 1006 8Q1006 0 994 0H354Q348 0 345.0 2.5Q342 5 342 8Q342 15 358 18L414 28Q437 32 448.5 39.0Q460 46 460 58V1376H422Q383 1376 328.0 1340.5Q273 1305 200.5 1211.0Q128 1117 36 940Q33 934 29.0 932.5Q25 931 22 932Q19 934 18.0 937.5Q17 941 18 950L80 1398Q82 1415 84.5 1418.5Q87 1422 90 1422Q94 1422 108.0 1416.5Q122 1411 143.5 1405.5Q165 1400 190 1400Z"/>
+  <path fill="#d51e22" d="M22.4 31.5L31.5 22.4V25Q31.5 31.5 25 31.5Z"/>
+  <path fill="none" stroke="#1c140e" stroke-width="0.9" d="M22.4 31.5L31.5 22.4"/>
 </svg>
