@@ -108,7 +108,8 @@ async function main() {
 
   const posts = entries
     .map(parseEntry)
-    .filter(p => p.title && p.url && p.date)
+    // only real web links: anything else (javascript:, data:) never reaches a card's href
+    .filter(p => p.title && /^https?:\/\//i.test(p.url) && p.date)
     .sort((a, b) => b.date.localeCompare(a.date)); // newest first
 
   if (posts.length === 0) throw new Error('No posts parsed — feed may be empty or format changed');
