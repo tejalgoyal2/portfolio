@@ -4,9 +4,11 @@ import { prefs } from '../life/prefs';
 /**
  * The resume, where the letter's stamp used to be: a little cartoon of one,
  * in ink on white (a photo, a name, a rule, a few blocks of lines, and not a
- * word you could read), sitting on the red. Point at it and it lifts off the
- * page; click it and the real one opens over the site in a window of its own,
- * with a way to open it in a tab, download it, or put it away (Esc does too).
+ * word you could read), sitting on the red, with a little speech box under
+ * it that says what it is. Point at it and it lifts straight off the page;
+ * click it and the real one opens over the site in a window of its own,
+ * with a way to open it in a tab, download it, or put it away (Esc does too);
+ * in there the system cursor stands in for the pen.
  * On a phone, or without a dialog, it's just a link to the PDF in a new tab.
  *
  * The PDF is public/resume.pdf: upload a new one over it and the next deploy
@@ -68,7 +70,7 @@ export default function Resume() {
           <path className="ra-bar" d="M12 100h58M12 107h40" />
         </svg>
         <span className="resume-tip" aria-hidden="true">
-          my resume, have a look
+          my resume, have a look<span className="resume-tip-arrow">↗</span>
         </span>
       </a>
 

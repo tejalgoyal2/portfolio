@@ -350,6 +350,31 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--ink);
   text-wrap: pretty;
 }
+/* favourite subjects: a label and a note in pen under the story */
+.about-aside {
+  margin: 1.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.9rem;
+}
+.about-aside-label {
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.about-aside-pen {
+  display: inline-block;
+  font-family: var(--font-pen);
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  rotate: var(--tilt, -1deg);
+}
 /* a link in running text: a quiet underline and a small arrow, nothing more */
 .about-link {
   color: var(--ink);
@@ -971,22 +996,43 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .tile-clip { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-/* Claubi's turn (Story.jsx): a block cursor runs each line and the new face
-   is typed in behind it; it blinks once at the end of the last line, and goes */
-.tile-cursor {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  background: var(--ink);
-  pointer-events: none;
-  will-change: transform;
+/* Claubi's turn (Story.jsx): the face switches off like an old monitor,
+   squeezing down to a bright line and the line to a dot, and the other side
+   powers up out of the dot. Transforms and opacity only; 720ms in all. */
+.tile.is-crt .tile-face.is-leaving { animation: tile-crt-off 340ms cubic-bezier(0.55, 0, 0.8, 0.4) both; }
+.tile.is-crt .tile-face.is-up { animation: tile-crt-on 360ms cubic-bezier(0.2, 0.7, 0.3, 1) 340ms both; }
+@keyframes tile-crt-off {
+  0% { transform: scale(1, 1); }
+  62% { transform: scale(1.015, 0.012); opacity: 1; }
+  100% { transform: scale(0, 0.012); opacity: 0.6; }
 }
-.tile-cursor.is-done { animation: tile-cursor-blink 520ms steps(1, end) forwards; }
-@keyframes tile-cursor-blink {
-  0% { opacity: 0; }
-  35% { opacity: 1; }
-  70%, 100% { opacity: 0; }
+@keyframes tile-crt-on {
+  0% { transform: scale(0, 0.012); }
+  38% { transform: scale(1.015, 0.012); }
+  100% { transform: scale(1, 1); }
+}
+/* the line itself, in ink on the paper, brightest as the face goes thin */
+.tile-crt {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  height: 3px;
+  margin-top: -1.5px;
+  background: var(--ink);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px oklch(from var(--red) l c h / 0.35);
+  opacity: 0;
+  pointer-events: none;
+  animation: tile-crt-line 720ms linear both;
+}
+@keyframes tile-crt-line {
+  0%, 30% { opacity: 0; transform: scaleX(1); }
+  40% { opacity: 1; transform: scaleX(1); }
+  47% { opacity: 1; transform: scaleX(0.02); }
+  66% { opacity: 1; transform: scaleX(1); }
+  74%, 100% { opacity: 0; transform: scaleX(1); }
 }
 
 .tile-kicker {
@@ -2029,15 +2075,15 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   width: 100%;
   height: auto;
   overflow: visible;
-  rotate: -4deg;
-  transition: translate 0.4s var(--ease-stamp), rotate 0.4s var(--ease-stamp);
+  transition: translate 0.35s var(--ease-stamp);
 }
+/* pointed at, the sheet lifts straight up off the page and its flat shadow drops away under it */
 .resume:hover .resume-art,
-.resume:focus-visible .resume-art { translate: 0 -5px; rotate: -1.5deg; }
+.resume:focus-visible .resume-art { translate: 0 -6px; }
 .resume:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
-.ra-shadow { fill: oklch(16% 0.02 40); transition: translate 0.4s var(--ease-stamp); }
+.ra-shadow { fill: oklch(16% 0.02 40); transition: translate 0.35s var(--ease-stamp); }
 .resume:hover .ra-shadow,
-.resume:focus-visible .ra-shadow { translate: 2px 3px; }
+.resume:focus-visible .ra-shadow { translate: 3px 9px; }
 .ra-sheet { fill: oklch(99% 0.004 85); stroke: oklch(16% 0.02 40); stroke-width: 2.6; stroke-linejoin: round; }
 .ra-fold { fill: oklch(90% 0.006 85); stroke: oklch(16% 0.02 40); stroke-width: 2.6; stroke-linejoin: round; }
 .ra-line { fill: none; stroke: oklch(16% 0.02 40); stroke-width: 2.4; }
@@ -2047,27 +2093,48 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .ra-bar--name { stroke: oklch(16% 0.02 40); stroke-width: 6; }
 .ra-bar--sub { stroke-width: 3.4; }
 .ra-bar--head { stroke: oklch(16% 0.02 40); stroke-width: 4.4; }
+/* what it is, always said: a little speech box under the sheet, pointing up at it */
 .resume-tip {
-  position: absolute;
-  top: calc(100% + 12px);
-  left: -6px;
+  position: relative;
+  display: block;
+  width: max-content;
+  margin-top: 16px;
+  padding: 0.25rem 0.65rem 0.3rem;
   font-family: var(--font-pen);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  line-height: 1.15;
   white-space: nowrap;
-  color: var(--paper);
-  opacity: 0;
-  translate: 0 -4px;
-  transition: opacity 0.25s var(--ease-set), translate 0.3s var(--ease-stamp);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  transition: translate 0.35s var(--ease-stamp);
 }
+.resume-tip::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 22px;
+  width: 11px;
+  height: 11px;
+  background: var(--paper);
+  border-left: 1.5px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
+  transform: rotate(45deg);
+}
+.resume-tip-arrow { margin-left: 0.3em; font-family: var(--font-data); font-size: 0.75em; color: var(--red); }
 .resume:hover .resume-tip,
-.resume:focus-visible .resume-tip { opacity: 0.85; translate: 0 0; }
-/* no hover to find it with: the note is just there */
-@media (hover: none) {
-  .resume-tip { position: static; display: block; margin-top: 0.7rem; opacity: 0.85; translate: 0 0; }
-}
+.resume:focus-visible .resume-tip { translate: 0 -2px; }
 @media (prefers-reduced-motion: reduce) {
   .resume-art, .ra-shadow, .resume-tip { transition: none; }
 }
+
+/* the pen can't follow into the window (it's drawn on the page, under it), so
+   in there the system's own cursor comes back */
+html.cursor-hidden .resume-window.resume-window,
+html.cursor-hidden .resume-window.resume-window * { cursor: default !important; }
+html.cursor-hidden .resume-window.resume-window a,
+html.cursor-hidden .resume-window.resume-window button { cursor: pointer !important; }
 
 /* the window it opens in: a sheet of the paper over the dimmed page */
 .resume-window {
@@ -2082,7 +2149,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--ink);
   overflow: visible;
 }
-.resume-window::backdrop { background: oklch(16% 0.02 40 / 0.62); }
+.resume-window::backdrop { background: oklch(16% 0.02 40 / 0.62); cursor: default; }
 .resume-window[open] { animation: resume-in 0.38s var(--ease-stamp) both; }
 .resume-window[open]::backdrop { animation: resume-dim 0.3s var(--ease-set) both; }
 .resume-window.is-still[open],

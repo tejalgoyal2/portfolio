@@ -19,14 +19,14 @@ import { prefs } from '../life/prefs';
  *   rows    Dime — row by row, left to right, like a receipt printing
  *   spread  IAM Threat Mapper — out from the click, unevenly, node to node,
  *           the way an attacker moves through a network
- *   type    Claubi — no scales at all: a block cursor runs along each line,
- *           top to bottom, and the new face is typed in behind it a
- *           character at a time, like a terminal printing its output
+ *   crt     Claubi — no scales at all: the face switches off like an old
+ *           monitor (it squeezes down to a bright line, the line to a dot),
+ *           and the other side powers up out of the dot the same way
  * The scales exist only while the tile turns, and only move by transform and
  * opacity (a CSS animation each, on the compositor). The face being left is
  * cut away under them through an SVG clip path, a square at a time, exactly
- * where each scale covers it (for Claubi, a line at a time, from the left, as
- * the cursor passes). Reduced motion: the faces simply swap.
+ * where each scale covers it. Claubi's faces just scale, by transform alone.
+ * Reduced motion: the faces simply swap.
  */
 const LINK_LABEL = { live: 'Live site', github: 'Source', youtube: 'Demo' };
 const STAMP_TONE = { LIVE: 'red' };
@@ -35,10 +35,7 @@ const CELL = 44; // px: the size of one scale, about
 const MAX_CELLS = 150;
 const LIFE = 540; // ms one scale takes to turn over
 const COVER = 0.42; // how far through its turn a scale is when it hides the face beneath
-const LINE = 26; // px: one line of Claubi's typed face
-const CHAR = 11; // px: one character of it
-const TYPE_MS = 820; // the whole face, first line to last
-const BLINK = 520; // and the cursor blinks once at the end before it goes
+const CRT = 720; // ms Claubi's switch-off and back on takes (sections.css keeps the same timing)
 
 // a small seeded random, so a wave is the same every time
 const rand = (i) => {
@@ -56,12 +53,6 @@ const WAVES = {
   },
 };
 
-// Claubi's face: lines of characters, typed in one line after the next
-function typePlan(el) {
-  const { width: w, height: h } = el.getBoundingClientRect();
-  const rows = Math.max(1, Math.round(h / LINE));
-  return { kind: 'type', rows, chars: Math.max(1, Math.round(w / CHAR)), w, h, total: TYPE_MS + BLINK };
-}
 
 function plan(el, wave, origin) {
   const { width: w, height: h } = el.getBoundingClientRect();
@@ -89,8 +80,6 @@ export default function Story({ project, lead = false, index }) {
   const clipId = `tile-clip-${index}`;
   const no = String(index).padStart(2, '0');
 
-  const cursorRef = useRef(null);
-
   const turn = (origin, keyed = false) => {
     if (morph) return;
     const to = side === 'front' ? 'back' : 'front';
@@ -102,37 +91,18 @@ export default function Story({ project, lead = false, index }) {
       focusOther();
       return;
     }
-    setMorph({ from: side, ...(wave === 'type' ? typePlan(ref.current) : plan(ref.current, wave, origin)) });
+    setMorph({ from: side, ...(wave === 'crt' ? { kind: 'crt', total: CRT } : plan(ref.current, wave, origin)) });
     setSide(to);
     focusOther();
   };
 
   // the face being left is cut away a square at a time, as each scale covers it
-  // (Claubi's a line at a time, from the left, behind the cursor)
   useEffect(() => {
     if (!morph) return;
     const rects = [...(clipRef.current?.querySelectorAll('rect') || [])];
     const start = performance.now();
     let left = rects.length;
     let raf = 0;
-    const typeStep = (now) => {
-      const t = now - start;
-      const per = TYPE_MS / morph.rows;
-      const row = Math.min(morph.rows - 1, Math.floor(t / per));
-      let at = 0;
-      for (let i = 0; i < morph.rows; i++) {
-        // whole characters only: it types, it doesn't wipe
-        const p = Math.min(1, Math.max(0, (t - i * per) / per));
-        const typed = Math.floor(p * morph.chars) / morph.chars;
-        rects[i].setAttribute('x', typed.toFixed(4));
-        rects[i].setAttribute('width', Math.max(0, 1 - typed + 0.002).toFixed(4));
-        if (i === row) at = typed;
-      }
-      const cur = cursorRef.current;
-      if (cur) cur.style.transform = `translate3d(${(Math.min(at, 1 - CHAR / morph.w) * morph.w).toFixed(1)}px, ${(row * (morph.h / morph.rows)).toFixed(1)}px, 0)`;
-      if (t < TYPE_MS) raf = requestAnimationFrame(typeStep);
-      else cur?.classList.add('is-done');
-    };
     const step = (now) => {
       const t = now - start;
       for (let i = 0; i < rects.length; i++) {
@@ -146,7 +116,7 @@ export default function Story({ project, lead = false, index }) {
       }
       if (left > 0) raf = requestAnimationFrame(step);
     };
-    raf = requestAnimationFrame(morph.kind === 'type' ? typeStep : step);
+    if (morph.kind !== 'crt') raf = requestAnimationFrame(step);
     const done = setTimeout(() => setMorph(null), morph.total + 40);
     return () => {
       cancelAnimationFrame(raf);
@@ -208,7 +178,7 @@ export default function Story({ project, lead = false, index }) {
   return (
     <article
       ref={ref}
-      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
+      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}${morph?.kind === 'crt' ? ' is-crt' : ''}`}
       data-arrive="rise"
       data-name={name}
       data-pen="rotate-cw"
@@ -219,7 +189,7 @@ export default function Story({ project, lead = false, index }) {
     >
       <div className="tile-lean">
         <div className="tile-turn">
-          <div className={faceClass('front')} inert={side !== 'front'} style={morph?.from === 'front' ? { clipPath: `url(#${clipId})` } : undefined}>
+          <div className={faceClass('front')} inert={side !== 'front'} style={morph?.from === 'front' && morph.kind !== 'crt' ? { clipPath: `url(#${clipId})` } : undefined}>
             <span className="tile-glow" aria-hidden="true" />
             <div className="tile-main">
               <p className="tile-kicker">
@@ -248,7 +218,7 @@ export default function Story({ project, lead = false, index }) {
             </div>
           </div>
 
-          <div className={faceClass('back')} inert={side !== 'back'} style={morph?.from === 'back' ? { clipPath: `url(#${clipId})` } : undefined}>
+          <div className={faceClass('back')} inert={side !== 'back'} style={morph?.from === 'back' && morph.kind !== 'crt' ? { clipPath: `url(#${clipId})` } : undefined}>
             <span className="tile-glow" aria-hidden="true" />
             <p className="tile-kicker">
               <span className="tile-no">{no}</span>
@@ -272,25 +242,9 @@ export default function Story({ project, lead = false, index }) {
             </div>
           </div>
 
-          {morph?.kind === 'type' && (
-            <>
-              {/* the cursor, and what's still left of the face being typed over, line by line */}
-              <span
-                ref={cursorRef}
-                className={`tile-cursor tile-cursor--to-${side}`}
-                aria-hidden="true"
-                style={{ width: `${CHAR}px`, height: `${morph.h / morph.rows}px` }}
-              />
-              <svg className="tile-clip" aria-hidden="true" width="0" height="0">
-                <clipPath id={clipId} clipPathUnits="objectBoundingBox" ref={clipRef}>
-                  {Array.from({ length: morph.rows }, (_, i) => (
-                    <rect key={i} x="0" y={i / morph.rows} width="1.002" height={1 / morph.rows + 0.002} />
-                  ))}
-                </clipPath>
-              </svg>
-            </>
-          )}
-          {morph && morph.kind !== 'type' && (
+          {/* Claubi's: the bright line it squeezes down to */}
+          {morph?.kind === 'crt' && <span className="tile-crt" aria-hidden="true" />}
+          {morph && morph.kind !== 'crt' && (
             <>
               {/* the scales, in a wave */}
               <div

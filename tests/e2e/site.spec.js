@@ -64,7 +64,7 @@ test('the press: a scroll during the opening skips ahead, and the page waits for
   expect(errors).toEqual([]);
 });
 
-test('projects: each tile is dog-eared at the top right; Claubi types its face in', async ({ page }) => {
+test('projects: each tile is dog-eared at the top right; Claubi switches off and on like an old monitor', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.tile--lead', -80);
   const lead = page.locator('.tile--lead');
@@ -75,9 +75,9 @@ test('projects: each tile is dog-eared at the top right; Claubi types its face i
   const claubi = page.locator('.tile[data-name="Claubi"]');
   await scrollTo(page, '.tile[data-name="Claubi"]', -200);
   await claubi.click({ position: { x: 60, y: 60 } });
-  await expect(claubi.locator('.tile-cursor')).toBeAttached();
+  await expect(claubi.locator('.tile-crt')).toBeAttached();
   await expect(claubi.locator('.tile-scale')).toHaveCount(0);
-  await expect(claubi.locator('.tile-cursor')).toHaveCount(0, { timeout: 3000 });
+  await expect(claubi.locator('.tile-crt')).toHaveCount(0, { timeout: 3000 });
   await expect(claubi).toHaveClass(/is-back/);
   await expect(claubi.locator('.tile-flip:focus')).toHaveCount(0);
 });
