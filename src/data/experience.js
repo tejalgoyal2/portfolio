@@ -1,52 +1,40 @@
-// {{n}} marks a headline number — Experience counts it up as it scrolls in.
-// The first three details of each role are the ones shown; the rest sit behind "More".
+// Each role as a short dispatch in my own words, and a few figures from it
+// (counted up as they arrive). A C2 in a story stays redacted until it's
+// scrolled into the clear (Experience.jsx).
 export const EXPERIENCE = [
   {
     role: "Software Engineering Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "May 2026 – Present", active: true,
-    desc: "Enterprise Solutions: building and modernizing the financial apps BCI’s investment & risk teams run on — React/Azure rebuilds, Power Platform, data pipelines, and AI-agent plumbing.",
-    details: [
-      "Developing Python MCP servers so AI agents can query enterprise financial DBs and app APIs directly — local implementation shipped, in code review",
-      "Contributing to the flagship React/Azure app rebuilt off a vendor-locked .NET/WPF stack — eliminated licensing risk, moved on-prem to cloud, made the codebase AI-readable",
-      "Automated a manual quarterly commission report in Power Automate — caught a wrong parameter count and a stored-proc name typo in the ticket, root-caused a SQL-connector DATE-type 500/503",
-      "Built the first modal-overlay pattern in a 13-screen Power Apps ops app — surfaced {{28}} fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
-      "Working across Azure resource groups, Data Factory pipelines, and PIM; bridged Okta/IAM knowledge from the security desk into the new team",
-    ],
+    story: "I’m on Enterprise Solutions, rebuilding the apps BCI’s investment and risk teams live in. Right now that means Python MCP servers so AI agents can query real financial databases and APIs directly, and helping move a vendor-locked .NET app onto React and Azure. Along the way I automated a quarterly commission report that used to be done by hand, once I’d found the two typos and the one DATE-type bug standing in its way.",
+    figures: [],
   },
   {
     role: "Cybersecurity & Risk Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "Jan – Apr 2026",
-    desc: "Identity, detection, and incident response across an institutional investment manager’s security stack.",
-    details: [
-      "Engineered Shadow AI detection via CrowdStrike LogScale, surfacing {{47}} unsanctioned AI tools across {{1,200+}} endpoints",
-      "Spearheaded breakglass documentation for {{163+}} SSO apps, reducing undocumented gaps from {{86%}} to {{22%}}",
-      "Built PowerShell automation against Confluence REST API, cutting compliance reporting from 3 hours to 10 minutes",
-      "Led solo IR investigation: correlated VirusTotal hashes, code signing anomalies, and C2 indicators to confirm malicious activity",
-      "Designed IAM admin role progression framework for Okta, reducing role redundancy by {{25%}} with least-privilege gating",
-      "Validated device trust and BYOD conditional access controls across managed and personal endpoints",
+    story: "Four months on the security team, mostly answering two questions: which AI tools are people actually using, and who can log in to what. I built Shadow AI detection in CrowdStrike LogScale, wrote breakglass docs for every SSO app we had, and ran an incident investigation solo, matching hashes, odd code signing and C2 indicators until there was no doubt it was malicious.",
+    figures: [
+      ["47", "unsanctioned AI tools found, across 1,200+ endpoints"],
+      ["22%", "of 163+ SSO apps left undocumented, down from 86%"],
+      ["10 min", "for a compliance report that used to take 3 hours"],
     ],
   },
   {
     role: "Teaching Assistant", org: "University of Victoria",
     period: "Jan – Dec 2025",
-    desc: "Two TA roles: hands-on Raspberry Pi labs for first-year engineers, and Fourier/Laplace tutorials for ECE 260.",
-    details: [
-      "Led weekly Raspberry Pi Pico W labs for {{30}} students: sensor integration, circuit design, embedded programming",
-      "Mentored {{12}} teams through term-long design projects with live debugging and troubleshooting",
-      "Delivered ECE 260 tutorials breaking down Fourier and Laplace transforms into structured solution approaches",
+    story: "Two TA jobs in one year. First-years got weekly Raspberry Pi Pico W labs: sensors, circuits, and the first time their own code made something blink. ECE 260 got Fourier and Laplace transforms, broken into steps until they stopped feeling like a magic trick.",
+    figures: [
+      ["30", "students in weekly labs"],
+      ["12", "design teams mentored through the term"],
     ],
   },
   {
     role: "Federated Learning Research Intern", org: "Indian Institute of Technology Ropar",
     period: "Jan – Jul 2024",
-    desc: "Implemented and benchmarked federated learning algorithms from scratch. Contributed implementations to a published paper on game-theoretic federated learning.",
-    details: [
-      "Built FedAvg from scratch in PyTorch, scaled experiments from 50 to 1M simulated clients across MNIST, CIFAR-10/100, FEMNIST",
-      "Developed Dirichlet-based non-IID distribution, reducing communication rounds by {{~15%}} under severe heterogeneity",
-      "Implemented CMAB framework for class imbalance, improving minority-class accuracy by {{~11%}}",
-      "Benchmarked {{8+}} FL algorithms (FedAvg, FedProx, DITTO) with modular experimentation framework",
-      "Contributed implementations to a published paper on game-theoretic federated learning",
-      "Co-created shared Ubuntu dev server for {{6}} researchers, standardized CUDA/PyTorch toolchain",
+    story: "I built federated learning from scratch in PyTorch, starting with FedAvg, and kept scaling until fifty simulated clients became a million. Then I made the data unfair on purpose, with Dirichlet non-IID splits, and found ways to train through it. The implementations ended up in a published paper on game-theoretic federated learning.",
+    figures: [
+      ["1M", "simulated clients, up from 50"],
+      ["~15%", "fewer communication rounds on skewed data"],
+      ["~11%", "better accuracy on the classes it was starved of"],
     ],
   },
 ];

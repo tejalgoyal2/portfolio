@@ -25,3 +25,9 @@
 /letters-admin.js
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+# the resume opens in the browser's own viewer under a proper name, and a new
+# upload shows within minutes; kept out of search results
+/resume.pdf
+  Content-Disposition: inline; filename="Tejal-Goyal-Resume.pdf"
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Robots-Tag: noindex

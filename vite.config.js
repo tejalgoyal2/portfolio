@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { existsSync } from 'node:fs'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // the resume link in Let's talk shows only once public/resume.pdf is in the repo
+  define: { 'import.meta.env.VITE_HAS_RESUME': JSON.stringify(existsSync('public/resume.pdf')) },
   // unit tests only; the browser checks in tests/e2e run under Playwright
   test: { include: ['tests/unit/**/*.test.js'] },
   build: {

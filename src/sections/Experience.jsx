@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { EXPERIENCE } from '../data/experience';
 import KineticHeadline from '../press/KineticHeadline';
@@ -10,16 +10,17 @@ import { onLayout } from '../life/layout';
  * Experience — the working history on the first dark spread. The section owns
  * its ink background, so the bright text is legible no matter where the scroll
  * sits (no scrubbed layer to desync). Every entry shows in full — role, place,
- * and what I actually did — so there's no hover-expand to reflow the page. One
- * security line stays redacted until you scroll it into the clear. Entrance
+ * a short dispatch of what I actually did, and a few figures from it — so
+ * there's no hover-expand to reflow the page. One security word stays redacted
+ * until you scroll it into the clear. Entrance
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
  * margin — not ruled straight: it winds down in long, easy bends like a snake,
  * pressing a dot in beside each job as it passes, and simply ends below the
  * last one. Each row is pasted in from the margin and slides off the
- * galley on the way out (src/life/arrive.js), and the headline numbers —
- * marked {{like this}} in the data — count up as they arrive.
+ * galley on the way out (src/life/arrive.js), and the figures count up as
+ * they arrive.
  */
 const REDACT = 'C2';
 
@@ -33,37 +34,6 @@ function Plain({ text }) {
         {REDACT}
       </Redacted>
       {text.slice(i + REDACT.length)}
-    </>
-  );
-}
-
-function Dispatch({ text }) {
-  return text.split(/(\{\{.+?\}\})/).map((part, k) =>
-    part.startsWith('{{') ? <CountUp key={k} value={part.slice(2, -2)} /> : <Plain key={k} text={part} />
-  );
-}
-
-const SHOWN = 3; // the strongest three per role; the rest behind "More"
-
-/** The rest of a role's dispatches, folded away until asked for. */
-function More({ items }) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  return (
-    <>
-      <div className={`led-more${open ? ' is-open' : ''}`} id={id} inert={!open}>
-        <ul className="led-dispatches led-dispatches--more">
-          {items.map((d, j) => (
-            <li className="led-dispatch" key={j} style={{ '--k': j }}>
-              <Dispatch text={d} />
-            </li>
-          ))}
-        </ul>
-      </div>
-      <button type="button" className="led-more-btn" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
-        {open ? 'Less' : `More (${items.length})`}
-        <span aria-hidden="true">{open ? '−' : '+'}</span>
-      </button>
     </>
   );
 }
@@ -226,18 +196,21 @@ export default function Experience() {
                   )}
                 </h3>
                 <p className="led-org">{entry.org}</p>
-                <p className="led-desc" data-ink>{entry.desc}</p>
-
-                {entry.details?.length > 0 && (
-                  <ul className="led-dispatches">
-                    {entry.details.slice(0, SHOWN).map((d, j) => (
-                      <li className="led-dispatch" key={j} data-ink="block">
-                        <Dispatch text={d} />
-                      </li>
+                <p className="led-story" data-ink>
+                  <Plain text={entry.story} />
+                </p>
+                {entry.figures.length > 0 && (
+                  <dl className="led-figs">
+                    {entry.figures.map(([fig, label]) => (
+                      <div className="led-fig" key={label}>
+                        <dt className="led-fig-label">{label}</dt>
+                        <dd className="led-fig-num">
+                          <CountUp value={fig} />
+                        </dd>
+                      </div>
                     ))}
-                  </ul>
+                  </dl>
                 )}
-                {entry.details?.length > SHOWN && <More items={entry.details.slice(SHOWN)} />}
               </div>
             </article>
           ))}

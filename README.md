@@ -85,6 +85,8 @@ Cloudflare Pages prints every push. `main` is the live edition at [tgoyal.me](ht
 
 The gratitude sheet wants a D1 binding `DB`, a Workers AI binding `AI`, and three secrets: `TURNSTILE_SECRET`, `SALT` and `ADMIN_SECRET`. Its tables make themselves on first use; `db/gratitude.sql` is the same schema, for reference. Security headers live in `public/_headers`.
 
+The resume is `public/resume.pdf`. To update it, upload the new PDF over that file on GitHub (Add file → Upload files, same name) and commit to `main`; the next print serves it at [tgoyal.me/resume.pdf](https://tgoyal.me/resume.pdf), opening in a new tab. Until that file exists, the link in Let's talk simply isn't there.
+
 ## Colophon
 
 Set in **Fraunces** (the nameplate and heads), **Newsreader** (the reading), **Anton** (the shouting), **JetBrains Mono** (datelines and labels) and **Caveat** (the editor's pen), all from Google Fonts and all under the SIL Open Font License. The site serves its own cut-down copies (`src/fonts`, made by `scripts/fonts/build.py`), each still carrying its copyright and licence.
