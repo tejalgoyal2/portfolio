@@ -19,7 +19,7 @@ const WIRE = [
   { t: 'still reading the docs, probably', pen: true },
   { t: 'FORECAST — 100% CHANCE OF REFACTORING' },
   { t: 'SPORTS — CUBE SOLVED, CROWD GOES MILD' },
-  { t: 'will bake you a loaf', pen: true },
+  { t: 'the banana bread is ready, the code isn’t', pen: true },
   { t: 'F1 — WEEKENDS ARE SPOKEN FOR' },
   { t: 'CLASSIFIEDS — INTERESTING PROBLEMS WANTED' },
   { t: 'correction: it was the cache. it’s always the cache', pen: true },

@@ -147,7 +147,7 @@ test('projects: a tile turns over from anywhere on it, in a wave of scales, and 
   await open(page);
   await scrollTo(page, '.cf-front .tile:nth-child(2)');
   const tile = page.locator('.tile').nth(1);
-  await expect(tile.locator('.tile-why')).toContainText('$11 sandwich');
+  await expect(tile.locator('.tile-why')).toContainText('$16 sandwich');
   await expect(tile).toHaveCSS('user-select', 'none');
   // somewhere on the story itself, not the button
   const box = await tile.boundingBox();

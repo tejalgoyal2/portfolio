@@ -7,7 +7,7 @@
 const DESKS = [
   { desk: 'Sports', lead: 'F1, every race weekend.', more: 'State-level badminton, once. Finished the TC10K, slowly.' },
   { desk: 'Puzzles', lead: 'Speedcubes. Hence the cube.', more: 'Card tricks, on request.' },
-  { desk: 'Kitchen', lead: 'Will bake you a loaf.', more: 'Ask nicely.' },
+  { desk: 'Kitchen', lead: 'Bakes a serious banana bread.', more: 'Brownies if you ask nicely.' },
   { desk: 'Community', lead: '1,000+ trees in the ground.', more: 'From the NGO I co-founded with my brother.' },
 ];
 
@@ -19,7 +19,7 @@ export default function OffTheClock() {
         <h3 className="weekend-title" id="weekend-title">
           The Weekend Edition
         </h3>
-        <span className="weekend-meta weekend-meta--end">Price: one loaf</span>
+        <span className="weekend-meta weekend-meta--end">Price: one slice</span>
       </header>
       <div className="weekend-desks">
         {DESKS.map(({ desk, lead, more }) => (

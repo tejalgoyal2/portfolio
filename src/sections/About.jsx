@@ -74,18 +74,19 @@ export default function About() {
         <div className="about-grid">
           <div className="about-col about-col--story">
             <p className="about-standfirst">
-              I&rsquo;m Tejal. I build software that feels obvious: AI agents that
-              talk to real systems, data pipelines that hold up, and small things
-              that are fun to use.
+              I&rsquo;m Tejal. I make software feel obvious, which turns out to
+              take a lot of work: AI agents that talk to real systems, data
+              pipelines that hold up, and small things that are fun to use.
             </p>
             <p className="about-body">
-              Started out in electronics engineering, then wandered over to the
-              software side and stayed. I&rsquo;ve pushed a federated-learning
-              experiment from fifty simulated clients to a million, and spent four
-              months on a security team chasing shadow AI and untangling who can
-              log in to what. These days I&rsquo;m teaching AI agents to talk to
-              real systems. Weekends are for things nobody asked for: type, Dime,
-              and{' '}
+              I started in electronics engineering, where a bad bug can actually
+              smoke. Software seemed safer, so I moved over and stayed. I&rsquo;ve
+              taken a federated-learning experiment from fifty simulated clients
+              to a million, and spent four months on a security team tracking
+              down shadow AI and working out who could log in to what (more
+              people than you&rsquo;d hope). These days I&rsquo;m teaching AI agents
+              to work with real systems without breaking them. Weekends are for
+              things nobody asked for (well, I did): type, Dime, and{' '}
               <a className="about-link" href="https://sudoku.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 a Sudoku with no ads<span className="about-link-arrow" aria-hidden="true">↗</span>
               </a>.
@@ -96,7 +97,7 @@ export default function About() {
             <p className="about-rail-kicker" id="about-numbers-title">By the numbers</p>
             <dl className="about-numbers">
               <div className="about-num">
-                <dt className="about-num-label">MEng GPA</dt>
+                <dt className="about-num-label">M.Eng. GPA</dt>
                 <dd className="about-num-fig">
                   <CountUp value="8.82" />
                   <span className="about-num-of">/9.0</span>

@@ -341,11 +341,14 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .about-standfirst {
   margin: 0;
   max-width: 32ch;
+  /* the italic at a book weight: a voice, not a shout, so the column under
+     it doesn't look thin beside it */
   font-family: var(--font-name);
-  font-weight: 600;
-  font-variation-settings: "opsz" 72, "SOFT" 0, "WONK" 0;
+  font-style: italic;
+  font-weight: 440;
+  font-variation-settings: "opsz" 72, "SOFT" 50, "WONK" 0;
   font-size: clamp(1.45rem, 2.2vw, 1.95rem);
-  line-height: 1.26;
+  line-height: 1.28;
   letter-spacing: -0.005em;
   color: var(--ink);
   text-wrap: pretty;
@@ -356,7 +359,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   font-family: var(--font-read);
   font-size: clamp(1.06rem, 1.3vw, 1.2rem);
   line-height: 1.62;
-  color: var(--ink-soft);
+  color: var(--ink);
   text-wrap: pretty;
 }
 /* a proper drop cap, three lines deep, cut from the nameplate's face */
@@ -364,7 +367,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   float: left;
   margin: 0.06em 0.09em -0.1em -0.02em;
   font-family: var(--font-name);
-  font-weight: 900;
+  font-weight: 800;
   font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
   font-size: 4.35em;
   line-height: 0.8;
@@ -1705,6 +1708,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .grateful-input::placeholder { font-weight: 400; color: oklch(95.5% 0.014 85 / 0.55); }
 .grateful-input:focus { border-color: var(--paper); }
+.grateful-input:focus-visible { box-shadow: 0 0 0 3px oklch(95.5% 0.014 85 / 0.28); }
 .grateful-set {
   padding: 0.45rem 0.75rem;
   font-family: var(--font-data);

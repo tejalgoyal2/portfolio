@@ -13,7 +13,7 @@ export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];
 export const PROJECTS = [
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
-    why: "I wanted to log spending the way I’d text a friend: \u201c$11 sandwich.\u201d A friend would also tell me that’s a crime. I didn’t have one on call, so I built a tracker that does both: it gets what I mean, and roasts me for it.",
+    why: "I wanted to log spending the way I’d text a friend: \u201c$16 sandwich.\u201d A friend would also tell me that’s a crime. I didn’t have one on call, so I built a tracker that does both: it gets what I mean, and roasts me for it.",
     facts: [["7", "API routes"], ["0", "database writes from the browser"], ["1", "roast per questionable purchase"]],
     wave: "rows",
     eli5: "Tell it what you spent, the way you’d tell a friend, and it keeps track of your money — and teases you about it.",

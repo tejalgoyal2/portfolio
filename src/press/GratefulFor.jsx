@@ -158,7 +158,7 @@ export default function GratefulFor() {
           waiting.current?.(t);
         },
         // when it does want a click, say so: the box is just under the sheet
-        'before-interactive-callback': () => setNote('One quick check just below the sheet, then it’s down.'),
+        'before-interactive-callback': () => setNote('A quick robot check just below, then it goes to press.'),
         'expired-callback': () => (token.current = ''),
         'error-callback': () => {
           token.current = '';
@@ -190,7 +190,7 @@ export default function GratefulFor() {
     // letters in any language, accents and all (the same rule the server keeps)
     if (!/^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)?$/u.test(word)) {
       setState('error');
-      setNote('One or two words, letters only.');
+      setNote('One or two words, letters only. It’s an old press.');
       return;
     }
     const spot = at || freeSpot(stamps);
@@ -219,7 +219,7 @@ export default function GratefulFor() {
         unstamp();
         if (r.status === 429 && d.error === 'full today') {
           setState('done');
-          setNote('The sheet’s full for today. Come back tomorrow?');
+          setNote('Today’s sheet is full. A fresh one goes up tomorrow.');
         } else if (r.status === 429) {
           // one a day for each connection: say whose it was, if it's this browser's
           const mineToday = !!readMine() && store.get(TODAY_KEY) === today();
@@ -227,16 +227,16 @@ export default function GratefulFor() {
           setState('done');
           setNote(
             mineToday
-              ? 'One stamp a day, and yours is already on the sheet.'
-              : 'Someone on your network already stamped today (it’s one a day each). Back tomorrow?'
+              ? 'One a day, and yours is already on the sheet.'
+              : 'Someone on your network beat you to it (it’s one a day each). Tomorrow?'
           );
         } else if (r.status === 403) {
           setState('error');
-          setNote('The person check didn’t pass. Try once more?');
+          setNote('The robot check didn’t buy it. One more go?');
           setValue(word);
         } else {
           setState('error');
-          setNote(r.status === 422 ? 'One or two words, letters only.' : 'That didn’t go through. Try again?');
+          setNote(r.status === 422 ? 'One or two words, letters only. It’s an old press.' : 'The press jammed. Try again?');
           setValue(word);
         }
         return;
@@ -245,11 +245,11 @@ export default function GratefulFor() {
       store.set(TODAY_KEY, today());
       store.set(MINE_KEY, JSON.stringify({ word: d.word, x, y }));
       setState(d.printed ? 'set' : 'held');
-      setNote(d.printed ? 'Stamped. It’s on the sheet for everyone.' : 'Stamped. Everyone else sees it once it’s had a quick look.');
+      setNote(d.printed ? 'Stamped. It’s on the sheet for everyone now.' : 'Stamped. Everyone else sees it once it’s been proofread.');
     } catch {
       unstamp();
       setState('error');
-      setNote('That didn’t go through. Try again?');
+      setNote('The press jammed. Try again?');
       setValue(word);
     }
   };
@@ -276,17 +276,17 @@ export default function GratefulFor() {
   if (saved && state === 'done' && !shown.some((s) => keyOf(s) === keyOf(saved))) shown.push({ ...saved, mine: true });
   const n = shown.length;
 
-  let how = 'Anonymous, one a day. It goes wherever you press it.';
+  let how = 'No names, one a day. Type it, then press it anywhere on the sheet.';
   if (note) how = note;
-  else if (!open) how = 'The sheet’s being set up. Back soon.';
-  else if (state === 'done') how = 'There’s a stamp from here today. Back tomorrow?';
-  else if (word) how = 'Now click anywhere on the sheet to press it down, or hit Enter.';
+  else if (!open) how = 'The press is warming up. Back soon.';
+  else if (state === 'done') how = 'Today’s is in. Same time tomorrow?';
+  else if (word) how = 'Now pick a spot on the sheet and press. Or just hit Enter.';
 
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">
       <div className="grateful-head">
         <h3 className="grateful-title" id="grateful-title">
-          Grateful for something today?
+          Any good news today?
         </h3>
         {open && (state === 'idle' || state === 'error') && (
           <form
@@ -297,18 +297,18 @@ export default function GratefulFor() {
             }}
           >
             <label className="sr-only" htmlFor="grateful-word">
-              A word or two you’re grateful for
+              A word or two of good news
             </label>
             <input
               id="grateful-word"
               className="grateful-input"
               type="text"
               maxLength={MAX}
-              size={Math.max(14, value.length + 2)}
+              size={Math.max(17, value.length + 2)}
               autoComplete="off"
               enterKeyHint="done"
               spellCheck="true"
-              placeholder="a word or two"
+              placeholder="a nap, cold brew…"
               value={value}
               onChange={(e) => setValue(e.target.value.slice(0, MAX))}
               onFocus={ready}
@@ -336,7 +336,7 @@ export default function GratefulFor() {
             <Impression key={keyOf(s)} s={s} age={n > 1 ? 1 - i / (n - 1) : 0} fresh={fresh === keyOf(s)} />
           ))}
         </ul>
-        {n === 0 && <p className="grateful-empty">Nothing stamped yet. Yours could be the first.</p>}
+        {n === 0 && <p className="grateful-empty">A clean sheet. Go on, be first.</p>}
         {canStamp && (
           <span ref={ghostRef} className="gstamp-ghost" aria-hidden="true">
             <span className="gstamp-face">{word.toLowerCase()}</span>
