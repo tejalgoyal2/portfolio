@@ -587,6 +587,8 @@ button.press-stamp {
   background: var(--red);
   transform-origin: 0 50%;
   pointer-events: none;
+  /* changes ink with the bar, at the bar's pace */
+  transition: background-color 0.6s var(--ease-set);
 }
 .running-head[data-ground="ink"] .rh-slug { background: var(--red-wet); }
 .running-head[data-ground="red"] .rh-slug { background: var(--paper); }
@@ -612,7 +614,7 @@ button.press-stamp {
   color: inherit;
   opacity: 0.66;
   cursor: pointer;
-  transition: opacity 0.25s var(--ease-set), color 0.3s var(--ease-set) 0.25s;
+  transition: opacity 0.25s var(--ease-set), color 0.6s var(--ease-set);
 }
 .rh-list button:hover { opacity: 1; }
 .rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: -2px; }
@@ -635,6 +637,7 @@ button.press-stamp {
   background: var(--red);
   transform: scaleX(0);
   transform-origin: 0 50%;
+  transition: background-color 0.6s var(--ease-set);
 }
 .running-head[data-ground="red"] .rh-line-fill { background: var(--paper); }
 .rh-line-tip { position: absolute; left: 0; top: 1px; width: 0; height: 0; }

@@ -855,7 +855,8 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), scale 0.55s cubic-bezier(0.34, 1.45, 0.5, 1);
 }
-.tile:hover .tile-lean { scale: 1.018; }
+.tile:hover .tile-lean,
+.tile.is-teasing .tile-lean { scale: 1.018; }
 .tile.is-morphing .tile-lean { scale: 1.008; }
 .tile-turn { position: relative; display: grid; height: 100%; }
 /* the tile's shadow on a layer of its own, so a folded corner never clips it */
@@ -891,7 +892,8 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* while it turns, what's left of the old face sits over the new one */
 .tile-face.is-leaving { z-index: 2; transition: none; }
 .tile:hover .tile-face { border-color: var(--red); }
-.tile:hover:not(.is-morphing) { --ear: 30px; }
+.tile:hover:not(.is-morphing),
+.tile.is-teasing:not(.is-morphing) { --ear: 30px; }
 /* the desk lamp: a soft pool of warm red under the pointer, soaked into the stock */
 .tile-glow {
   position: absolute;
@@ -934,11 +936,14 @@ html.fonts-pending .mast-plate { visibility: hidden; }
     linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
     linear-gradient(315deg, color-mix(in oklch, var(--front-stock), oklch(20% 0.03 60) 12%) 20%, var(--front-stock) 75%);
 }
-.tile:hover:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
+.tile:hover:not(.is-morphing) .tile-ear,
+.tile.is-teasing:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
 /* no hover on a touch screen: the corner stays turned a little, so it still says "turn me" */
 @media (hover: none) {
   .tile:not(.is-morphing) { --ear: 18px; }
   .tile:not(.is-morphing) .tile-ear { width: 18px; height: 18px; transform: none; }
+  .tile.is-teasing:not(.is-morphing) { --ear: 30px; }
+  .tile.is-teasing:not(.is-morphing) .tile-ear { transform: scale(1.667); transform-origin: 100% 100%; }
 }
 
 /* the turn: the face breaks into square scales that turn over in a wave
@@ -1109,8 +1114,10 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   cursor: inherit;
 }
 .tile-flip span { display: inline-block; font-size: 1.15em; transition: rotate 0.6s cubic-bezier(0.34, 1.4, 0.5, 1); }
-.tile:hover .tile-flip { color: var(--red); }
-.tile:hover .tile-flip span { rotate: 180deg; }
+.tile:hover .tile-flip,
+.tile.is-teasing .tile-flip { color: var(--red); }
+.tile:hover .tile-flip span,
+.tile.is-teasing .tile-flip span { rotate: 180deg; }
 .tile-flip:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 .tile-desc { margin: 0 0 0.7rem; font-family: var(--font-read); font-style: italic; font-size: 1rem; line-height: 1.5; color: var(--ink); }
 .tile-long { margin: 0 0 1rem; font-family: var(--font-read); font-size: 0.92rem; line-height: 1.55; color: var(--ink-soft); }

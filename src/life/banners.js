@@ -13,7 +13,10 @@ gsap.registerPlugin(ScrollTrigger);
  * to dry behind it — every letter pegged to a sagging string, swinging from
  * its peg.
  *
- * - Your cursor passing near is a breeze: its movement is smoothed over a
+ * - The wind blows by on its own: every few seconds a gust runs along the
+ *   line, one way then the other, pushing each letter as it passes the way a
+ *   hand swept across them would.
+ * - Your cursor passing near is a breeze too: its movement is smoothed over a
  *   moment (so a quick wiggle does nothing much) and pushes the nearby
  *   letters gently the way it went; a hard scroll sets the whole line swaying.
  *   The swing is slow and lightly damped, so it dies away over several seconds.
@@ -30,6 +33,9 @@ const DAMP = 0.42; // very light: it dies away over several seconds
 const MAX = 0.3; // rad
 const INK_IN = 2.6; // per second while the pen is on it
 const INK_OUT = 0.09; // drying, per second
+const GUST = 1.7; // seconds for a gust to cross the line
+const GUST_V = 950; // px/s: about a hand swept across
+const LULL = [2.6, 5.2]; // seconds between gusts
 
 export function startBanners(root = document) {
   const made = [];
@@ -93,6 +99,10 @@ export function startBanners(root = document) {
     let lastV = 0;
     let breeze = 0; // smoothed push from the cursor
     let jolt = 0; // smoothed push from the scroll
+    // the wind's own gusts: where one is along the line (0..1), which way, and the lull before the next
+    let gust = -1;
+    let gustDir = Math.random() < 0.5 ? 1 : -1;
+    let lull = 0.6 + Math.random() * 1.2;
 
     const tick = (t, deltaMs) => {
       if (!on || document.hidden) return;
@@ -105,6 +115,22 @@ export function startBanners(root = document) {
       const smooth = 1 - Math.exp(-dt / 0.35);
       breeze += ((inBand ? Math.max(-1600, Math.min(1600, pointer.vx)) : 0) - breeze) * smooth;
       jolt += (Math.max(-40000, Math.min(40000, dv / Math.max(dt, 1e-3))) - jolt) * smooth;
+      let gx = 0;
+      let gv = 0;
+      if (gust < 0) {
+        lull -= dt;
+        if (lull <= 0) gust = 0;
+      } else {
+        gust += dt / GUST;
+        // it builds and fades as it crosses, like a hand coming in and lifting off
+        gv = GUST_V * gustDir * Math.sin(Math.min(1, gust) * Math.PI);
+        gx = bx + geo.w * (gustDir > 0 ? gust : 1 - gust);
+        if (gust >= 1) {
+          gust = -1;
+          gustDir = -gustDir;
+          lull = LULL[0] + Math.random() * (LULL[1] - LULL[0]);
+        }
+      }
       for (let i = 0; i < st.length; i++) {
         const s = st[i];
         const a = geo.at[i];
@@ -115,7 +141,8 @@ export function startBanners(root = document) {
           // the breeze is strongest on the letters nearest the cursor
           const cx = rl + a.w / 2;
           const near = Math.exp(-(((pointer.x - cx) / 260) ** 2));
-          const push = breeze * 0.0016 * near + jolt * 0.0000016 * (1 + 0.2 * Math.sin(i * 1.7));
+          const wind = gv ? gv * 0.0016 * Math.exp(-(((gx - cx) / 260) ** 2)) : 0;
+          const push = breeze * 0.0016 * near + wind + jolt * 0.0000016 * (1 + 0.2 * Math.sin(i * 1.7));
           s.w += (push - K * s.th - DAMP * s.w) * dt;
           s.th = Math.max(-MAX, Math.min(MAX, s.th + s.w * dt));
         }

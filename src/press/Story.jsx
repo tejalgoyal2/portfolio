@@ -9,7 +9,9 @@ import { prefs } from '../life/prefs';
  * The front says what it is and why I made it, with three facts; the back is
  * the full file, on manila. Hover and the tile lifts a little and a corner
  * folds back to show the manila underneath; click anywhere on it (but a link)
- * and it turns over.
+ * and it turns over. Until you've turned one, each tile, the first time it's
+ * well into view, lifts its corner once on its own, so it's plain there's a
+ * back to see.
  *
  * It doesn't flip like a playing card. It changes skin: the face breaks into
  * small square scales that turn over one by one in a wave, newsprint to
@@ -32,6 +34,15 @@ const CELL = 44; // px: the size of one scale, about
 const MAX_CELLS = 150;
 const LIFE = 540; // ms one scale takes to turn over
 const COVER = 0.42; // how far through its turn a scale is when it hides the face beneath
+const TURNED_KEY = 'press-turned'; // once you've turned a tile, the others stop showing you how
+
+const turnedYet = () => {
+  try {
+    return !!sessionStorage.getItem(TURNED_KEY);
+  } catch {
+    return false;
+  }
+};
 
 // a small seeded random, so a wave is the same every time
 const rand = (i) => {
@@ -76,8 +87,44 @@ export default function Story({ project, lead = false, index }) {
   const clipId = `tile-clip-${index}`;
   const no = String(index).padStart(2, '0');
 
+  const [tease, setTease] = useState(false);
+
+  // the corner lifts once by itself, the first time the tile is well into view
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || prefs.reduced || turnedYet() || typeof IntersectionObserver === 'undefined') return;
+    let wait = 0;
+    let drop = 0;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        clearTimeout(wait);
+        if (!e.isIntersecting) return;
+        // a beat after it settles, the lead first and the rest in turn
+        wait = setTimeout(() => {
+          if (turnedYet()) return io.disconnect();
+          io.disconnect();
+          setTease(true);
+          drop = setTimeout(() => setTease(false), 1100);
+        }, 450 + (index - 1) * 260);
+      },
+      { threshold: 0.6, rootMargin: '0px 0px -18% 0px' }
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      clearTimeout(wait);
+      clearTimeout(drop);
+    };
+  }, [index]);
+
   const turn = (origin) => {
     if (morph) return;
+    setTease(false);
+    try {
+      sessionStorage.setItem(TURNED_KEY, '1');
+    } catch {
+      /* private mode: they'll just keep lifting */
+    }
     const to = side === 'front' ? 'back' : 'front';
     const focusOther = () =>
       requestAnimationFrame(() => ref.current?.querySelector(`.tile-${to} .tile-flip`)?.focus({ preventScroll: true }));
@@ -173,7 +220,7 @@ export default function Story({ project, lead = false, index }) {
   return (
     <article
       ref={ref}
-      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
+      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}${tease ? ' is-teasing' : ''}`}
       data-arrive="rise"
       data-name={name}
       data-pen="rotate-cw"
@@ -208,7 +255,7 @@ export default function Story({ project, lead = false, index }) {
             <div className="tile-foot">
               {linkRow}
               <button type="button" className="tile-flip" aria-label={`Turn over: the full file on ${name}`}>
-                Turn over <span aria-hidden="true">↻</span>
+                More on the back <span aria-hidden="true">↻</span>
               </button>
             </div>
           </div>
@@ -232,7 +279,7 @@ export default function Story({ project, lead = false, index }) {
             <div className="tile-foot">
               {linkRow}
               <button type="button" className="tile-flip" aria-label={`Turn back to the front of ${name}`}>
-                Turn back <span aria-hidden="true">↺</span>
+                Back to the front <span aria-hidden="true">↺</span>
               </button>
             </div>
           </div>
