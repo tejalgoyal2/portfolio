@@ -41,12 +41,15 @@ export function usePressScroll() {
 
     ScrollTrigger.defaults({ markers: false });
 
-    // After fonts settle, layout shifts — recompute trigger positions.
-    if (document.fonts?.ready) {
-      document.fonts.ready.then(() => ScrollTrigger.refresh());
-    }
+    // After fonts settle, layout shifts — recompute trigger positions. Again
+    // whenever more faces come in: they're declared in two batches, after the
+    // first frame and after load (life/fonts.js).
+    const refresh = () => ScrollTrigger.refresh();
+    document.fonts?.ready.then(refresh);
+    document.fonts?.addEventListener('loadingdone', refresh);
 
     return () => {
+      document.fonts?.removeEventListener('loadingdone', refresh);
       gsap.ticker.remove(raf);
       lenis.destroy();
       ScrollTrigger.getAll().forEach((t) => t.kill());

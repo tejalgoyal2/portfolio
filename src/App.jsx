@@ -4,6 +4,7 @@ import { startInkLines } from './life/inkLines';
 import { startArrivals } from './life/arrive';
 import { startBanners } from './life/banners';
 import { afterPrint } from './life/idle';
+import { startFonts } from './life/fonts';
 import Loader from './press/Loader';
 import PaperBackdrop from './press/PaperBackdrop';
 import PressCursor from './press/PressCursor';
@@ -37,6 +38,8 @@ import Contact from './sections/Contact';
  */
 export default function App() {
   usePressScroll();
+  // the first frame is set in the fonts' stand-ins; the faces come after it
+  useEffect(startFonts, []);
   // after every section has mounted and the loader has lifted: paragraphs
   // marked data-ink ink in by line, and blocks arrive and leave as you scroll
   useEffect(

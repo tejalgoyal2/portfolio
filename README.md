@@ -87,7 +87,7 @@ The gratitude sheet wants a D1 binding `DB`, a Workers AI binding `AI`, and thre
 
 ## Colophon
 
-Set in **Fraunces** (the nameplate and heads), **Newsreader** (the reading), **Anton** (the shouting), **JetBrains Mono** (datelines and labels) and **Caveat** (the editor's pen), all from Google Fonts.
+Set in **Fraunces** (the nameplate and heads), **Newsreader** (the reading), **Anton** (the shouting), **JetBrains Mono** (datelines and labels) and **Caveat** (the editor's pen), all from Google Fonts and all under the SIL Open Font License. The site serves its own cut-down copies (`src/fonts`, made by `scripts/fonts/build.py`), each still carrying its copyright and licence.
 
 Hand-drawn icons by [matita-dev/icons](https://github.com/matita-dev/icons) (MIT). *Matita* is Italian for pencil. Nominative determinism remains undefeated.
 

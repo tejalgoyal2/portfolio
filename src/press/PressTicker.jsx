@@ -53,6 +53,8 @@ export default function PressTicker() {
     const recompute = () => { half = track.scrollWidth / 2; };
     window.addEventListener('resize', recompute);
     document.fonts?.ready.then(recompute);
+    // the pen's items are set in Caveat, which only comes in after load (life/fonts.js)
+    document.fonts?.addEventListener('loadingdone', recompute);
 
     let paused = false;
     // off screen it doesn't crawl at all
@@ -91,6 +93,7 @@ export default function PressTicker() {
       gsap.ticker.remove(tick);
       io.disconnect();
       window.removeEventListener('resize', recompute);
+      document.fonts?.removeEventListener('loadingdone', recompute);
       wire.removeEventListener('pointerenter', onEnter);
       wire.removeEventListener('pointerleave', onLeave);
     };

@@ -77,7 +77,7 @@ html.press-booting { overflow: hidden; }
 }
 .loader-plate {
   margin: 0;
-  font-family: var(--font-name);
+  font-family: var(--font-nameplate);
   font-weight: 900;
   /* cut exactly like the masthead's nameplate, so the hand-off is invisible */
   font-variation-settings: "opsz" 144, "wght" 860, "SOFT" 0, "WONK" 0;
@@ -93,7 +93,7 @@ html.press-booting { overflow: hidden; }
   position: absolute;
   inset: 0;
   margin: 0;
-  font-family: var(--font-name);
+  font-family: var(--font-nameplate);
   font-weight: 900;
   font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
   font-size: clamp(2.6rem, 11vw, 8.5rem);
@@ -200,7 +200,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   margin: 0;
   padding-block: clamp(0.5rem, 1.4vw, 1.1rem);
   text-align: center;
-  font-family: var(--font-name);
+  font-family: var(--font-nameplate);
   font-weight: 900;
   font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
   font-size: clamp(3rem, 13vw, 12rem);

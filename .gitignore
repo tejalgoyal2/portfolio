@@ -11,3 +11,6 @@ dist
 # Playwright output
 test-results/
 playwright-report/
+
+# downloaded font sources for scripts/fonts/build.py
+scripts/fonts/.cache/

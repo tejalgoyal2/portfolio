@@ -29,12 +29,15 @@
   /* rare cool counter-ink — second plate / misregistration accent only */
   --color-blue-plate:  oklch(45%   0.10  250);
 
-  /* fonts */
-  --font-name:   "Fraunces", "Times New Roman", Georgia, serif;   /* nameplate + editorial heads */
-  --font-impact: "Anton", "Arial Narrow", sans-serif;             /* kinetic mega-type, impacts */
-  --font-read:   "Newsreader", Georgia, "Times New Roman", serif; /* body, decks, clippings */
-  --font-data:   "JetBrains Mono", "SFMono-Regular", monospace;   /* datelines, labels, stamps */
-  --font-pen:    "Caveat", "Marker Felt", cursive;                /* editor's marginalia */
+  /* fonts: nameplate + editorial heads · kinetic mega-type, impacts · body,
+     decks, clippings · datelines, labels, stamps · editor's marginalia.
+     Each "… Fallback" is a system face sized to stand in for it until it
+     arrives (src/styles/fonts.css) */
+  --font-name:   "Fraunces", "Fraunces Fallback", "Times New Roman", Georgia, serif;
+  --font-impact: "Anton", "Anton Fallback", "Anton Fallback DIN", "Arial Narrow", sans-serif;
+  --font-read:   "Newsreader", "Newsreader Fallback", "Newsreader Fallback Noto", Georgia, "Times New Roman", serif;
+  --font-data:   "JetBrains Mono", "JetBrains Mono Fallback", "SFMono-Regular", monospace;
+  --font-pen:    "Caveat", "Caveat Fallback", "Marker Felt", cursive;
 
   /* easings */
   --ease-set:    cubic-bezier(0.16, 1,    0.3,  1);    /* type settling into the stick */
@@ -62,11 +65,14 @@
 
   --blue-plate:  oklch(45%   0.10  250);
 
-  --font-name:   "Fraunces", "Times New Roman", Georgia, serif;
-  --font-impact: "Anton", "Arial Narrow", sans-serif;
-  --font-read:   "Newsreader", Georgia, "Times New Roman", serif;
-  --font-data:   "JetBrains Mono", "SFMono-Regular", monospace;
-  --font-pen:    "Caveat", "Marker Felt", cursive;
+  --font-name:   "Fraunces", "Fraunces Fallback", "Times New Roman", Georgia, serif;
+  --font-impact: "Anton", "Anton Fallback", "Anton Fallback DIN", "Arial Narrow", sans-serif;
+  --font-read:   "Newsreader", "Newsreader Fallback", "Newsreader Fallback Noto", Georgia, "Times New Roman", serif;
+  --font-data:   "JetBrains Mono", "JetBrains Mono Fallback", "SFMono-Regular", monospace;
+  --font-pen:    "Caveat", "Caveat Fallback", "Marker Felt", cursive;
+  /* the name alone: Fraunces cut down to its letters, so the first screen
+     doesn't wait on the whole face (scripts/fonts/build.py) */
+  --font-nameplate: "Fraunces Nameplate", "Fraunces", "Fraunces Fallback", "Times New Roman", Georgia, serif;
 
   --ease-set:    cubic-bezier(0.16, 1,    0.3,  1);
   --ease-stamp:  cubic-bezier(0.34, 1.56, 0.64, 1);
