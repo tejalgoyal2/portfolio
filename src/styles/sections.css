@@ -824,23 +824,43 @@ html.np-handoff .mast-plate { visibility: hidden; }
   gap: clamp(1.2rem, 2.4vw, 2rem);
   margin-bottom: clamp(2.6rem, 5vh, 3.8rem);
 }
-.tile { position: relative; perspective: 1400px; }
+.tile {
+  /* newsprint on the front, a manila case file on the back */
+  --front-stock: var(--paper-stock);
+  --back-stock: oklch(88% 0.052 84);
+  --ear: 0px;
+  position: relative;
+  perspective: 1400px;
+  cursor: pointer;
+  /* nothing to select: the whole tile is a thing you turn over */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 .tile--lead { grid-column: 1 / -1; }
-/* leans toward the cursor (--rx/--ry from Story.jsx), easing after it */
+/* leans toward the cursor (--rx/--ry from Story.jsx), easing after it, and
+   lifts a little on hover with a soft overshoot */
 .tile-lean {
+  position: relative;
   height: 100%;
   transform-style: preserve-3d;
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), scale 0.55s cubic-bezier(0.34, 1.45, 0.5, 1);
 }
-/* and turns over: quick off the mark, a long settle */
-.tile-turn {
-  display: grid;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.95s cubic-bezier(0.16, 0.84, 0.24, 1);
+.tile:hover .tile-lean { scale: 1.018; }
+.tile.is-morphing .tile-lean { scale: 1.008; }
+.tile-turn { position: relative; display: grid; height: 100%; }
+/* the tile's shadow on a layer of its own, so a folded corner never clips it */
+.tile-turn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
+  transition: box-shadow 0.4s var(--ease-set);
+  pointer-events: none;
 }
-.tile.is-flipped .tile-turn { transform: rotateY(180deg); }
+.tile:hover .tile-turn::before { box-shadow: 6px 10px 0 oklch(56% 0.2 27 / 0.16), 0 22px 44px oklch(20% 0.02 60 / 0.16); }
 .tile-face {
   grid-area: 1 / 1;
   position: relative;
@@ -849,22 +869,21 @@ html.np-handoff .mast-plate { visibility: hidden; }
   overflow: hidden;
   padding: clamp(1.3rem, 2.4vw, 2.1rem);
   color: var(--ink);
-  background: var(--paper-stock);
+  background: var(--front-stock);
   border: 1.5px solid var(--ink);
   border-radius: 4px;
-  box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transition: border-color 0.3s var(--ease-set), box-shadow 0.4s var(--ease-set);
+  visibility: hidden;
+  /* the corner that folds back (see .tile-ear) is cut out of the face that's up */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--ear)), calc(100% - var(--ear)) 100%, 0 100%);
+  transition: border-color 0.3s var(--ease-set), clip-path 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
 }
-.tile-back { transform: rotateY(180deg); }
-/* only the face you can see takes the pointer (Safari would hand clicks to the hidden one) */
-.tile.is-flipped .tile-front,
-.tile:not(.is-flipped) .tile-back { pointer-events: none; }
-.tile:hover .tile-face {
-  border-color: var(--red);
-  box-shadow: 6px 10px 0 oklch(56% 0.2 27 / 0.16), 0 22px 44px oklch(20% 0.02 60 / 0.16);
-}
+.tile-back { background: var(--back-stock); }
+.tile-face.is-up,
+.tile-face.is-leaving { visibility: visible; }
+/* while it turns, what's left of the old face sits over the new one */
+.tile-face.is-leaving { z-index: 2; transition: none; }
+.tile:hover .tile-face { border-color: var(--red); }
+.tile:hover:not(.is-morphing) { --ear: 30px; }
 /* the desk lamp: a soft pool of warm red under the pointer, soaked into the stock */
 .tile-glow {
   position: absolute;
@@ -882,6 +901,86 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 .tile:hover .tile-glow { opacity: 1; }
 .tile-face > *:not(.tile-glow) { position: relative; z-index: 1; }
+
+/* the dog-ear: the cut corner, folded back over the tile in real 3D so you
+   see the other side's stock — the hint that it turns over */
+.tile-ear {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 30px;
+  height: 30px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  background:
+    linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
+    linear-gradient(315deg, color-mix(in oklch, var(--back-stock), oklch(20% 0.03 60) 16%) 20%, var(--back-stock) 75%);
+  transform: rotate3d(1, -1, 0, 180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
+  pointer-events: none;
+}
+.tile.is-back .tile-ear {
+  background:
+    linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
+    linear-gradient(315deg, color-mix(in oklch, var(--front-stock), oklch(20% 0.03 60) 12%) 20%, var(--front-stock) 75%);
+}
+.tile:hover:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
+/* no hover on a touch screen: the corner stays turned a little, so it still says "turn me" */
+@media (hover: none) {
+  .tile:not(.is-morphing) { --ear: 18px; }
+  .tile:not(.is-morphing) .tile-ear { width: 18px; height: 18px; transform: none; }
+}
+
+/* the turn: the face breaks into square scales that turn over in a wave
+   (Story.jsx sets the grid and each scale's delay); transform and opacity only */
+.tile-morph {
+  position: absolute;
+  inset: 1.5px;
+  z-index: 3;
+  display: grid;
+  overflow: hidden;
+  border-radius: 3px;
+  perspective: 700px;
+  pointer-events: none;
+}
+.tile-morph--to-back { --from-stock: var(--front-stock); --to-stock: var(--back-stock); }
+.tile-morph--to-front { --from-stock: var(--back-stock); --to-stock: var(--front-stock); }
+.tile-scale {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: tile-scale-y 540ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
+}
+.tile-scale--x { animation-name: tile-scale-x; }
+.tile-scale::before,
+.tile-scale::after {
+  content: "";
+  position: absolute;
+  inset: -0.5px;
+  background: var(--from-stock);
+  box-shadow: inset 0 0 0 0.5px oklch(20% 0.02 60 / 0.16);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.tile-scale--y::after { background: var(--to-stock); transform: rotateY(180deg); }
+.tile-scale--x::after { background: var(--to-stock); transform: rotateX(180deg); }
+@keyframes tile-scale-y {
+  0% { opacity: 0; transform: translateZ(0) rotateY(0deg) scale(1); }
+  10% { opacity: 1; transform: translateZ(10px) rotateY(0deg) scale(1.04); }
+  50% { transform: translateZ(26px) rotateY(90deg) scale(1.08); }
+  85% { opacity: 1; transform: translateZ(4px) rotateY(180deg) scale(1.01); }
+  100% { opacity: 0; transform: translateZ(0) rotateY(180deg) scale(1); }
+}
+@keyframes tile-scale-x {
+  0% { opacity: 0; transform: translateZ(0) rotateX(0deg) scale(1); }
+  10% { opacity: 1; transform: translateZ(10px) rotateX(0deg) scale(1.04); }
+  50% { transform: translateZ(26px) rotateX(-90deg) scale(1.08); }
+  85% { opacity: 1; transform: translateZ(4px) rotateX(-180deg) scale(1.01); }
+  100% { opacity: 0; transform: translateZ(0) rotateX(-180deg) scale(1); }
+}
+.tile-clip { position: absolute; width: 0; height: 0; overflow: hidden; }
+
 .tile-kicker {
   display: flex;
   flex-wrap: wrap;
@@ -916,7 +1015,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 .tile--lead .tile-name { font-size: clamp(3.4rem, 7vw, 6rem); line-height: 0.9; }
 .tile-why {
-  margin: 0.9rem 0 1.5rem;
+  margin: 0.9rem 0 1.4rem;
   max-width: 40ch;
   font-family: var(--font-read);
   font-size: clamp(1.05rem, 1.3vw, 1.18rem);
@@ -925,9 +1024,71 @@ html.np-handoff .mast-plate { visibility: hidden; }
   text-wrap: pretty;
 }
 .tile--lead .tile-why { max-width: 52ch; font-size: clamp(1.2rem, 1.7vw, 1.5rem); line-height: 1.42; color: var(--ink); }
+/* three facts on the front, set like a box score */
+.tile-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: auto 0 1.3rem;
+  padding: 0.95rem 0 0;
+  list-style: none;
+  border-top: 1px solid oklch(20% 0.02 60 / 0.14);
+}
+.tile-fact-fig {
+  display: block;
+  font-family: var(--font-name);
+  font-weight: 900;
+  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
+  font-size: clamp(1.55rem, 2.1vw, 2rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.tile-fact-label {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* the lead runs its facts down the right of the story */
+.tile--lead .tile-front {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  column-gap: clamp(2rem, 5vw, 5rem);
+}
+.tile--lead .tile-main { grid-column: 1; grid-row: 1; }
+.tile--lead .tile-facts {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0 0 1.3rem;
+  padding: 0;
+  border-top: 0;
+}
+.tile--lead .tile-facts li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid oklch(20% 0.02 60 / 0.14);
+}
+.tile--lead .tile-fact-fig { min-width: 1.6ch; font-size: clamp(2rem, 3vw, 2.6rem); }
+.tile--lead .tile-foot { grid-column: 1 / -1; grid-row: 2; }
 .tile-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.7rem; margin-top: auto; }
+.tile-facts + .tile-foot { margin-top: 0; }
 .tile-flip {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
   padding: 0.45em 0;
   font-family: var(--font-data);
   font-size: 0.68rem;
@@ -937,9 +1098,11 @@ html.np-handoff .mast-plate { visibility: hidden; }
   color: var(--ink);
   background: none;
   border: 0;
-  cursor: pointer;
+  cursor: inherit;
 }
-.tile-flip:hover { color: var(--red); }
+.tile-flip span { display: inline-block; font-size: 1.15em; transition: rotate 0.6s cubic-bezier(0.34, 1.4, 0.5, 1); }
+.tile:hover .tile-flip { color: var(--red); }
+.tile:hover .tile-flip span { rotate: 180deg; }
 .tile-flip:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 .tile-desc { margin: 0 0 0.7rem; font-family: var(--font-read); font-style: italic; font-size: 1rem; line-height: 1.5; color: var(--ink); }
 .tile-long { margin: 0 0 1rem; font-family: var(--font-read); font-size: 0.92rem; line-height: 1.55; color: var(--ink-soft); }
@@ -983,10 +1146,12 @@ html.np-handoff .mast-plate { visibility: hidden; }
 @media (max-width: 900px) {
   .cf-front { grid-template-columns: 1fr; }
   .tile--lead .tile-long { columns: 1; }
+  .tile--lead .tile-front { display: flex; }
+  .tile--lead .tile-facts { margin: auto 0 1.3rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tile-lean { transform: none; transition: none; }
-  .tile-turn { transition: none; }
+  .tile-face, .tile-ear { transition: none; }
 }
 
 /* ── In brief: the rest, in still newspaper columns ──────────────────────── */
