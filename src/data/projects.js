@@ -1,12 +1,15 @@
 // The four lead stories on the Projects front page, in order (src/sections/Projects.jsx).
 // Everything else runs in the rows below. Every project has an `eli5`: what it
 // is in one or two plain lines, the way you'd explain it to a ten-year-old.
-// That's what the page shows first; `desc` and `long` are for the full file.
+// The four leads also have a `why`: what it is and why I made it, in a line or
+// two, told as a story rather than a pitch — that's the front of their tile;
+// `desc` and `long` are the back (the technical file).
 export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];
 
 export const PROJECTS = [
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
+    why: "I wanted to log what I spend the way I'd text a friend — \"chai, 40\" — not fill in a form. So I built a tracker that just gets it, and roasts me for it.",
     eli5: "Tell it what you spent, the way you'd tell a friend, and it keeps track of your money — and teases you about it.",
     desc: "AI-powered expense tracker with natural language parsing, spending roasts, and zero client-side DB writes.",
     long: "Ground-up rewrite of WalletRIP on Cloudflare Workers. Next.js 16 with @opennextjs/cloudflare adapter. Zero client-side database writes. All mutations through API routes with auth, Zod v4 validation, and Upstash Redis rate limiting. 7 API routes including Gemini NLP parse, Quick Add for Siri/Shortcuts, AI insights, and Hinglish roast. Origin header checking, CSV export with formula injection protection, optimistic UI updates with rollback.",
@@ -15,6 +18,7 @@ export const PROJECTS = [
   },
   {
     tier: 1, name: "IAM Threat Mapper", status: "LIVE", color: "#8b8eff",
+    why: "After a winter on a security desk, I wanted to see how the big breaches actually happened — one stolen login at a time, and the one fix that would have stopped each.",
     eli5: "Shows, step by step, how hackers broke into real companies by stealing logins, and what would have stopped them.",
     desc: "Interactive attack path visualizer mapping real-world breaches to MITRE ATT&CK techniques with IAM maturity assessment.",
     long: "5 breach case studies (MGM/Caesars, Uber Lapsus$, Twilio 0ktapus, Microsoft Midnight Blizzard, M365 token theft) mapped across 32 nodes to 17 ATT&CK techniques. Interactive Cytoscape.js graphs with severity-coded nodes. 20-question IAM maturity assessment aligned to NIST 800-63 and CIS Controls, with weighted scoring across 7 security categories. Assessment gaps link directly to exploitable attack scenarios.",
@@ -23,6 +27,7 @@ export const PROJECTS = [
   },
   {
     tier: 1, name: "Claubi", status: "REPO", color: "#f97316",
+    why: "I like AI writing code. I don't like it running commands on my machine without asking. So I'm building one that has to ask first, and writes down every answer.",
     eli5: "A coding helper that lives on your own computer and has to ask permission before it touches anything.",
     desc: "Security-hardened, local-first AI coding agent in Rust. Deny-first permissions, append-only audit logging, no vendor lock-in.",
     long: "AI coding agent that treats AI-generated code as untrusted by default. Runs any model locally through Ollama. Deny-first permission model inspired by AWS IAM and CrowdStrike prevention policies. Append-only audit log (JSONL). Full Ollama client with streaming chat, model switching, CLI REPL. Planned: multi-model routing, planner-executor-reviewer pipeline, Ratatui TUI, local MCP server.",
@@ -64,6 +69,7 @@ export const PROJECTS = [
   },
   {
     tier: 2, name: "type", status: "LIVE", color: "#fda4af",
+    why: "I got a new mechanical keyboard and wanted somewhere to just type. Notepad felt like a waste of a good keyboard, so I made a page where every letter lands like it has weight.",
     eli5: "A blank page where every letter you type lands like it has weight. No score, no timer — it just feels nice.",
     desc: "A keyboard-only page where typing has real physics — glyphs land with spring weight, the page itself has mass, and six styles react to your rhythm. No timer, no prompts, no judging.",
     long: "Hand-rolled canvas renderer and physics engine, zero animation libraries. Variable font weight records how hard each key was struck; glyphs settle via closed-form underdamped springs. Six styles — Print, Clean, Ember, Tide, Frost, Gale — cycle on F4, each shedding matter proportional to flow. Every keystroke imparts a real impulse to a spring-mounted page. Streak tracking, secret words that swap styles mid-sentence, a 12-second seismograph, and a lifetime odometer — all local, nothing leaves the browser.",
