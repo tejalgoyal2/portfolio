@@ -369,6 +369,33 @@ html.np-handoff .mast-plate { visibility: hidden; }
   color: var(--ink-soft);
 }
 .about-col--body p + p { margin-top: 1rem; }
+/* the interview: the editor's questions in red pencil, the answers in type */
+.about-deck {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-read);
+  font-style: italic;
+  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  color: var(--ink-soft);
+}
+.about-col .about-q {
+  position: relative;
+  margin: 1.5rem 0 0.4rem;
+  font-family: var(--font-pen);
+  font-size: clamp(1.3rem, 1.7vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--red);
+}
+.about-col .about-q:first-child { margin-top: 0; }
+.about-q > span { display: inline-block; rotate: var(--tilt, 0deg); transform-origin: left center; }
+.about-col--lead .about-a {
+  margin: 0;
+  font-family: var(--font-read);
+  font-size: clamp(1rem, 1.2vw, 1.12rem);
+  line-height: 1.62;
+  color: var(--ink-soft);
+}
+.about-col--body .about-a { margin-top: 0; }
 
 .about-stats {
   margin: 0;
@@ -693,6 +720,11 @@ html.np-handoff .mast-plate { visibility: hidden; }
   }
   .about-col--rail { grid-column: 1 / -1; }
   .about-col--rail::before { display: none; }
+}
+@media (max-width: 720px) {
+  /* a phone reads the interview in one column */
+  .about-grid { grid-template-columns: 1fr; }
+  .about-col--body::before { display: none; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -1468,6 +1500,21 @@ html.np-handoff .mast-plate { visibility: hidden; }
   pointer-events: none;
 }
 .led-nib.is-on { opacity: 1; }
+/* where the line stops: the story's end mark, pressed in as the nib lifts */
+.led-end {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: var(--red);
+  opacity: 0;
+  scale: 0.2;
+  transition: opacity 0.2s var(--ease-set), scale 0.45s var(--ease-stamp);
+  pointer-events: none;
+}
+.led-end.is-in { opacity: 1; scale: 1; }
 .led-nib svg { width: 100%; height: 100%; fill: var(--ground); stroke: var(--paper); stroke-width: 1.3; stroke-linejoin: round; }
 .led-nib svg path:last-child { fill: none; }
 .led-dot-mark {
@@ -1728,86 +1775,46 @@ html.np-handoff .mast-plate { visibility: hidden; }
   padding: clamp(10vh, 15vh, 18vh) clamp(1.5rem, 5vw, 6rem) calc(clamp(5rem, 9vh, 7rem) + 170px);
   overflow: hidden;
 }
-/* ── Grateful for: the gratitude line (GratefulFor.jsx) ─────────────────────
-   One running line of type across the red, every word someone left, and a
-   blank at the end for yours. */
+/* ── Grateful for: the stamp sheet (GratefulFor.jsx) ────────────────────────
+   A sheet of cream paper on the red, covered in rubber-stamped words, each
+   pressed down where someone chose. */
 .grateful {
   position: relative;
   z-index: 3;
   margin: clamp(3rem, 7vh, 5rem) 0 clamp(2.2rem, 5vh, 3.2rem);
-  padding-top: 1.1rem;
-  border-top: 3px double oklch(95.5% 0.014 85 / 0.55);
 }
-.grateful-kicker {
-  margin: 0 0 0.6rem;
-  font-family: var(--font-data);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--paper);
-  opacity: 0.75;
-}
-.grateful-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15rem 0;
+.grateful-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.2rem; }
+.grateful-title {
   margin: 0;
-  padding: 0;
-  list-style: none;
   font-family: var(--font-name);
   font-style: italic;
-  line-height: 1.25;
+  font-weight: 600;
+  font-size: clamp(1.35rem, 2.3vw, 1.85rem);
+  line-height: 1.15;
   color: var(--paper);
 }
-.grateful-word {
-  --k: 0;
-  font-size: calc(1.45rem + var(--k) * 1.5rem);
-  font-weight: calc(400 + var(--k) * 300);
-}
-/* between the words, a little dot of the paper */
-.grateful-word::after {
-  content: '·';
-  display: inline-block;
-  margin: 0 0.45em;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 1.45rem;
-  color: oklch(95.5% 0.014 85 / 0.45);
-}
-.grateful-word:last-child::after { content: none; }
-.grateful-word.is-mine { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.18em; text-decoration-color: oklch(95.5% 0.014 85 / 0.5); }
-/* yours, just set: the slug drops into the line */
-.grateful-word.is-fresh { animation: grateful-set 0.7s var(--ease-stamp) both; }
-@keyframes grateful-set {
-  0% { opacity: 0; translate: 0 -0.6em; }
-  55% { opacity: 1; translate: 0 0.06em; }
-  100% { opacity: 1; translate: 0 0; }
-}
-.grateful-blank form { display: inline-flex; align-items: baseline; gap: 0.8rem; }
+.grateful-form { display: inline-flex; align-items: center; gap: 0.6rem; }
+/* what you type is set like the face of a rubber stamp */
 .grateful-input {
   min-width: 0;
   max-width: 100%;
-  padding: 0 0.1rem 0.05rem;
-  font-family: var(--font-pen);
-  font-style: normal;
-  font-size: 1.8rem;
+  padding: 0.3rem 0.65rem 0.32rem;
+  font-family: var(--font-name);
+  font-style: italic;
   font-weight: 700;
+  font-size: 1.15rem;
   line-height: 1.1;
   color: var(--paper);
   background: transparent;
-  border: 0;
-  border-bottom: 2px dashed oklch(95.5% 0.014 85 / 0.55);
-  border-radius: 0;
+  border: 2px solid oklch(95.5% 0.014 85 / 0.55);
+  border-radius: 6px;
   outline: none;
 }
-.grateful-input::placeholder { color: oklch(95.5% 0.014 85 / 0.55); }
-.grateful-input:focus { border-bottom-style: solid; border-bottom-color: var(--paper); }
+.grateful-input::placeholder { font-weight: 400; color: oklch(95.5% 0.014 85 / 0.55); }
+.grateful-input:focus { border-color: var(--paper); }
 .grateful-set {
-  padding: 0.3rem 0.6rem;
+  padding: 0.45rem 0.75rem;
   font-family: var(--font-data);
-  font-style: normal;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -1818,23 +1825,99 @@ html.np-handoff .mast-plate { visibility: hidden; }
   border-radius: 2px;
   cursor: pointer;
 }
-.grateful-set:disabled { opacity: 0.6; cursor: default; }
-.grateful-set:focus-visible,
-.grateful-input:focus-visible { outline: 2px dashed var(--paper); outline-offset: 4px; }
-.grateful-closed { font-family: var(--font-pen); font-style: normal; font-size: 1.6rem; color: oklch(95.5% 0.014 85 / 0.55); }
-.grateful-note {
-  margin: 0.8rem 0 0;
+.grateful-set:disabled { opacity: 0.45; cursor: default; }
+.grateful-set:focus-visible { outline: 2px dashed var(--paper); outline-offset: 4px; }
+.grateful-how {
+  margin: 0.6rem 0 0.9rem;
   font-family: var(--font-data);
   font-size: 0.64rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--paper);
-  opacity: 0.6;
+  opacity: 0.7;
+}
+
+.grateful-sheet {
+  position: relative;
+  height: clamp(260px, 30vw, 340px);
+  overflow: hidden;
+  background: var(--paper);
+  border-radius: 2px;
+  box-shadow: 0 10px 24px oklch(15% 0.03 25 / 0.35);
+}
+.grateful-sheet.is-inked { cursor: copy; }
+.grateful-stamps { margin: 0; padding: 0; list-style: none; }
+.gstamp,
+.gstamp-ghost {
+  position: absolute;
+  pointer-events: none;
+}
+.gstamp {
+  --ink: var(--red);
+  translate: -50% -50%;
+  rotate: var(--rot, 0deg);
+  /* the older a stamp, the more its ink has faded */
+  opacity: calc(0.96 - var(--age, 0) * 0.3);
+}
+.gstamp--ink { --ink: var(--ink); }
+.gstamp--blue { --ink: oklch(44% 0.13 258); }
+.gstamp-face {
+  display: block;
+  padding: 0.22em 0.6em 0.26em;
+  font-family: var(--font-name);
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.3vw, 1.2rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+  /* a rubber stamp never inks evenly */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='40'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.3 1.55'/%3E%3C/filter%3E%3Crect width='90' height='40' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-size: 90px 40px;
+  mix-blend-mode: multiply;
+}
+.gstamp.is-mine .gstamp-face { outline-width: 2px; }
+/* yours, pressed down: it comes down onto the sheet and lands */
+.gstamp.is-fresh { animation: gstamp-press 0.55s var(--ease-stamp) both; }
+@keyframes gstamp-press {
+  0% { opacity: 0; scale: 1.5; }
+  45% { opacity: 1; scale: 0.94; }
+  100% { opacity: 0.92; scale: 1; }
+}
+/* yours, carried over the sheet before it goes down */
+.gstamp-ghost {
+  --ink: var(--red);
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease-set);
+}
+.gstamp-ghost.is-on { opacity: 0.5; }
+.gstamp-ghost .gstamp-face { mask-image: none; }
+.grateful-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-family: var(--font-read);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-ghost);
+  pointer-events: none;
 }
 .grateful-check:empty { display: none; }
 .grateful-check { margin-top: 0.8rem; }
+@media (max-width: 720px) {
+  .grateful-sheet { height: 440px; }
+  .gstamp-face { font-size: 0.82rem; border-width: 1.5px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .grateful-word.is-fresh { animation: none; }
+  .gstamp.is-fresh { animation: none; }
 }
 
 /* ── The road along the bottom, and the car (RoadCar.jsx, src/gl/car-stage.js) */
@@ -1989,7 +2072,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .contact-cube {
   position: absolute;
   right: clamp(1.5rem, 6vw, 7rem);
-  top: 46%;
+  /* low enough to stay whole at the very bottom of the page, high enough to finish its solve in view */
+  top: 55%;
   width: min(27vw, 25rem);
   aspect-ratio: 1;
   translate: 0 -50%;
@@ -2188,7 +2272,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
 
 /* Op-Ed Desk hint — use paper-at-opacity on ink ground so it reads */
 .opdesk-hint {
-  color: oklch(95.5% 0.014 85 / 0.38);
+  color: oklch(95.5% 0.014 85 / 0.62);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
