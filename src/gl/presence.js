@@ -21,7 +21,7 @@ import { gsap } from 'gsap';
 import { pointer } from '../life/pointer';
 import { prefs } from '../life/prefs';
 import { groundAt } from '../life/ground';
-import { measureMask } from '../life/paper';
+import { measureMask, OVER_UI } from '../life/paper';
 import { onLayout } from '../life/layout';
 import { bus } from '../life/bus';
 import { Spring, clamp, lerp, smoothstep } from '../life/spring';
@@ -225,7 +225,8 @@ export function createPresence(view, hitBtn) {
 
     // ---- near the cursor: slow the turn so a face is easy to hit
     const dc = pointer.active ? Math.hypot(pointer.x - cx, pointer.y - cy) - rad * 0.7 : Infinity;
-    const near = prefs.fine && dc < NEAR;
+    // not while the pointer is on the running head or its settings card, even where they cover the cube
+    const near = prefs.fine && dc < NEAR && !pointer.target?.closest?.(OVER_UI);
     // over the cube, the cursor becomes a little turning arrow (checked every few frames)
     if (frame % 3 === 0) bus.cursorHint = near && rad > 8 && view.pick(pointer.x, pointer.y) ? 'rotate' : null;
     turnRate.target = reduced || dragging ? 0 : near ? 0.15 : 1;

@@ -47,7 +47,7 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   const errors = await open(page);
   expect(await page.evaluate(() => document.documentElement.classList.contains('cursor-hidden'))).toBe(true);
   await page.mouse.move(400, 400);
-  for (const sel of ['a', 'button', 'input', '.story-try', '.grateful-sheet']) {
+  for (const sel of ['a', 'button', 'input', '.tile', '.grateful-sheet', '.rh-settings-btn']) {
     const cursor = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).cursor, sel);
     expect(cursor, sel).toMatch(/none|url\(/);
   }
@@ -57,31 +57,40 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   expect(errors).toEqual([]);
 });
 
-test('profile: the dial re-sets the story', async ({ page }) => {
+test('profile: one calm story, no birth year, no city', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.about-grid');
-  const story = page.locator('.about-story');
-  await expect(story.locator('.about-p')).toHaveCount(2);
-  await page.getByRole('radio', { name: '5 sec' }).click();
-  await expect(story.locator('.about-p')).toHaveCount(1);
-  await page.getByRole('radio', { name: '2 min' }).click();
-  expect(await story.locator('.about-p').count()).toBeGreaterThan(4);
-  await expect(page.locator('.about-col--rail')).not.toContainText(/published paper|Victoria/);
+  await expect(page.locator('.about-story, .about-dial')).toHaveCount(0);
+  await expect(page.locator('.about-col--story .about-p')).toHaveCount(2);
+  const rail = page.locator('.about-col--rail');
+  await expect(rail).toContainText('Claude Pro since');
+  await expect(rail).not.toContainText(/2002|published paper|Victoria/);
+  await expect(page.locator('.about-margin li')).toHaveCount(7);
 });
 
-test('projects: every try-it works', async ({ page }) => {
+test('projects: tiles turn over to the full file and back', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.cf-front');
-  await page.locator('.try-type').click();
-  await page.keyboard.type('hello');
-  await expect(page.locator('.try-type-g')).toHaveCount(5);
-  await page.locator('.try-dime-say').first().click();
-  await expect(page.locator('.try-dime-row')).toHaveCount(1);
-  await page.locator('.try-chain-step button').nth(1).click();
-  await expect(page.locator('.try-chain-step.is-gone')).toHaveCount(2);
-  await page.locator('.try-permit-no').click();
-  await expect(page.locator('.try-permit-line:not(.is-quiet)')).toHaveCount(1);
+  const tile = page.locator('.tile').first();
+  await expect(tile.locator('.tile-why')).toContainText('mechanical keyboard');
+  await tile.getByRole('button', { name: /Turn it over/ }).click();
+  await expect(tile).toHaveClass(/is-flipped/);
+  await page.waitForTimeout(1100);
+  await expect(tile.locator('.tile-back .tile-long')).toBeVisible();
+  await expect(tile.locator('.tile-back .tile-flip')).toBeFocused();
+  await tile.getByRole('button', { name: /Turn it back/ }).click();
+  await expect(tile).not.toHaveClass(/is-flipped/);
   await expect(page.locator('.story-link').first()).toHaveCSS('border-top-style', 'solid');
+});
+
+test('things to find tick themselves off', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.about-grid', 300);
+  await page.waitForTimeout(400);
+  // a click on bare paper makes a wave
+  await page.mouse.click(1380, 600);
+  await page.getByRole('button', { name: 'Page settings' }).click();
+  await expect(page.locator('.rh-finds li.is-found')).toContainText(['Make a wave on the paper']);
 });
 
 test('stamp sheet: stamps are visible, and yours lands where you click', async ({ page }) => {
@@ -103,10 +112,10 @@ test('stamp sheet: stamps are visible, and yours lands where you click', async (
   await expect(page.locator('.grateful-how')).toContainText('Stamped');
 });
 
-test('experience: the nib rides above the dots', async ({ page }) => {
+test('experience: just the line, no nib, no end mark', async ({ page }) => {
   await open(page);
-  const z = await page.evaluate(() => getComputedStyle(document.querySelector('.led-nib')).zIndex);
-  expect(Number(z)).toBeGreaterThan(0);
+  await expect(page.locator('.led-nib, .led-end')).toHaveCount(0);
+  await expect(page.locator('.led-ink path')).toHaveCount(1);
 });
 
 test('reduced motion: everything readable, nothing hidden', async ({ browser }) => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { TURNSTILE_SITEKEY } from '../data/site';
+import { found } from '../life/discover';
 
 /**
  * Grateful for — the stamp sheet (docs/REVAMP.md §6). A sheet of cream paper
@@ -227,6 +228,7 @@ export default function GratefulFor() {
         }
         return;
       }
+      found('sheet');
       store.set(TODAY_KEY, today());
       store.set(MINE_KEY, JSON.stringify({ word: d.word, x, y }));
       setState(d.printed ? 'set' : 'held');

@@ -6,6 +6,7 @@ import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
 import { handHTML } from '../life/hand';
 import { afterPrint } from '../life/idle';
+import { found } from '../life/discover';
 
 /**
  * "Some broke." — so there's a bug loose in the empty paper beside the
@@ -35,9 +36,15 @@ const STONE = `<svg viewBox="0 0 36 34" aria-hidden="true">
   <text x="18" y="21" text-anchor="middle">RIP</text>
 </svg>`;
 // the soul: a little cartoon ghost with a wispy tail and sleepy eyes
-const SOUL = `<svg viewBox="0 0 40 52" aria-hidden="true">
-  <path class="soul-body" d="M20 3C10.5 3 5 10 5 19v13c0 4 2.4 6.6 5.2 6.6 2 0 3-1.6 4.8-1.6 1.6 0 2.4 3 5 7 1.6 2.6 3 4.8 4.6 6.2-0.8-3-0.4-6 1.4-8.4 1.4-1.8 3.4-2.4 4.8-4.2C33.6 35 35 33 35 30V19C35 10 29.5 3 20 3Z"/>
-  <path class="soul-face" d="M13 19.5q2 2 4 0M23 19.5q2 2 4 0M17.5 25.5q2.5 1.6 5 0"/>
+// its soul, the way anime draws one leaving: a round little head on a long wisp
+// of a tail, eyes wide, mouth open. Now and then it's wearing a blindfold.
+const SOUL = (blind) => `<svg viewBox="0 0 40 72" aria-hidden="true">
+  <path class="soul-body" d="M8 14a12 12 0 0 1 24 0c0 7-3 11-6 15-3 4-4 8-3 13 1 5 4 9 2 14-2 4-6 6-9 9 2-4 3-7 1-11-2-4-6-7-6-13 0-5 3-9 3-13C10 25 8 21 8 14Z"/>
+  ${
+    blind
+      ? '<path class="soul-band" d="M6.5 10.5h27v5.5h-27z M33 12l5 -2.5 M33 14.5l4.5 2"/><path class="soul-face" d="M17.5 21.5q2.5 2.2 5 0"/>'
+      : '<circle class="soul-face" cx="15" cy="13" r="2.4"/><circle class="soul-face" cx="25" cy="13" r="2.4"/><circle class="soul-dot" cx="15" cy="13" r="0.8"/><circle class="soul-dot" cx="25" cy="13" r="0.8"/><ellipse class="soul-face" cx="20" cy="20.5" rx="2" ry="2.6"/>'
+  }
 </svg>`;
 
 export default function Bug() {
@@ -185,15 +192,16 @@ export default function Bug() {
       alive = false;
       hush();
       bug.classList.add('is-squashed');
+      found('bug');
       // its soul floats up out of it, swaying, and fades
       if (!prefs.reduced) {
         const soul = document.createElement('span');
         soul.className = 'cf-bug-soul';
-        soul.innerHTML = SOUL;
+        soul.innerHTML = SOUL(Math.random() < 0.3);
         soul.style.left = `${b.x}px`;
         soul.style.top = `${b.y - 10}px`;
         zone.appendChild(soul);
-        const sway = (k) => `translate(${(Math.sin(k * Math.PI * 2.2) * 9).toFixed(1)}px, ${(-k * 92).toFixed(1)}px) rotate(${(Math.sin(k * Math.PI * 2.2 + 0.6) * 9).toFixed(1)}deg)`;
+        const sway = (k) => `translate(${(Math.sin(k * Math.PI * 2.2) * 8).toFixed(1)}px, ${(-k * 110).toFixed(1)}px) rotate(${(Math.sin(k * Math.PI * 2.2 + 0.6) * 7).toFixed(1)}deg)`;
         const a = soul.animate(
           [
             { transform: `${sway(0)} scale(0.3, 0.15)`, opacity: 0 },

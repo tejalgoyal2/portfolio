@@ -434,10 +434,20 @@ button.press-stamp {
   background: var(--ink);
   color: var(--paper);
   border-block: 1px solid color-mix(in oklch, var(--paper) 16%, transparent);
-  /* a quiet inner vignette so the crawl fades at the edges instead of clipping */
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
-  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
 }
+/* the band runs solid edge to edge; only the words fade into it at the ends */
+.wire::before,
+.wire::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 6%;
+  pointer-events: none;
+}
+.wire::before { left: 0; background: linear-gradient(to right, var(--ink), transparent); }
+.wire::after { right: 0; background: linear-gradient(to left, var(--ink), transparent); }
 .wire-track {
   display: flex;
   width: max-content;
@@ -777,6 +787,43 @@ button.press-stamp {
   animation: rh-panel-in 0.32s var(--ease-stamp);
 }
 .rh-panel[hidden] { display: none; }
+.rh-panel { max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; }
+/* things to find: a checklist that ticks itself */
+.rh-finds ul { list-style: none; margin: 0; padding: 0; }
+.rh-finds li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.28rem 0;
+  font-family: var(--font-read);
+  font-size: 0.92rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-soft);
+}
+.rh-find-box {
+  position: relative;
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+.rh-finds li.is-found { color: var(--ink); }
+.rh-finds li.is-found .rh-find-box { color: var(--red); }
+.rh-finds li.is-found .rh-find-box::after {
+  content: '';
+  position: absolute;
+  left: 0.22rem;
+  top: -0.05rem;
+  width: 0.28rem;
+  height: 0.55rem;
+  border: solid var(--red);
+  border-width: 0 2px 2px 0;
+  rotate: 40deg;
+}
+.rh-finds-all { margin: 0.6rem 0 0; font-family: var(--font-pen); font-size: 1.2rem; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--red); }
 @keyframes rh-panel-in {
   from { opacity: 0; translate: 0 -8px; rotate: 0.6deg; }
   to { opacity: 1; translate: 0 0; rotate: 0deg; }

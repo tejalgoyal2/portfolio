@@ -1,5 +1,6 @@
 import { bus } from './bus';
 import { groundAt } from './ground';
+import { found } from './discover';
 
 /**
  * Empty paper vs. content. One definition decides where a click prints a
@@ -9,12 +10,14 @@ import { groundAt } from './ground';
 // Things that are solid all over: anywhere on them is theirs.
 const SOLID = [
   'a', 'button', 'input', 'textarea', 'select', 'label', 'img', 'video',
-  '.story-try', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted', '.skill',
+  '.tile', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted', '.skill',
   '.running-head', '.press-loader', '[data-content]',
 ].join(',');
 // Text: only the lines themselves are content — the bare paper beside a short
 // line, or round a headline, is still paper you can press.
 const WORDS = 'p, h1, h2, h3, h4, li, dt, dd, blockquote, figure, .kinetic';
+/** Page furniture that floats over the cube: it takes its own clicks. */
+export const OVER_UI = '.running-head, [data-ui]';
 const DECOY = '.kh-ghost, .kh-spread, .about-pq-ghost, [aria-hidden="true"]:not(.kh-set):not(.kh-set *)';
 const range = typeof document !== 'undefined' ? document.createRange() : null;
 
@@ -39,7 +42,7 @@ export function isEmptyPaper(el, x, y) {
 // What the type field keeps clear of. Text gets tight per-line boxes; the
 // cards, the filmstrip and the wire band are masked whole.
 const TEXT = 'p, h1, h2, h3, h4, li, dt, dd, blockquote, .kicker, .mast-kicker, .mast-cue, .contact-line-label, [data-mask-text]';
-const BOXES = '.story-try, .opdesk-strip-wrap, .wire, .press-stamp, dl, .skill-list, img, video, [data-mask]';
+const BOXES = '.tile, .opdesk-strip-wrap, .wire, .press-stamp, dl, .skill-list, img, video, [data-mask]';
 const DECOR = '.seam'; // torn edges: no type under them, but the cube may pass
 
 /**
@@ -102,6 +105,8 @@ export function startPaperPress() {
     if (html.classList.contains('press-booting')) return;
     const touch = e.pointerType === 'touch';
     if (!touch && e.button !== 0) return;
+    // the running head and its Page settings card sit above everything: a click there is theirs, never the cube's
+    if (e.target.closest?.(OVER_UI)) return;
     const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
     if (!face && !isEmptyPaper(e.target, e.clientX, e.clientY)) return;
     end();
@@ -155,7 +160,10 @@ export function startPaperPress() {
     } else if (p.face) {
       const turns = bus.twist?.(p.face, e.shiftKey);
       emit('life:twist', { x: p.x0, y: p.y0, turns });
-    } else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+    } else {
+      emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+      found('ripple');
+    }
     end();
   });
 

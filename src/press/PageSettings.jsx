@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { NIBS, SYSTEM, nib, setNib, onNib } from '../life/nib';
 import { DRIFT_LEVELS, settings, setSetting, onSettings } from '../life/settings';
 import { prefs } from '../life/prefs';
+import { FINDS, isFound, onFound } from '../life/discover';
 
 /**
  * Page settings — a small card that drops from the running head with the
@@ -15,16 +16,19 @@ export default function PageSettings() {
   const [pen, setPen] = useState(nib());
   const [s, setS] = useState({ ...settings });
   const [icons, setIcons] = useState(null);
+  const [, setFinds] = useState(0);
   const wrapRef = useRef(null);
   const btnRef = useRef(null);
   const id = useId();
 
   useEffect(() => {
+    const c = onFound(() => setFinds((n) => n + 1));
     const a = onNib(setPen);
     const b = onSettings((next) => setS({ ...next }));
     return () => {
       a();
       b();
+      c();
     };
   }, []);
 
@@ -131,6 +135,22 @@ export default function PageSettings() {
           </label>
         </fieldset>
 
+        {/* the little things that do something — ticked off as you come across them */}
+        <fieldset className="rh-opt rh-finds">
+          <legend>
+            Things to find · {FINDS.filter((f) => isFound(f.key)).length} / {FINDS.length}
+          </legend>
+          <ul>
+            {FINDS.map((f) => (
+              <li key={f.key} className={isFound(f.key) ? 'is-found' : undefined}>
+                <span className="rh-find-box" aria-hidden="true" />
+                {f.label}
+                <span className="sr-only">{isFound(f.key) ? ' (found)' : ' (not yet)'}</span>
+              </li>
+            ))}
+          </ul>
+          {FINDS.every((f) => isFound(f.key)) && <p className="rh-finds-all">You found everything. Thanks for playing.</p>}
+        </fieldset>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { hash } from '../life/spring';
 import { prefs } from '../life/prefs';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
+import { found } from '../life/discover';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -196,6 +197,7 @@ export default function Ridge() {
           // a harder hit throws it further and higher, within reason
           const hit = Math.min(1, Math.abs(car.v) / 420);
           air = { vx: dir * (150 + hit * 170), vy: -(330 + hit * 220), y: ground(bs) + 1.5 - R, bounced: false };
+          found('boulder');
           side = dir;
         }
       }

@@ -1,3 +1,4 @@
+import { found } from './discover';
 /**
  * The visitor's pen: which pencil icon is their cursor. Only pointy ones, so
  * the point is where you click: each records where its tip is (in the icon's
@@ -40,6 +41,7 @@ try {
 export const nib = () => current;
 
 export function setNib(name) {
+  found('pen');
   current = name === 'system' ? SYSTEM : NIBS.find((n) => n.name === name) || NIBS[0];
   try {
     localStorage.setItem(KEY, current.name);

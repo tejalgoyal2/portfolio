@@ -19,6 +19,7 @@ import { createNotes } from './notes';
 import { clack } from '../life/sound';
 import { setSetting } from '../life/settings';
 import { scroll } from '../life/scroll';
+import { found } from '../life/discover';
 
 const LINE = 0.6; // a section's moves play while it scrolls past 60% of the viewport
 
@@ -117,12 +118,16 @@ export async function startStage(canvas, hitBtn, noteHost) {
   bus.twist = (face, back = false) => {
     const turns = back ? 3 : 1;
     director.click(face, turns);
+    found('twist');
     presence.kick(1);
     heldAt = scroll.y;
     twisted = true;
     return turns;
   };
-  bus.orbit = (dx, dy) => presence.orbit(dx, dy);
+  bus.orbit = (dx, dy) => {
+    found('orbit');
+    presence.orbit(dx, dy);
+  };
   bus.release = (vx, vy) => presence.release(vx, vy);
   const notes = createNotes(noteHost);
 
@@ -232,6 +237,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
       if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
       if (before < director.total && director.k === director.total) {
         solvedOnce = true;
+        found('solved');
         presence.celebrate();
         notes.show('solved', presence.state);
       }

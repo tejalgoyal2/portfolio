@@ -27,6 +27,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { gsap } from 'gsap';
 import { prefs } from '../life/prefs';
 import { scroll } from '../life/scroll';
+import { found } from '../life/discover';
 
 const HEADLIGHT = new Color('#fff1c2');
 
@@ -128,6 +129,7 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
   const showNote = (show) => note?.classList.toggle('is-on', show);
   let hideNote = 0;
   const onEnter = () => {
+    found('car');
     hovering = true;
     clearTimeout(hideNote);
     showNote(true);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { prefs } from '../life/prefs';
+import { found } from '../life/discover';
 
 /**
  * Let's talk is a letter, so it gets a stamp: perforated edges, a little
@@ -43,6 +44,7 @@ export default function Postage() {
   const tickRef = useRef(null);
   useEffect(() => () => tickRef.current && gsap.ticker.remove(tickRef.current), []);
   const spin = () => {
+    found('stamp');
     setStruck(true);
     const paper = ref.current?.querySelector('.postage-paper');
     const spinEl = ref.current?.querySelector('.postage-spin');
