@@ -9,7 +9,7 @@ import { groundAt } from './ground';
 // Things that are solid all over: anywhere on them is theirs.
 const SOLID = [
   'a', 'button', 'input', 'textarea', 'select', 'label', 'img', 'video',
-  '.case-file', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted', '.skill',
+  '.story-try', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted', '.skill',
   '.running-head', '.press-loader', '[data-content]',
 ].join(',');
 // Text: only the lines themselves are content — the bare paper beside a short
@@ -39,7 +39,7 @@ export function isEmptyPaper(el, x, y) {
 // What the type field keeps clear of. Text gets tight per-line boxes; the
 // cards, the filmstrip and the wire band are masked whole.
 const TEXT = 'p, h1, h2, h3, h4, li, dt, dd, blockquote, .kicker, .mast-kicker, .mast-cue, .contact-line-label, [data-mask-text]';
-const BOXES = '.case-file, .opdesk-strip-wrap, .wire, .press-stamp, dl, .skill-list, img, video, [data-mask]';
+const BOXES = '.story-try, .opdesk-strip-wrap, .wire, .press-stamp, dl, .skill-list, img, video, [data-mask]';
 const DECOR = '.seam'; // torn edges: no type under them, but the cube may pass
 
 /**

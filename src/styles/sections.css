@@ -277,7 +277,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   font-weight: 500;
   letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--ink-ghost);
+  color: var(--ink-soft);
   opacity: 0;
   animation: mast-cue-bob 2.4s var(--ease-set) infinite;
 }
@@ -400,19 +400,127 @@ html.np-handoff .mast-plate { visibility: hidden; }
   text-align: right;
 }
 
+.about-otc-kicker {
+  margin: clamp(1.6rem, 3vw, 2.3rem) 0 0.7rem;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 .about-margin {
   list-style: none;
-  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 .about-margin li {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: var(--indent, 0);
   font-family: var(--font-pen);
   font-size: clamp(1.15rem, 1.5vw, 1.4rem);
-  line-height: 1.05;
+  font-weight: 600;
+  line-height: 1.1;
   color: var(--red-deep);
+}
+/* each line its own slope (src/life/hand.js), from the left where the pen started */
+.otc-note { display: inline-block; rotate: var(--tilt, 0deg); transform-origin: left center; }
+/* the ones that do what they say, when asked */
+.otc-act {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.otc-act .hw-w {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklch, var(--red) 55%, transparent);
+}
+.otc-act:hover .otc-note { color: var(--red); }
+.otc-act:hover .hw-w { text-decoration-color: var(--red); }
+.otc-act:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px; }
+.otc-plane {
+  position: fixed;
+  z-index: 40;
+  width: 30px;
+  height: 30px;
+  color: var(--ink);
+  pointer-events: none;
+}
+.otc-plane svg { width: 100%; height: 100%; overflow: visible; }
+/* the card trick, on request */
+.trick {
+  margin: 1rem 0 0;
+  padding: 0.85rem 0.9rem 0.9rem;
+  background: var(--paper-stock);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
+}
+.trick-say {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-pen);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--red);
+  rotate: var(--tilt, 0deg);
+  transform-origin: left center;
+}
+.trick-cards { display: flex; gap: 0.4rem; perspective: 600px; }
+.trick-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 3.7rem;
+  font-family: var(--font-name);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 1px 2px 0 oklch(20% 0.02 60 / 0.15);
+  animation: trick-deal 0.5s var(--ease-stamp) both;
+  animation-delay: calc(var(--i) * 70ms);
+  backface-visibility: hidden;
+}
+.trick-card.is-red { color: var(--red); }
+.trick-card b { font-size: 1.15rem; font-weight: 900; line-height: 1; }
+.trick-card i { font-style: normal; font-size: 1.05rem; line-height: 1.1; }
+@keyframes trick-deal {
+  from { opacity: 0; transform: rotateY(90deg) translateY(-6px); }
+  to { opacity: 1; transform: rotateY(0deg) translateY(0); }
+}
+.trick-row { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.trick-row button {
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-data);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.trick-row button + button { color: var(--ink); background: transparent; }
+.trick-row button:hover { background: var(--red); border-color: var(--red); color: var(--paper); }
+.trick-row button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .trick-card { animation: none; }
 }
 /* written in by the pencil (src/life/writeIn.js handwrite) */
 .about-margin { position: relative; }
@@ -457,7 +565,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   white-space: nowrap;
   background: var(--paper);
   box-shadow: 0 2px 6px oklch(20% 0.02 60 / 0.16), 0 0 0 1px oklch(56% 0.2 27 / 0.18);
-  rotate: -5deg;
+  rotate: var(--tilt, -3deg);
   translate: 0 -100%;
   opacity: 0;
   scale: 0.6;
@@ -471,8 +579,6 @@ html.np-handoff .mast-plate { visibility: hidden; }
 /* the little car on the rule (src/life/car.js) */
 .about-grid { position: relative; }
 
-.about-margin li:nth-child(odd) { transform: rotate(-1.6deg); transform-origin: left; }
-.about-margin li:nth-child(even) { transform: rotate(1.2deg); transform-origin: left; margin-left: 0.6rem; }
 
 /* ── Skills — the type case (back shop) ──────────────────────────────────── */
 .skills {
@@ -732,6 +838,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 .story {
   position: relative;
+  display: flex;
+  flex-direction: column;
   padding: clamp(1.4rem, 2.6vw, 2.2rem) 0 clamp(1.3rem, 2.2vw, 2rem);
   border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
 }
@@ -747,16 +855,21 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .story--lead {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: clamp(1.4rem, 4vw, 3.6rem);
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-areas: 'text try' 'meta try';
+  grid-template-rows: auto 1fr;
+  column-gap: clamp(1.6rem, 4vw, 3.6rem);
   border-bottom: 3px double var(--ink);
 }
+.story--lead .story-text { grid-area: text; }
+.story--lead .story-try { grid-area: try; margin: 0.6rem 0 0; align-self: center; }
+.story--lead .story-meta { grid-area: meta; margin-top: 0.4rem; }
 .story-kicker {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.8rem;
-  margin: 0 0 0.4rem;
+  gap: 0.5rem 0.8rem;
+  margin: 0 0 0.55rem;
   font-family: var(--font-data);
   font-size: 0.7rem;
   font-weight: 700;
@@ -764,27 +877,38 @@ html.np-handoff .mast-plate { visibility: hidden; }
   color: var(--red);
 }
 .story-kicker .press-stamp { font-size: 0.58rem; }
+.story-pen {
+  display: inline-block;
+  font-family: var(--font-pen);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--red);
+  rotate: var(--tilt, -1deg);
+  transform-origin: left center;
+}
 .story-name {
   margin: 0;
-  font-size: clamp(2.2rem, 4.4vw, 3.9rem);
-  line-height: 0.92;
-  text-transform: uppercase;
+  font-size: clamp(2rem, 3.2vw, 2.9rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
-.story--lead .story-name { font-size: clamp(4.5rem, 13vw, 11.5rem); line-height: 0.82; }
-.story-pen { margin: 0.35rem 0 0; font-family: var(--font-pen); font-size: 1.3rem; font-weight: 700; color: var(--red); rotate: -2deg; }
+.story--lead .story-name { font-size: clamp(3.4rem, 7.4vw, 6.6rem); line-height: 0.9; }
 /* what it is, plainly — the thing to read first */
 .story-eli5 {
-  margin: 0.9rem 0 1rem;
+  margin: 0.8rem 0 0;
   font-family: var(--font-read);
-  font-size: clamp(1.08rem, 1.35vw, 1.25rem);
+  font-size: clamp(1.06rem, 1.3vw, 1.2rem);
   line-height: 1.45;
   color: var(--ink);
-  max-width: 34ch;
+  max-width: 36ch;
   text-wrap: pretty;
 }
-.story--lead .story-eli5 { margin-top: 0; font-size: clamp(1.3rem, 2vw, 1.75rem); line-height: 1.35; max-width: 30ch; }
-.story-tech { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0 0 1rem; }
+.story--lead .story-eli5 { margin-top: 1.4rem; font-size: clamp(1.25rem, 1.8vw, 1.6rem); line-height: 1.38; max-width: 28ch; }
+.story-meta { margin-top: auto; }
+.story-tech { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0 0 0.9rem; }
 .story-tech-label { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); margin-right: 0.3rem; }
 .story-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1.1rem; }
 .story-link,
@@ -810,283 +934,6 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .story-file-inner { overflow: hidden; min-height: 0; }
 .story-desc { margin: 1rem 0 0.5rem; font-family: var(--font-read); font-style: italic; font-size: 0.98rem; line-height: 1.5; color: var(--ink); max-width: 60ch; }
 .story-long { margin: 0; font-family: var(--font-read); font-size: 0.93rem; line-height: 1.55; color: var(--ink-soft); max-width: 60ch; }
-.cf-also {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.4rem 1rem;
-  margin: 0 0 1.2rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
-  font-family: var(--font-data);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.cf-also-hint { font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--ink-soft); }
-@media (max-width: 900px) {
-  .cf-front { grid-template-columns: 1fr; }
-  .story--lead { grid-template-columns: 1fr; align-items: start; }
-  .story:not(.story--lead) + .story:not(.story--lead)::before { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .story-file { transition: none; }
-}
-
-.cf-features {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.1rem, 2.4vh, 1.8rem);
-  margin-bottom: clamp(1.4rem, 3vh, 2.2rem);
-}
-.cf-index {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(1rem, 2vw, 1.4rem);
-}
-
-/* The wraparound display (Projects.jsx CurvedRows): three full-bleed rows,
-   each a strip of cards on the inside of a cylinder — real CSS 3D. */
-.cf-rows {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1rem, 2.4vh, 1.6rem);
-  width: 100vw;
-  margin: clamp(2rem, 4vh, 3rem) 0 0 calc(50% - 50vw);
-}
-.cf-rows { --cf-card: min(340px, 76vw); }
-.cf-row {
-  position: relative;
-  height: 250px;
-  perspective: 1300px;
-  perspective-origin: 50% 50%;
-}
-.cf-track {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-}
-.cf-slot {
-  position: absolute;
-  top: 12px;
-  left: calc(50% - var(--cf-card) / 2);
-  width: var(--cf-card);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
-}
-.cf-row .case-file {
-  width: var(--cf-card);
-  padding: 1.15rem 1.3rem 1.2rem;
-}
-.cf-row .cf-name { font-size: 1.55rem; }
-.cf-row .cf-deck {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 0.98rem;
-  min-height: calc(1.4em * 3);
-}
-.cf-row .cf-filed { flex-wrap: nowrap; max-width: 100%; overflow: hidden; mask-image: linear-gradient(90deg, #000 85%, transparent); }
-.cf-row .cf-tag { flex-shrink: 0; white-space: nowrap; }
-.cf-row .cf-foot { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
-/* now and then, a card is ringed in red */
-.case-file.is-flagged {
-  border-color: var(--red);
-  box-shadow: 0 0 0 1.5px var(--red), 3px 4px 0 oklch(56% 0.2 27 / 0.18);
-}
-.case-file.is-flagged .cf-no { text-decoration: underline wavy var(--red); text-underline-offset: 3px; }
-
-/* A case file. Rest = cream sheet. Hover inverts to ink, tilts in REAL CSS 3D
-   toward the cursor (perspective + rotateX/Y driven by JS custom props), and a
-   warm desk-lamp glow tracks the pointer. overflow:hidden clips that glow to
-   the rounded rect (and forces a flat plane — which is fine, the card itself is
-   the 3D surface; no child needs preserve-3d). */
-.case-file {
-  position: relative;
-  overflow: hidden;
-  background: var(--paper-stock);
-  border: 1.5px solid var(--ink);
-  border-radius: 4px;
-  padding: clamp(1.2rem, 2.4vw, 2rem);
-  color: var(--ink);
-  box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
-  transform: perspective(1100px) translateY(var(--lift, 0px))
-    rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
-    border-color 0.3s var(--ease-set);
-}
-/* while the pointer is over the card, the tilt tracks it crisply (short, linear)
-   — on leave the class drops and transform eases home over the longer 0.5s */
-.case-file.is-tilt {
-  transition: transform 0.1s linear, box-shadow 0.4s var(--ease-set),
-    border-color 0.3s var(--ease-set);
-}
-/* lift the card's own content above the glow layer */
-.case-file > *:not(.cf-glow) { position: relative; z-index: 1; }
-.cf-features .case-file { padding: clamp(1.6rem, 3vw, 2.6rem); }
-
-.case-file:hover {
-  /* stays on paper: the card lifts, its border and title take the press red,
-     and a faint warm ink wash spreads from the cursor (.cf-glow) */
-  --lift: -6px;
-  border-color: var(--red);
-  box-shadow: 6px 10px 0 oklch(56% 0.2 27 / 0.16),
-    0 22px 44px oklch(20% 0.02 60 / 0.18);
-  z-index: 3;
-}
-.case-file:hover .cf-name { color: var(--red); }
-.case-file.is-linked {
-  border-color: var(--red);
-  box-shadow: 0 0 0 2px var(--red), 4px 6px 0 oklch(56% 0.2 27 / 0.2);
-}
-
-/* the ink wash — a soft pool of press red that spreads out from wherever the
-   cursor entered and keeps under it (--mx/--my set on pointermove). Multiplied
-   onto the cream, so it reads as ink soaking into the stock. Transform and
-   opacity only. */
-.cf-glow {
-  position: absolute;
-  left: var(--mx, 50%);
-  top: var(--my, 50%);
-  z-index: 0;
-  width: 560px;
-  height: 560px;
-  margin: -280px 0 0 -280px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(closest-side, oklch(56% 0.214 27 / 0.12), oklch(56% 0.214 27 / 0.04) 55%, transparent);
-  mix-blend-mode: multiply;
-  opacity: 0;
-  transform: scale(0.15);
-  transition: opacity 0.35s var(--ease-set), transform 0.9s var(--ease-set);
-}
-.case-file:hover .cf-glow { opacity: 1; transform: scale(1); }
-
-@media (prefers-reduced-motion: reduce) {
-  .case-file { transform: none; }
-}
-
-.cf-top {
-  display: flex;
-  align-items: baseline;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-}
-.cf-no {
-  font-family: var(--font-data);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--red);
-}
-.cf-name {
-  font-family: var(--font-name);
-  font-weight: 900;
-  font-size: clamp(1.4rem, 2.6vw, 2.4rem);
-  line-height: 1;
-  margin: 0 auto 0 0;
-}
-.cf-features .cf-name { font-size: clamp(1.9rem, 4vw, 3.4rem); }
-
-/* stamps must flip with the page — switch to a light screen on the inked card */
-
-.cf-deck {
-  font-family: var(--font-read);
-  font-size: clamp(1rem, 1.3vw, 1.15rem);
-  line-height: 1.4;
-  max-width: 62ch;
-  margin: 0.9rem 0 0;
-  color: var(--ink-soft);
-}
-
-/* An editor's scribble — my own hand on the one file I sink the most weekends
-   into. Caveat in wet red, kicked off-axis so it reads as a margin note and not
-   a label. Red is the accent that holds on both the cream ground and the ink
-   hover-invert, so it needs no per-state override. */
-.cf-pen {
-  font-family: var(--font-pen);
-  font-size: clamp(1.25rem, 1.9vw, 1.7rem);
-  line-height: 1;
-  color: var(--red-wet);
-  margin: 0.55rem 0 0 0.15rem;
-  transform: rotate(-3.5deg);
-  transform-origin: left center;
-  pointer-events: none;
-}
-
-/* Feature dossier (metrics + notes) renders always — no hover-expand, so
-   sibling cards never reflow. Spacing is owned by the blocks themselves. */
-.cf-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(1.1rem, 3vw, 2.4rem);
-  margin-top: 1.5rem;
-  margin-bottom: 1.1rem;
-  padding-bottom: 1.1rem;
-  border-bottom: 1px solid oklch(58% 0.01 60 / 0.4);
-}
-.cf-metric { display: flex; flex-direction: column; gap: 0.2rem; }
-.cf-metric-n {
-  font-family: var(--font-name);
-  font-weight: 900;
-  font-size: clamp(1.7rem, 3.2vw, 2.8rem);
-  line-height: 0.85;
-  color: var(--red);
-}
-/* Phrase metrics ("deny-first", "append-only") read as a short red descriptor,
-   not a giant numeral — the big-number style wrapped and collided with the
-   notes below it. Still red, still the headline face, just sized to its words. */
-.cf-metric-n--phrase {
-  font-size: clamp(0.98rem, 1.4vw, 1.1rem);
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  font-weight: 800;
-  align-self: flex-start;
-  padding-top: 0.15rem;
-}
-.cf-metric-l {
-  font-family: var(--font-data);
-  font-size: 0.64rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-}
-
-.cf-notes {
-  font-family: var(--font-read);
-  font-size: 0.95rem;
-  line-height: 1.55;
-  max-width: 70ch;
-  margin: 1.3rem 0 0;
-  color: var(--ink-soft);
-}
-
-.cf-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-  margin-top: 1.3rem;
-}
-.cf-filed {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-}
-.cf-filed-label {
-  font-family: var(--font-data);
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-  margin-right: 0.3rem;
-}
 .cf-tag {
   font-family: var(--font-data);
   font-size: 0.66rem;
@@ -1096,20 +943,348 @@ html.np-handoff .mast-plate { visibility: hidden; }
   border-radius: 2px;
   opacity: 0.78;
 }
-.cf-links { display: flex; flex-wrap: wrap; gap: 1.2rem; }
-.cf-link {
+
+/* ── Try it: the small working piece beside each story (Tryouts.jsx) ─────── */
+.story > * { min-width: 0; }
+.story-try {
+  position: relative;
+  min-width: 0;
+  margin: 1.3rem 0 1.4rem;
+  padding: 1.5rem 1.05rem 1.05rem;
+  background: var(--paper-stock);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
+}
+.story-try-label {
+  position: absolute;
+  top: -0.75em;
+  left: 0.9rem;
+  padding: 0.18em 0.6em;
   font-family: var(--font-data);
-  font-size: 0.72rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--red);
+}
+.try-ask {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-read);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+.try-ask span { font-style: normal; color: var(--red); }
+@keyframes try-print {
+  from { opacity: 0; translate: 0 -6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* type: letters that land like they have weight */
+.try-type {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: clamp(104px, 11vw, 140px);
+  padding: 0 0.9rem;
+  overflow: hidden;
+  cursor: text;
+  background: var(--paper);
+  border-radius: 2px;
+}
+/* the line the letters land on */
+.try-type::after {
+  content: '';
+  position: absolute;
+  left: 0.9rem;
+  right: 0.9rem;
+  top: 66%;
+  border-top: 1px solid color-mix(in oklch, var(--red) 45%, transparent);
+  pointer-events: none;
+}
+.story--lead .try-type { height: clamp(150px, 17vw, 220px); }
+.try-type:focus-within { outline: 2px solid var(--red); outline-offset: 3px; }
+.try-type-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  color: transparent;
+  caret-color: transparent;
+  background: none;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  cursor: text;
+}
+.try-type-line {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: var(--font-name);
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  line-height: 1.25;
+  color: var(--ink);
+  pointer-events: none;
+}
+.story--lead .try-type-line { font-size: clamp(3rem, 6vw, 5.2rem); }
+.try-type-g { display: inline-block; }
+.try-type-caret {
+  display: inline-block;
+  flex-shrink: 0;
+  align-self: center;
+  width: 2.5px;
+  height: 0.8em;
+  margin-left: 3px;
+  background: var(--red);
+  opacity: 0;
+}
+.try-type:focus-within .try-type-caret { animation: try-caret 1.05s steps(1) infinite; }
+@keyframes try-caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+.try-type-hint {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  translate: 0 -50%;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-ghost);
+  pointer-events: none;
+}
+.try-type:not(.is-empty) .try-type-hint { display: none; }
+.try-type:focus-within .try-type-hint { left: 1.6rem; }
+
+/* Dime: said to a friend, set on the receipt */
+.try-dime-says { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0 0 0.9rem; }
+.try-dime-say {
+  padding: 0.12rem 0.75rem 0.22rem;
+  font-family: var(--font-pen);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 14px 14px 14px 4px;
+  cursor: pointer;
+  transition: translate 0.25s var(--ease-stamp), color 0.2s, border-color 0.2s;
+}
+.try-dime-say:hover { translate: 0 -2px; color: var(--red); border-color: var(--red); }
+.try-dime-say:active { translate: 0 1px; }
+.try-dime-say:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.try-dime-receipt {
+  min-height: 4.6rem;
+  padding: 0.65rem 0.8rem 0.7rem;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px dashed color-mix(in oklch, var(--ink) 42%, transparent);
+}
+.try-dime-none { margin: 0; font-family: var(--font-read); font-style: italic; font-size: 0.92rem; color: var(--ink-ghost); }
+.try-dime-rows { list-style: none; margin: 0; padding: 0; }
+.try-dime-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.7rem;
+  padding: 0.28rem 0;
+  border-bottom: 1px dotted color-mix(in oklch, var(--ink) 35%, transparent);
+  animation: try-print 0.4s var(--ease-stamp) both;
+}
+.try-dime-item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.try-dime-pile { color: var(--ink-soft); }
+.try-dime-amt { font-weight: 700; text-align: right; min-width: 4.4em; }
+.try-dime-total {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.4rem 0 0;
+  padding-top: 0.3rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--red);
-  text-decoration: none;
-  white-space: nowrap;
-  border-bottom: 1.5px solid transparent;
-  transition: border-color 0.2s, color 0.2s;
+  border-top: 1.5px solid var(--ink);
 }
-.cf-link:hover { border-color: currentColor; }
+.try-dime-roast {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-pen);
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--red);
+  rotate: var(--tilt, -1deg);
+  transform-origin: left center;
+  animation: try-print 0.45s var(--ease-stamp) 0.15s both;
+}
+
+/* IAM Threat Mapper: a break-in, step by step — put the fix anywhere */
+.try-chain-steps { list-style: none; margin: 0; padding: 0; }
+.try-chain-step + .try-chain-step::before {
+  content: '↓';
+  display: block;
+  padding-left: 0.75rem;
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  line-height: 1.25;
+  color: var(--ink-ghost);
+  transition: opacity 0.3s var(--ease-set);
+}
+.try-chain-step.is-gone::before { opacity: 0.3; }
+.try-chain-step button {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-read);
+  font-size: 0.98rem;
+  line-height: 1.3;
+  text-align: left;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.2s, opacity 0.35s var(--ease-set), translate 0.25s var(--ease-stamp);
+}
+.try-chain-step button:hover { border-color: var(--red); translate: 3px 0; }
+.try-chain-step button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.try-chain-n { flex-shrink: 0; font-family: var(--font-data); font-size: 0.68rem; font-weight: 700; color: var(--red); }
+.try-chain-step.is-stopped button { border-color: var(--red); box-shadow: 0 0 0 1.5px var(--red); }
+.try-chain-step.is-gone button {
+  opacity: 0.4;
+  border-style: dashed;
+  text-decoration: line-through;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 1.5px;
+}
+.try-chain-fix {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.65rem;
+  margin: 0.5rem 0 0.15rem 0.35rem;
+  font-family: var(--font-pen);
+  font-size: 1.22rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--red);
+  animation: try-print 0.4s var(--ease-stamp) both;
+}
+.try-chain-fix .press-stamp { flex-shrink: 0; font-size: 0.55rem; }
+.try-chain-fix > span:last-child { display: inline-block; rotate: var(--tilt, -1deg); transform-origin: left center; }
+
+/* Claubi: it asks first, and writes every answer down */
+.try-permit { font-family: var(--font-data); }
+.try-permit-ask { padding: 0.8rem 0.9rem 0.9rem; color: var(--paper); background: var(--ink); border-radius: 3px; }
+.try-permit-who { margin: 0 0 0.3rem; font-size: 0.7rem; letter-spacing: 0.04em; opacity: 0.82; }
+.try-permit-who b { color: var(--red-wet); }
+.try-permit-what { margin: 0 0 0.8rem; font-size: 0.9rem; font-weight: 700; overflow-wrap: anywhere; animation: try-print 0.35s var(--ease-stamp) both; }
+.try-permit-what::before { content: '$ '; opacity: 0.55; }
+.try-permit-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.try-permit-no,
+.try-permit-yes {
+  padding: 0.42rem 0.85rem;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.try-permit-no { color: var(--ink); background: var(--paper); border: 1.5px solid var(--paper); }
+.try-permit-no:hover { color: var(--paper); background: var(--red); border-color: var(--red); }
+.try-permit-yes { color: var(--paper); background: transparent; border: 1.5px solid color-mix(in oklch, var(--paper) 45%, transparent); }
+.try-permit-yes:hover { border-color: var(--paper); }
+.try-permit-no:focus-visible,
+.try-permit-yes:focus-visible { outline: 2px solid var(--red-wet); outline-offset: 2px; }
+.try-permit-log {
+  min-height: 5.2rem;
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--paper);
+  border: 1px dashed color-mix(in oklch, var(--ink) 42%, transparent);
+}
+.try-permit-file { margin: 0 0 0.3rem; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-ghost); }
+.try-permit-line { margin: 0; font-size: 0.64rem; line-height: 1.55; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: try-print 0.35s var(--ease-stamp) both; }
+.try-permit-line.is-quiet { color: var(--ink-ghost); animation: none; }
+
+/* ── In brief: the rest, in still newspaper columns ──────────────────────── */
+.cf-also {
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--ink);
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.briefs {
+  columns: 3;
+  column-gap: clamp(1.6rem, 3vw, 2.8rem);
+  column-rule: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+}
+.brief {
+  break-inside: avoid;
+  padding: 1rem 0 1.2rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+}
+.brief-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 0.4rem;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--red);
+}
+.brief-kicker .press-stamp { font-size: 0.52rem; }
+.brief-name {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-name);
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.brief-eli5 { margin: 0 0 0.6rem; font-family: var(--font-read); font-size: 1rem; line-height: 1.45; color: var(--ink-soft); max-width: 38ch; text-wrap: pretty; }
+.brief-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 0; }
+
+@media (max-width: 900px) {
+  .cf-front { grid-template-columns: 1fr; }
+  .story--lead { grid-template-columns: 1fr; grid-template-areas: 'text' 'try' 'meta'; grid-template-rows: auto; }
+  .story--lead .story-try { margin: 1.3rem 0 1.4rem; }
+  .story:not(.story--lead) + .story:not(.story--lead)::before { display: none; }
+  .briefs { columns: 2; }
+}
+@media (max-width: 600px) {
+  .briefs { columns: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-file { transition: none; }
+  .try-dime-row,
+  .try-dime-roast,
+  .try-chain-fix,
+  .try-permit-what,
+  .try-permit-line { animation: none; }
+  .try-type:focus-within .try-type-caret { animation: none; opacity: 1; }
+}
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Experience — The Ledger / On the Record (first ink spread)
@@ -1553,97 +1728,113 @@ html.np-handoff .mast-plate { visibility: hidden; }
   padding: clamp(10vh, 15vh, 18vh) clamp(1.5rem, 5vw, 6rem) calc(clamp(5rem, 9vh, 7rem) + 170px);
   overflow: hidden;
 }
-/* ── Letters to the editor: the gratitude corner (LettersCorner.jsx) ───────
-   A clipping of cream paper pasted on the red: the question, a slip to write
-   on, and every word so far set as slugs of type. */
-.letters {
+/* ── Grateful for: the gratitude line (GratefulFor.jsx) ─────────────────────
+   One running line of type across the red, every word someone left, and a
+   blank at the end for yours. */
+.grateful {
   position: relative;
   z-index: 3;
-  max-width: 600px;
-  margin: clamp(3rem, 7vh, 5rem) 0 clamp(2.5rem, 5vh, 3.5rem);
-  padding: 1.3rem clamp(1.1rem, 2.4vw, 1.8rem) 1.4rem;
-  color: var(--ink);
-  background: var(--paper);
-  rotate: -0.6deg;
-  box-shadow: 0 10px 24px oklch(15% 0.03 25 / 0.35);
+  margin: clamp(3rem, 7vh, 5rem) 0 clamp(2.2rem, 5vh, 3.2rem);
+  padding-top: 1.1rem;
+  border-top: 3px double oklch(95.5% 0.014 85 / 0.55);
 }
-.letters-kicker {
-  margin: 0 0 0.9rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 3px double var(--ink);
+.grateful-kicker {
+  margin: 0 0 0.6rem;
   font-family: var(--font-data);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-}
-.letters-slip { position: relative; }
-.letters-q { display: block; margin-bottom: 0.6rem; font-family: var(--font-name); font-style: italic; font-weight: 600; font-size: clamp(1.25rem, 2.2vw, 1.6rem); line-height: 1.15; }
-.letters-row { display: flex; align-items: flex-end; gap: 0.8rem; }
-.letters-input {
-  flex: 1;
-  min-width: 0;
-  padding: 0.15rem 0.1rem 0.25rem;
-  font-family: var(--font-pen);
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--red);
-  background: transparent;
-  border: 0;
-  border-bottom: 1.5px dashed color-mix(in oklch, var(--ink) 45%, transparent);
-  outline: none;
-}
-.letters-input::placeholder { color: color-mix(in oklch, var(--ink) 35%, transparent); }
-.letters-input:focus { border-bottom-style: solid; border-bottom-color: var(--ink); }
-.letters-input:disabled { cursor: default; }
-.letters-send {
-  padding: 0.5rem 0.9rem;
-  font-family: var(--font-data);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--paper);
-  background: var(--red);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: opacity 0.2s var(--ease-set), translate 0.15s var(--ease-set);
+  opacity: 0.75;
 }
-.letters-send:disabled { opacity: 0.35; cursor: default; }
-.letters-send:not(:disabled):active { translate: 0 1px; }
-.letters-send:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.letters-check:empty { display: none; }
-.letters-check { margin-top: 0.6rem; }
-.letters-msg { margin: 0.55rem 0 0; font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.06em; color: var(--ink-soft); }
-.letters-stamp { position: absolute; right: 0.2rem; top: -0.2rem; pointer-events: none; }
-.letters-words {
+.grateful-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem 0.4rem;
-  margin: 1.1rem 0 0;
-  padding: 0.9rem 0 0;
+  gap: 0.15rem 0;
+  margin: 0;
+  padding: 0;
   list-style: none;
-  border-top: 1px solid color-mix(in oklch, var(--ink) 18%, transparent);
+  font-family: var(--font-name);
+  font-style: italic;
+  line-height: 1.25;
+  color: var(--paper);
 }
-.letters-word {
+.grateful-word {
   --k: 0;
-  padding: 0.3em 0.55em 0.25em;
+  font-size: calc(1.45rem + var(--k) * 1.5rem);
+  font-weight: calc(400 + var(--k) * 300);
+}
+/* between the words, a little dot of the paper */
+.grateful-word::after {
+  content: '·';
+  display: inline-block;
+  margin: 0 0.45em;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1.45rem;
+  color: oklch(95.5% 0.014 85 / 0.45);
+}
+.grateful-word:last-child::after { content: none; }
+.grateful-word.is-mine { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.18em; text-decoration-color: oklch(95.5% 0.014 85 / 0.5); }
+/* yours, just set: the slug drops into the line */
+.grateful-word.is-fresh { animation: grateful-set 0.7s var(--ease-stamp) both; }
+@keyframes grateful-set {
+  0% { opacity: 0; translate: 0 -0.6em; }
+  55% { opacity: 1; translate: 0 0.06em; }
+  100% { opacity: 1; translate: 0 0; }
+}
+.grateful-blank form { display: inline-flex; align-items: baseline; gap: 0.8rem; }
+.grateful-input {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 0.1rem 0.05rem;
+  font-family: var(--font-pen);
+  font-style: normal;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px dashed oklch(95.5% 0.014 85 / 0.55);
+  border-radius: 0;
+  outline: none;
+}
+.grateful-input::placeholder { color: oklch(95.5% 0.014 85 / 0.55); }
+.grateful-input:focus { border-bottom-style: solid; border-bottom-color: var(--paper); }
+.grateful-set {
+  padding: 0.3rem 0.6rem;
   font-family: var(--font-data);
-  font-size: calc(0.72rem + var(--k) * 0.9rem);
-  line-height: 1;
-  color: var(--ink);
-  background: var(--paper-stock);
-  border: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
-  border-radius: 3px;
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red-stock);
+  background: var(--paper);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
 }
-.letters-word.is-fresh { color: var(--paper); background: var(--red); animation: letter-set 0.6s var(--ease-stamp); }
-@keyframes letter-set {
-  from { scale: 0.6; opacity: 0; }
-  to { scale: 1; opacity: 1; }
+.grateful-set:disabled { opacity: 0.6; cursor: default; }
+.grateful-set:focus-visible,
+.grateful-input:focus-visible { outline: 2px dashed var(--paper); outline-offset: 4px; }
+.grateful-closed { font-family: var(--font-pen); font-style: normal; font-size: 1.6rem; color: oklch(95.5% 0.014 85 / 0.55); }
+.grateful-note {
+  margin: 0.8rem 0 0;
+  font-family: var(--font-data);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper);
+  opacity: 0.6;
 }
+.grateful-check:empty { display: none; }
+.grateful-check { margin-top: 0.8rem; }
 @media (prefers-reduced-motion: reduce) {
-  .letters-word.is-fresh { animation: none; }
+  .grateful-word.is-fresh { animation: none; }
 }
 
 /* ── The road along the bottom, and the car (RoadCar.jsx, src/gl/car-stage.js) */
@@ -1712,13 +1903,13 @@ html.np-handoff .mast-plate { visibility: hidden; }
   font-weight: 700;
   color: var(--paper);
   white-space: nowrap;
-  rotate: -4deg;
   opacity: 0;
   translate: 0 8px;
   transition: opacity 0.3s var(--ease-set), translate 0.45s var(--ease-stamp);
   pointer-events: none;
 }
 .car-note.is-on { opacity: 1; translate: 0 0; }
+.car-note-text { display: inline-block; rotate: var(--tilt, -1deg); transform-origin: left center; }
 @media (max-width: 720px) {
   .contact-road { height: 190px; }
   .car-hit { height: 90px; width: 170px; }

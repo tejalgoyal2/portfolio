@@ -66,10 +66,10 @@ Each item below is caused by the visitor (cursor, click, scroll) or is a slow am
 - **Rendering:** one shared fixed three.js canvas for the cube and the car. Lazy-load three after first paint, and pause when the tab is hidden.
 
 ## 3. Projects as front-page stories
-- Each project is a front-page story: headline, a 3-line deck, a short looping screen recording, links, and "Read the full file" to expand the long text.
-- Record the loops with Playwright from the live sites (type, Dime, IAM Threat Mapper, Sudoku, WalletRIP) as small muted MP4/WebM. Repo-only projects get a typographic poster in the press style.
+- Each lead project is a front-page story: its name as a headline, what it is in one or two plain lines (`eli5` in `projects.js`), and a small working **Try it** piece beside it (`src/press/Tryouts.jsx`), then the tech, links, and "Read the full file".
+  - type: type a few keys and the letters land with weight. Dime: tap a sentence and it's set on a receipt and you get roasted. IAM Threat Mapper: the four steps of the Uber 2022 break-in; tap one to put the fix there. Claubi: a deny-first permission prompt with an audit log.
+- No screen recordings or posters (Tejal didn't like them), and no moving card rows. The rest run "In brief": still newspaper columns.
 - Order: type, Dime, IAM Threat Mapper, Claubi, then the rest.
-- Loops "print in" with a red/blue plate offset that snaps into register. Stories stack like sheets sliding over each other on scroll.
 
 ## 4. Content (facts only from `src/data/*` and the notes below)
 - **Hero headline:** `BUILDING SOFTWARE THAT FEELS OBVIOUS`.
@@ -94,14 +94,14 @@ Each item below is caused by the visitor (cursor, click, scroll) or is a slow am
 - **Hover:** it stops, the headlights flash twice, and a Caveat note appears: "Want to drive it? Take it out for a spin →". Click goes to `https://play.tgoyal.me`.
 - play.tgoyal.me is not live yet, so put the link behind one config flag. Until it's live, the note reads "The garage opens soon" and nothing is linked.
 
-## 6. The gratitude corner
-- **Where:** a small "Letters to the editor" corner near Contact.
-- **Ask:** "What are you grateful for today?" Each visitor leaves one or two words (≤ 24 characters), anonymously, once a day. On submit, a RECEIVED stamp lands.
-- **Display:** every approved word as a printed slug on the corner. Identical words merge and grow with count, showing the newest ~60 distinct words.
+## 6. The gratitude line
+- **Where:** a line of type across Let's talk, under the links: "Grateful for coffee · the sea · …" with a blank at the end for yours. Not a question to Tejal and not a letter: people put a word there because they're grateful for it.
+- One or two words (≤ 24 characters), anonymously, once a day. Enter sets it into the line. The same word from different people is set bigger; the newest ~60 distinct words show.
 - **Backend:** Cloudflare Pages Functions + D1 + Turnstile.
-  - Each submission gets an automatic check with Workers AI `@cf/meta/llama-guard-3-8b` plus a word list. Flagged entries wait for Tejal's approval on an admin route protected by Cloudflare Access or a secret.
-  - Rate-limit with a salted daily hash of the IP; never store raw IPs.
-  - Tejal creates the D1 database, the Turnstile widget and the bindings. Walk him through it with wrangler.
+  - Turnstile (checked for this site's hostnames and the `gratitude` action), a site-wide daily cap (300), a full review queue stops new words, and a salted daily hash of the IP (IPv6 by /64; raw IPs never stored).
+  - Workers AI `@cf/meta/llama-guard-3-8b` plus a word list checks each word; flagged ones wait at `/letters-admin`, which can also take a printed word down.
+  - A `tally` table keeps one row per word so reading the line stays cheap.
+  - Everything runs on the Workers Free plan, which can't bill: past a free limit a piece just fails until midnight UTC.
 
 ## Process
 - Work on a branch called `revamp`. Cloudflare Pages builds a preview URL per branch. `main` is the live site, so never push there until Tejal approves.
