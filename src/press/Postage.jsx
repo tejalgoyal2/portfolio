@@ -8,7 +8,7 @@ import { prefs } from '../life/prefs';
  * Click it and it spins like a fidget spinner — always the same way, off
  * quickly and coasting a long while to a stop, and every click while it's
  * still going adds its push to the spin, so a few quick clicks whirl it up
- * (speed lines trailing) — and copies my email. Point at any of the ways to
+ * — and copies my email. Point at any of the ways to
  * reach me (or the stamp) and a postmark is struck across it — a ring with
  * the press's name and this month, and the wavy cancellation lines — so the
  * letter's ready to go; once you've copied the email it says so.
@@ -16,30 +16,6 @@ import { prefs } from '../life/prefs';
  * Reduced motion: the postmark just appears.
  */
 const EMAIL = 'itejalgoyal@gmail.com';
-
-/**
- * Speed lines for a spinning stamp, the comic way: a couple of curved swishes
- * hugging two opposite corners of the space it whirls in, pointing the way it
- * turns. They stay put (only the stamp turns), so it's the stamp you see
- * spinning, not a disc going round beside it.
- */
-function swishes(svg, paper) {
-  const w = paper.offsetWidth;
-  const h = paper.offsetHeight;
-  const r = Math.hypot(w, h) / 2;
-  const box = Math.ceil(r + 30);
-  svg.setAttribute('viewBox', `${-box} ${-box} ${box * 2} ${box * 2}`);
-  svg.style.width = svg.style.height = `${box * 2}px`;
-  svg.style.margin = `${-box}px 0 0 ${-box}px`;
-  const deg = Math.PI / 180;
-  const arc = (rr, from, to) => {
-    const p = (a) => `${(Math.cos(a * deg) * rr).toFixed(1)} ${(Math.sin(a * deg) * rr).toFixed(1)}`;
-    return `M${p(from)}A${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${p(to)}`;
-  };
-  // clockwise: over the top right, and under the bottom left; a long stroke and a short one each
-  const d = [-118, 62].map((a) => `${arc(r + 8, a, a + 52)}${arc(r + 18, a + 12, a + 40)}`).join('');
-  svg.innerHTML = `<path d="${d}"/>`;
-}
 
 export default function Postage() {
   const ref = useRef(null);
@@ -70,10 +46,8 @@ export default function Postage() {
     setStruck(true);
     const paper = ref.current?.querySelector('.postage-paper');
     const spinEl = ref.current?.querySelector('.postage-spin');
-    const lines = ref.current?.querySelector('.postage-whirl');
     if (!paper || !spinEl || prefs.reduced) return;
     const sp = spinner.current;
-    if (lines && !lines.childElementCount) swishes(lines, paper);
     sp.push += 430; // deg/s per click
     if (sp.on) return;
     sp.on = true;
@@ -91,12 +65,10 @@ export default function Postage() {
       const k = Math.min(1, Math.max(0, (sp.v - 240) / 700));
       // a touch of motion blur when it's really going
       spinEl.style.filter = k > 0.05 ? `blur(${(k * 0.7).toFixed(2)}px)` : '';
-      if (lines) lines.style.opacity = (k * (0.85 + 0.15 * Math.sin(t * 38))).toFixed(3);
       if (sp.v <= 0 && sp.push < 1) {
         sp.on = false;
         sp.a = ((sp.a + 5) % 360) - 5;
         spinEl.style.filter = '';
-        if (lines) lines.style.opacity = '0';
         gsap.ticker.remove(tick);
         tickRef.current = null;
       }
@@ -129,8 +101,6 @@ export default function Postage() {
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >
-      {/* comic swishes by its corners while it whirls (drawn on the first spin) */}
-      <svg className="postage-whirl" aria-hidden="true" />
       {/* the stamp and its postmark spin as one */}
       <span className="postage-spin" aria-hidden="true">
         <span className="postage-paper" aria-hidden="true">

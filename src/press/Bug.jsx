@@ -11,7 +11,7 @@ import { onLayout } from '../life/layout';
  * legs going, turning where it walks. It dares you ("catch me if you can"),
  * and when you come near it scurries off, speed lines trailing, and gloats
  * once the chase is on ("i'm fast af, baby"). Catch it with a click and it's
- * squashed: a little headstone pops up where it fell — R.I.P. — and its
+ * caught: it's gone, and a little headstone fades up where it was — R.I.P. — and its
  * soul floats up out of it, swaying, and fades. A while later another one wanders in
  * from the edge, because there's always another one.
  *
@@ -164,12 +164,10 @@ export default function Bug() {
       bug.style.setProperty('--dash', dash.toFixed(2));
       if (sayFor > 0 && say) {
         // kept whole inside the paper beside the headline
-        // the bubble's tail sits just over its head (the end it walks with);
-        // near an edge the bubble slides along so it stays whole, the tail doesn't
-        const hx = b.x + Math.cos(b.th) * 14;
-        const hy = b.y + Math.sin(b.th) * 14;
-        const shift = Math.max(sayW / 2 + 4 - hx, Math.min(0, W - sayW / 2 - 4 - hx));
-        say.style.transform = `translate3d(${hx.toFixed(1)}px,${(hy - 12).toFixed(1)}px,0)`;
+        // the bubble rides along just above it, its tail on the bug; near an
+        // edge the bubble slides along so it stays whole, the tail doesn't
+        const shift = Math.max(sayW / 2 + 4 - b.x, Math.min(0, W - sayW / 2 - 4 - b.x));
+        say.style.transform = `translate3d(${b.x.toFixed(1)}px,${(b.y - 16).toFixed(1)}px,0)`;
         say.style.setProperty('--shift', `${shift.toFixed(1)}px`);
       }
     };
