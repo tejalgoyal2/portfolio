@@ -9,6 +9,9 @@ The logos of tools and companies, used where the page talks about them
 - **Files:** one `<slug>.svg` per mark, copied verbatim from the package's
   `dist/<slug>.js` (`export const svg`), XML prolog and comments stripped.
   Full colour, as published.
+- **Recoloured:** `ollama.svg` and `model-context-protocol.svg` are published
+  as white-only marks, which vanish on the cream paper, so their white is
+  swapped for the press ink (`#1c140e`).
 - **`manifest.json`:** slug → `{ title, hex }` from the same files.
 - **Loading:** `src/life/brands.js` maps each slug to its file's URL; the
   files are never inlined into the scripts (see `vite.config.js`), so a mark

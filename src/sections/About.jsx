@@ -93,7 +93,7 @@ export default function About() {
     []
   );
 
-  const PQ = '“I treat AI-generated code as untrusted by default.”';
+  const PQ = '“The best software feels obvious. Getting it there never is.”';
 
   return (
     <section ref={rootRef} className="about" aria-label="Profile" data-ground="paper" data-section="about">
@@ -101,7 +101,7 @@ export default function About() {
         <header className="about-head" data-depart="lift">
           <span className="kicker">Profile</span>
           <KineticHeadline as="h2" font="name" className="about-headline">
-            I treat my own code as a suspect
+            I build the version that just works
           </KineticHeadline>
         </header>
 
@@ -109,17 +109,16 @@ export default function About() {
           {/* Column 1 — lead + pull-quote */}
           <div className="about-col about-col--lead" data-depart="part-l">
             <p className="about-lead" data-ink="block">
-              I started in electronics engineering, detoured through a
-              federated-learning lab where I scaled experiments from{' '}
-              <span data-mark="circle" data-mark-id="scale" data-note="!!">50 to a million</span> simulated clients, spent a winter on a cybersecurity desk
-              hunting shadow AI and chasing a malicious binary to ground — and now
-              I build and modernize the financial apps BCI&rsquo;s investment
-              teams depend on: React/Azure rebuilds, platform tooling, AI
-              plumbing woven in. The thread through all of it:{' '}
-              <span data-mark="underline" data-mark-id="thread" data-note="the whole job">
-                break things to understand them
+              I started in electronics engineering, spent a lab stint scaling
+              federated-learning experiments from{' '}
+              <span data-mark="circle" data-mark-id="scale" data-note="!!">50 to a million</span> simulated clients, and a winter on a
+              security desk. Now I&rsquo;m on BCI&rsquo;s Enterprise Solutions
+              team, rebuilding the financial apps its investment teams run on —
+              React and Azure, data pipelines, and the plumbing that lets{' '}
+              <span data-mark="underline" data-mark-id="agents" data-note="the fun part">
+                AI agents talk to real systems
               </span>
-              , then build the better version.
+              .
             </p>
 
             <blockquote className="about-pq" data-arrive="pin">
@@ -135,25 +134,24 @@ export default function About() {
               <span data-mark="underline" data-mark-id="repro" data-note="rule #1">
                 a result you can&rsquo;t reproduce at scale isn&rsquo;t a result
               </span>
-              . So I kept rebuilding the harness until a
-              million clients behaved like fifty — and the bugs that fell out on
-              the way were the interesting part.
+              . So I kept rebuilding the harness until a million clients behaved
+              like fifty.
             </p>
             <p data-ink>
-              The security desk taught me the opposite reflex: assume the thing is{' '}
-              <span data-mark="circle" data-mark-id="pwned" data-note="always.">
-                already compromised
-              </span>
-              , then go looking. I learned to read a binary the
-              way a good editor reads a draft — suspicious of every line that looks
-              too clean.
+              At BCI that turned into building{' '}
+              <span data-mark="circle" data-mark-id="mcp" data-note="MCP!">
+                MCP servers
+              </span>{' '}
+              so AI agents can query financial databases and app APIs directly,
+              and automating the reports people used to put together by hand.
             </p>
             <p data-ink>
-              Those two instincts run together now. An MCP server is a door
-              between an AI agent and a company&rsquo;s real systems. I build the
-              door — then I spend just as long trying to{' '}
-              <span data-mark="scribble" data-mark-id="kick" data-note="fun part">
-                kick it in
+              Off the clock I ship my own: type, a page where every keystroke has
+              weight; Dime, the expense tracker that roasts your spending; a Sudoku
+              with no ads. The security years didn&rsquo;t go anywhere — they&rsquo;re
+              why every door I build, I then try to{' '}
+              <span data-mark="scribble" data-mark-id="kick" data-note="always.">
+                kick in
               </span>
               .
             </p>
@@ -179,17 +177,20 @@ export default function About() {
                 <dd><Redacted trigger="scroll">167 / 170</Redacted></dd>
               </div>
               <div className="about-stat">
-                <dt>Published</dt>
-                <dd>1 paper</dd>
+                <dt>Contributed to</dt>
+                <dd>1 published paper</dd>
               </div>
               <div className="about-stat">
-                <dt>Classified</dt>
-                <dd><Redacted trigger="scroll" tone="red">82,486</Redacted> emails</dd>
+                <dt>Side projects live</dt>
+                <dd><Redacted trigger="scroll" tone="red">5</Redacted> and counting</dd>
               </div>
             </dl>
 
             <ul className="about-margin" aria-label="Off the clock">
               <li>F1 on weekends.</li>
+              <li>Speedcubes (hence the cube).</li>
+              <li>Folded an origami MiG-29.</li>
+              <li>Card tricks, on request.</li>
               <li>Co-founded an NGO with my brother — 1,000+ trees in.</li>
               <li>State-level badminton, once.</li>
               <li>Finished the TC10K (slowly).</li>

@@ -542,5 +542,13 @@
  "ultralytics": {
   "title": "Ultralytics",
   "hex": "#111F68"
+ },
+ "azure-data-factories": {
+  "title": "Azure Data Factory",
+  "hex": "#0078D4"
+ },
+ "model-context-protocol": {
+  "title": "Model Context Protocol",
+  "hex": "#000000"
  }
 }
