@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { EXPERIENCE } from '../data/experience';
 import KineticHeadline from '../press/KineticHeadline';
@@ -43,6 +43,31 @@ function Plain({ text }) {
 function Dispatch({ text }) {
   return text.split(/(\{\{.+?\}\})/).map((part, k) =>
     part.startsWith('{{') ? <CountUp key={k} value={part.slice(2, -2)} /> : <Plain key={k} text={part} />
+  );
+}
+
+const SHOWN = 3; // the strongest three per role; the rest behind "More"
+
+/** The rest of a role's dispatches, folded away until asked for. */
+function More({ items }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <>
+      <div className={`led-more${open ? ' is-open' : ''}`} id={id} inert={!open}>
+        <ul className="led-dispatches led-dispatches--more">
+          {items.map((d, j) => (
+            <li className="led-dispatch" key={j} style={{ '--k': j }}>
+              <Dispatch text={d} />
+            </li>
+          ))}
+        </ul>
+      </div>
+      <button type="button" className="led-more-btn" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+        {open ? 'Less' : `More (${items.length})`}
+        <span aria-hidden="true">{open ? '−' : '+'}</span>
+      </button>
+    </>
   );
 }
 
@@ -261,13 +286,14 @@ export default function Experience() {
 
                 {entry.details?.length > 0 && (
                   <ul className="led-dispatches">
-                    {entry.details.map((d, j) => (
+                    {entry.details.slice(0, SHOWN).map((d, j) => (
                       <li className="led-dispatch" key={j} data-ink="block">
                         <Dispatch text={d} />
                       </li>
                     ))}
                   </ul>
                 )}
+                {entry.details?.length > SHOWN && <More items={entry.details.slice(SHOWN)} />}
               </div>
             </article>
           ))}
