@@ -24,14 +24,14 @@ The site keeps this list in **Page settings** (top right of the running head) an
 
 - [ ] **Make a wave on the paper.** Click any bare paper. The pencil icons drifting about get shoved aside and sway back.
 - [ ] **Swap your pen.** Your cursor is a pencil, and the little pen up in the running head trades it for another. There's a rocket in there.
-- [ ] **Turn a face of the cube.** Click a sticker to turn that face; Shift turns it the other way. Your twists stay put while you play.
+- [ ] **Turn a face of the cube.** Click a sticker to turn that face; Shift turns it the other way. Your twists stay. The cube never quietly undoes them.
 - [ ] **Spin the whole cube round.** Hold and drag.
 - [ ] **Catch the bug.** It lives beside the Projects headline, talks a big game, and is quicker than it looks.
 - [ ] **Get the van to toss the boulder.** A camper van drives the ridge into Experience with a boulder rolling after it. Scroll back so the van turns round into it.
 - [ ] **Spin the postage stamp.** It's on the letter at the bottom. It spins like a fidget spinner and copies my email while it's at it.
 - [ ] **Leave a stamp on the sheet.** Type a word you're grateful for and press it down wherever you like.
 - [ ] **Find the car.** Not the little line-drawn one on the rules. The other one.
-- [ ] **See the cube solved.** Read to the end. It gets there.
+- [ ] **See the cube solved.** Read to the end without touching it, or undo your own mess by hand. It only says solved when it is.
 
 Also in this edition: the section names hang in huge wood type on a washing line and sway when your cursor blows past (wherever the pen touches a letter, it soaks up ink). The big headlines are loose type and lift near the cursor. The lead projects are case files on tiles that lean toward you in real CSS 3D; click one and it turns over to the full file in a wave of little square scales, a different wave for each project. The wire under the masthead crawls faster while you scroll, and a red rule along the running head fills in as you read.
 
@@ -45,7 +45,7 @@ Also in this edition: the section names hang in huge wood type on a washing line
 
 **The life layer** (`src/life`). One pointer tracker, one scroll tracker and one shared idea of what counts as bare paper, used by everything that reacts to you: the drifting icons, the ripples, the marks a click leaves, the pen, the cars, the bug. The motion is transforms and opacity, run off one shared GSAP ticker, and the canvases pause when the tab is hidden. Reduced motion gets a still page that reads exactly the same.
 
-**The cube** (`src/cube`, `src/gl`). A stickerless speedcube in three.js, loaded after the first paint. It starts from one fixed scramble and plays a 62-move CFOP solve spread across the sections, so it's solved by the time you reach the bottom. `docs/cube/verify.py` replays that solve in the test suite, because a cube that ends the page unsolved would be a very specific kind of embarrassing. The click it makes when a face turns is synthesised from a burst of noise; there isn't a single audio file in the repo.
+**The cube** (`src/cube`, `src/gl`). A stickerless speedcube in three.js, loaded after the first paint. It starts from one fixed scramble and plays a 44-move layer-by-layer solve spread across the sections, so an untouched cube is solved by the time you reach the bottom. Twist it and the solve carries on from wherever you left it, which usually means it isn't. `docs/cube/verify.py` replays the solve in the test suite, because a cube that ends the page unsolved on its own would be a very specific kind of embarrassing. It only draws a frame when something on it moved. The click it makes when a face turns is synthesised from a burst of noise; there isn't a single audio file in the repo.
 
 **The gratitude sheet** (`functions/api/gratitude`, `lib/gratitude.js`). Anyone can stamp a word they're grateful for onto the sheet in Let's talk, anonymously, once a day. Turnstile checks you're a person, a salted daily hash stands in for your IP, Workers AI (Llama Guard) and a word list keep it kind, anything flagged waits for me in a review queue, and D1 holds the lot. It runs on the free plan, which can't send me a bill: past a limit, it just closes until midnight UTC.
 
