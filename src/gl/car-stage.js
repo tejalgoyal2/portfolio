@@ -1,7 +1,8 @@
 // The car in Let's talk (docs/REVAMP.md §5): the little rally car
 // (public/models/car-display.glb) on a road along the bottom of the red
-// finale. It drives in from the left the first time the section comes into
-// view — pulling away fast, a long easy roll to a stop — then idles with a
+// finale. It drives in from the right the first time the road comes into
+// view and pulls up by the gratitude sheet — quick off the edge, a long easy
+// roll to a stop — then idles with a
 // small engine shiver, and rolls a little with the page's scroll. Point at it
 // and it stops, flashes its headlights twice, and a pen note says where it's
 // headed (src/data/site.js switches the note to a link once the game is live).
@@ -74,10 +75,12 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
 
   const size = new Box3().setFromObject(car).getSize(new Vector3());
   const scene = new Scene();
-  // a three-quarter view: turned a touch towards you, seen a little from above
+  // a three-quarter view: turned a touch towards you, seen a little from above,
+  // nose to the left (the model faces +x, so it's turned round: DIR is which way it drives)
+  const DIR = -1;
   const stand = new Group();
   stand.add(car);
-  stand.rotation.set(0.26, -0.38, 0);
+  stand.rotation.set(0.26, Math.PI + 0.38, 0);
   scene.add(stand);
   scene.add(new HemisphereLight('#fffaf0', '#5a2a24', 1.9));
   const key = new DirectionalLight('#fff6ea', 1.6);
@@ -111,8 +114,14 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
   window.addEventListener('resize', resize);
 
   // where it is (px along the road), how fast, and what it's doing
-  const parkAt = () => (W < 720 ? W * 0.34 : W * 0.2);
-  let x = prefs.reduced ? parkAt() : -size.x * scale;
+  // beside the sheet on a wide page (the sheet keeps to the left 860px), towards the right on a phone
+  const parkAt = () => {
+    if (W < 1100) return W * (W < 720 ? 0.64 : 0.7);
+    const pad = Math.min(96, Math.max(24, W * 0.05)); // the section's side padding (sections.css)
+    return Math.min(W - 150, Math.max(W * 0.7, pad + 860 + 150));
+  };
+  const offstage = () => W + size.x * scale;
+  let x = prefs.reduced ? parkAt() : offstage();
   let v = 0;
   let spin = 0;
   let hovering = false;
@@ -155,15 +164,16 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
     const len = size.x * scale;
     hit.style.transform = `translate3d(${(x - len * 0.55).toFixed(1)}px,0,0)`;
     hit.style.width = `${(len * 1.1).toFixed(0)}px`;
-    if (note) note.style.transform = `translate3d(${(x - len * 0.2).toFixed(1)}px,0,0)`;
-    if (beam) beam.style.transform = `translate3d(${(x + len * 0.42).toFixed(1)}px,0,0)`;
+    // the note ends over its tail, so it never runs off the right edge; the beam throws ahead of its nose
+    if (note) note.style.transform = `translate3d(${(x + len * 0.45).toFixed(1)}px,0,0)`;
+    if (beam) beam.style.transform = `translate3d(${(x + DIR * len * 0.42).toFixed(1)}px,0,0) scaleX(${DIR})`;
   };
 
   const tick = (time, deltaMs) => {
     if (!on || document.hidden) return;
     const dt = Math.min(0.05, deltaMs / 1000);
     t += dt;
-    const goal = arrived ? parkAt() + (hovering || prefs.reduced ? 0 : Math.max(-70, Math.min(70, scroll.v * 0.06))) : -size.x * scale;
+    const goal = arrived ? parkAt() + (hovering || prefs.reduced ? 0 : Math.max(-70, Math.min(70, scroll.v * 0.06))) : offstage();
     if (prefs.reduced) {
       x = goal;
       v = 0;
@@ -173,12 +183,12 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
       v += (k * (goal - x) - 2 * 0.92 * Math.sqrt(k) * v) * dt;
       x += v * dt;
     }
-    spin -= (v * dt) / (0.42 * scale);
+    spin -= (DIR * v * dt) / (0.42 * scale);
     for (const w of wheels) w.rotation.z = spin;
     // the engine idling: a small shiver of the body; a squat as it pulls away, a dip as it brakes
     const idle = prefs.reduced || hovering ? 0 : Math.sin(t * 38) * 0.006 + Math.sin(t * 11) * 0.004;
     body.position.y = idle;
-    body.rotation.z += (Math.max(-0.06, Math.min(0.06, -v * 0.00018)) - body.rotation.z) * Math.min(1, dt * 8);
+    body.rotation.z += (Math.max(-0.06, Math.min(0.06, -DIR * v * 0.00018)) - body.rotation.z) * Math.min(1, dt * 8);
     // the headlights: two winks
     if (flashT >= 0) {
       flashT += dt;

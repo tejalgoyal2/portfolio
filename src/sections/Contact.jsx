@@ -9,8 +9,9 @@ import githubIcon from '../life/brands/github.svg?url';
 import linkedinIcon from '../life/brands/linkedin.svg?url';
 
 /**
- * Let's talk — the oxblood finale, where the cube comes back out of the margin
- * to finish its solve in front of you. Reveal is pure progressive enhancement with
+ * Let's talk — the oxblood finale. The cube comes back out of the margin to
+ * finish its solve beside the headline; further down, by the gratitude sheet,
+ * the car pulls in from the right and parks. Reveal is pure progressive enhancement with
  * zero ScrollTrigger dependency: the content is fully visible by default (no-JS
  * / reduced-motion). Only when JS runs with motion allowed do we add
  * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
@@ -51,59 +52,64 @@ export default function Contact() {
 
   return (
     <section ref={rootRef} className="contact" id="contact" data-ground="red" data-section="contact">
-      {/* the cube comes home here, big, for the last moves of the solve (src/gl/presence.js) */}
-      <div className="contact-cube" data-cube-home="contact" aria-hidden="true" />
-      <div className="contact-inner">
-        <header className="contact-hd">
-          <p className="contact-kicker">Get in touch</p>
-          <KineticHeadline
-            as="h2"
-            font="impact"
-            className="contact-title"
-            spread={false}
-            inview
-            showLoose
-          >
-            LET&rsquo;S TALK
-          </KineticHeadline>
-          <p className="contact-sub" data-ink>
-            Hiring, building something, or just want to talk F1? All three work.
-          </p>
-        </header>
+      {/* Let's talk and the cube side by side: it finishes its solve here, beside the
+          headline, not down at the foot of the page */}
+      <div className="contact-lead">
+        <div className="contact-inner">
+          <header className="contact-hd">
+            <p className="contact-kicker">Get in touch</p>
+            <KineticHeadline
+              as="h2"
+              font="impact"
+              className="contact-title"
+              spread={false}
+              inview
+              showLoose
+            >
+              LET&rsquo;S TALK
+            </KineticHeadline>
+            <p className="contact-sub" data-ink>
+              Hiring, building something, or just want to talk F1? All three work.
+            </p>
+          </header>
 
-        <div className="contact-body">
-          <div className="contact-stamp-row">
-            <Postage />
+          <div className="contact-body">
+            <div className="contact-stamp-row">
+              <Postage />
+            </div>
+
+            <ul className="contact-classified" data-arrive-items="paste">
+              {LINKS.map(({ name, href, text, icon, external }) => (
+                <li className="contact-line" key={name}>
+                  {/* the mark is a way in too (the text link carries the name for screen readers) */}
+                  <a
+                    href={href}
+                    className="contact-line-label"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    data-pen="rocket"
+                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  >
+                    <img src={icon} alt="" width="22" height="22" loading="lazy" />
+                  </a>
+                  <a
+                    href={href}
+                    className="contact-line-link"
+                    data-pen="rocket"
+                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  >
+                    <span className="sr-only">{name}: </span>
+                    {text}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
-
-          <ul className="contact-classified" data-arrive-items="paste">
-            {LINKS.map(({ name, href, text, icon, external }) => (
-              <li className="contact-line" key={name}>
-                {/* the mark is a way in too (the text link carries the name for screen readers) */}
-                <a
-                  href={href}
-                  className="contact-line-label"
-                  tabIndex={-1}
-                  aria-hidden="true"
-                  data-pen="rocket"
-                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                >
-                  <img src={icon} alt="" width="22" height="22" loading="lazy" />
-                </a>
-                <a
-                  href={href}
-                  className="contact-line-link"
-                  data-pen="rocket"
-                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                >
-                  <span className="sr-only">{name}: </span>
-                  {text}
-                </a>
-              </li>
-            ))}
-          </ul>
         </div>
+        <div className="contact-cube" data-cube-home="contact" aria-hidden="true" />
+      </div>
 
+      <div className="contact-inner">
         <GratefulFor />
 
         <footer className="contact-colophon">
