@@ -219,10 +219,11 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 .np-space { display: inline-block; width: 0.22em; }
 
-/* see main.jsx — only the two-column lead re-wraps badly on a font swap */
-@media (min-width: 721px) {
-  html.fonts-pending .mast-lead { visibility: hidden; }
-}
+/* see main.jsx — the type set first waits for its faces, so a font swap never
+   moves anything you can see (the loader's sheet, the nameplate, the lead) */
+html.fonts-pending .loader-sheet,
+html.fonts-pending .mast-plate,
+html.fonts-pending .mast-lead { visibility: hidden; }
 
 /* lead story — the copy on the left, the cube's slot on the right */
 .mast-lead {
