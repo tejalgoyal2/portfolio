@@ -3,6 +3,9 @@
 // the loader lifts, transparent, pointer-events off; it pauses when the tab is
 // hidden. Scroll position picks how far the solve has got: each section's
 // stage is spread over the scroll it takes that section to pass the 60% line.
+// It only draws when something on screen changed: a turn in flight, the cube
+// moving (its slow turn, the float, a drag), the canvas moving — an idle cube,
+// or one tucked away off screen, costs next to nothing.
 import { WebGLRenderer } from 'three';
 import { gsap } from 'gsap';
 import { Director } from '../cube/director';
@@ -13,7 +16,7 @@ import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
 import { settings } from '../life/settings';
 import { onLayout } from '../life/layout';
-import { createCubeView } from './cube-view';
+import { createCubeView, CUBE_REACH } from './cube-view';
 import { createPresence } from './presence';
 import { createNotes } from './notes';
 import { clack } from '../life/sound';
@@ -84,6 +87,9 @@ export async function startStage(canvas, hitBtn, noteHost) {
   // so of the GPU memory — of a full-screen stage. Sizes come in steps so the
   // drawing buffer is rarely reallocated.
   let side = 0;
+  let boxX = NaN;
+  let boxY = NaN;
+  let dirty = true; // something changed that the last drawn frame doesn't show
   const resize = () => {
     w = document.documentElement.clientWidth;
     h = window.innerHeight;
@@ -94,18 +100,26 @@ export async function startStage(canvas, hitBtn, noteHost) {
     renderer.setPixelRatio(dpr < 1.5 ? 2 : Math.min(dpr, 2));
     view.resize(w, h);
     side = 0;
+    dirty = true;
   };
   const frameBox = (st) => {
     const want = Math.max(96, Math.ceil(((st.r * 2.6 + 48) / 48)) * 48);
     if (want !== side) {
       side = want;
+      // (resizing clears the drawing buffer, so it must be drawn again)
       renderer.setSize(side, side, false);
       canvas.style.width = canvas.style.height = `${side}px`;
+      boxX = NaN;
     }
     const bx = Math.round(st.x - side / 2);
     const by = Math.round(st.y - side / 2);
+    if (bx === boxX && by === boxY) return;
+    // the canvas and the view inside it move together, in the same drawn frame
+    boxX = bx;
+    boxY = by;
     canvas.style.transform = `translate3d(${bx}px,${by}px,0)`;
     view.setCrop(bx, by, side, side);
+    dirty = true;
   };
   resize();
   window.addEventListener('resize', resize);
@@ -113,14 +127,12 @@ export async function startStage(canvas, hitBtn, noteHost) {
   // ---- input: the paper-press listener asks us first (src/life/paper.js)
   bus.cubeAt = (x, y) => (settings.cube ? view.pick(x, y) : null);
   // a click twists the face under it clockwise — Shift for anticlockwise —
-  // and the twists stay put until the page scrolls on
-  let heldAt = 0;
+  // and the twist stays: the solve carries on from wherever you leave it
   bus.twist = (face, back = false) => {
     const turns = back ? 3 : 1;
     director.click(face, turns);
     found('twist');
     presence.kick(1);
-    heldAt = scroll.y;
     twisted = true;
     return turns;
   };
@@ -146,13 +158,9 @@ export async function startStage(canvas, hitBtn, noteHost) {
 
   // the page may load mid-scroll: arrive at that section's state without
   // playing the moves in between (the scramble is never shown being played)
-  director.instant = true;
-  director.setTarget(targetAt(window.scrollY, spans));
-  director.tick(0);
-  director.instant = prefs.reduced;
+  director.arrive(targetAt(window.scrollY, spans));
 
   let shownOn = true;
-  let solvedOnce = false;
   let twisted = false;
   // each turn, as it starts: lines round the cube the way it's going, a jelly
   // squash along its axis, and — for one you made — the click of the plastic
@@ -190,15 +198,59 @@ export async function startStage(canvas, hitBtn, noteHost) {
       /* fine */
     }
   };
+  // what the last drawn frame showed: the cube's transform and its edge light
+  const drawn = { x: NaN, y: 0, s: [0, 0, 0], q: view.group.quaternion.clone(), edge: -1 };
+  const g = view.group;
+  let draws = 0;
+  let laidOut = false; // the cubies are where the view last put them
+  let tucked = false; // wholly off screen, canvas cleared
+  /** Roughly how far (in CSS px) any point of the cube has moved since the last drawn frame. */
+  const drift = (r) => {
+    const dq = Math.min(1, Math.abs(g.quaternion.dot(drawn.q)));
+    const turn = 2 * Math.acos(dq) * r;
+    const grow = Math.max(Math.abs(g.scale.x - drawn.s[0]), Math.abs(g.scale.y - drawn.s[1]), Math.abs(g.scale.z - drawn.s[2])) * CUBE_REACH;
+    return Math.hypot(g.position.x - drawn.x, g.position.y - drawn.y) + turn + grow;
+  };
+  /**
+   * Wholly outside the viewport: the cube's bounding sphere (jelly and all), seen
+   * through the camera's perspective, doesn't reach the screen on some side.
+   */
+  const offScreen = (st) => {
+    const R = CUBE_REACH * Math.max(g.scale.x, g.scale.y, g.scale.z);
+    const D = view.camera.position.z;
+    // where the sphere's outline lands along one screen axis, measured from the screen's middle
+    const span = (off) => {
+      const c = Math.atan(off / D);
+      const a = Math.asin(Math.min(1, R / Math.hypot(off, D)));
+      return [D * Math.tan(c - a), D * Math.tan(c + a)];
+    };
+    const [x0, x1] = span(st.x - w / 2);
+    const [y0, y1] = span(st.y - h / 2);
+    return x1 < -w / 2 - 1 || x0 > w / 2 + 1 || y1 < -h / 2 - 1 || y0 > h / 2 + 1;
+  };
+  const draw = () => {
+    renderer.render(view.scene, view.camera);
+    drawn.x = g.position.x;
+    drawn.y = g.position.y;
+    drawn.s[0] = g.scale.x;
+    drawn.s[1] = g.scale.y;
+    drawn.s[2] = g.scale.z;
+    drawn.q.copy(g.quaternion);
+    drawn.edge = view.uniforms.uEdge.value;
+    dirty = false;
+    tucked = false;
+    draws++;
+  };
+
   const bornAt = performance.now();
   const frame = (time, deltaMs) => {
     if (document.hidden) return;
     const dt = Math.min(deltaMs / 1000, 0.1);
-    if (director.held && Math.abs(scroll.y - heldAt) > 24) director.letGo();
-    // once it's been solved it stays solved: scrolling back up doesn't scramble it again
-    director.setTarget(solvedOnce ? director.total : targetAt(scroll.y, spans));
+    // (once it's really been solved the director rests and ignores this: scrolling back up doesn't scramble it again)
+    director.setTarget(targetAt(scroll.y, spans));
     const before = director.k;
     const done = director.tick(dt);
+    if (done.length) laidOut = false;
     // switched off in Page settings: the solve keeps time, nothing is drawn
     if (settings.cube !== shownOn) {
       shownOn = settings.cube;
@@ -207,6 +259,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
         bus.cursorHint = null;
         renderer.clear();
       }
+      dirty = true;
     }
     if (!shownOn) return;
     presence.update(dt);
@@ -232,19 +285,32 @@ export async function startStage(canvas, hitBtn, noteHost) {
       }
     } else nearFor = 0;
     if (twisted && askedPlay) notes.hushIf('play');
-    // milestones, on the way forward only: two layers done, and the solve
-    if (done.some((c) => c.kind === 'solve')) {
-      if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
-      if (before < director.total && director.k === director.total) {
-        solvedOnce = true;
-        found('solved');
-        presence.celebrate();
-        notes.show('solved', presence.state);
-      }
+    // milestones: two layers done (on the way forward, and only if they really are — your
+    // twists may have left them otherwise), and the solve, whenever the cube really is solved
+    if (done.some((c) => c.kind === 'solve') && before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total && director.state.firstTwoLayers())
+      notes.show('layers', presence.state);
+    if (done.some((c) => c.solved)) {
+      found('solved');
+      presence.celebrate();
+      notes.show('solved', presence.state);
     }
-    view.update();
-    frameBox(presence.state);
-    renderer.render(view.scene, view.camera);
+    // the cubies only move while a turn is in flight, or the moment one lands
+    if (director.active || !laidOut) {
+      view.update();
+      laidOut = !director.active;
+      dirty = true;
+    }
+    const st = presence.state;
+    frameBox(st);
+    // wholly off screen (slid out past the edge while a band goes by): nothing to draw
+    if (offScreen(st)) {
+      if (!tucked) renderer.clear();
+      tucked = true;
+      dirty = true;
+      return;
+    }
+    // and only when something you could see has changed: well under a pixel of drift is nothing
+    if (dirty || drift(st.r) > 0.1 || Math.abs(view.uniforms.uEdge.value - drawn.edge) > 0.002) draw();
   };
   gsap.ticker.add(frame);
 
@@ -265,7 +331,11 @@ export async function startStage(canvas, hitBtn, noteHost) {
       return director.state.isSolved();
     },
     get yourTwists() {
-      return director.visitor.length;
+      return director.twists;
+    },
+    /** Frames actually drawn so far (it skips the ones where nothing changed). */
+    get draws() {
+      return draws;
     },
   };
 

@@ -116,6 +116,12 @@ export function mulVec(m, v) {
 
 const COORDS = [-1, 0, 1];
 
+// An edge or a corner looks solved only when it's home and not turned at all; a
+// centre (or the core) only ever spins in place, which no sticker shows.
+const settled = (c) =>
+  c.home.filter((v) => v !== 0).length < 2 ||
+  (c.pos[0] === c.home[0] && c.pos[1] === c.home[1] && c.pos[2] === c.home[2] && c.rot.every((v, i) => v === IDENTITY[i]));
+
 function buildCubies() {
   const out = [];
   for (const x of COORDS)
@@ -233,7 +239,13 @@ export class CubeState {
     return true;
   }
 
+  /** Every sticker on its own face (the same as equals(solved()), without building the sticker maps). */
   isSolved() {
-    return this.equals(CubeState.solved());
+    return this.cubies.every(settled);
+  }
+
+  /** The first two layers are done: the cross and all four F2L pairs (everything below the U layer). */
+  firstTwoLayers() {
+    return this.cubies.every((c) => c.home[1] === 1 || settled(c));
   }
 }

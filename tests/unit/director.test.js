@@ -3,6 +3,7 @@ import { CubeState, invertMove, parseMoves } from '../../src/cube/model';
 import { Director } from '../../src/cube/director';
 import { SCRAMBLE, SOLVE } from '../../src/cube/solve';
 
+const N = SOLVE.length;
 const expected = (k) => CubeState.solved().applyAll(SCRAMBLE).applyAll(SOLVE.slice(0, k));
 const run = (d, seconds, step = 1 / 60) => {
   const out = [];
@@ -29,34 +30,35 @@ describe('Director', () => {
 
   it('a short run plays every move, a little faster, never skipping a state', () => {
     const d = new Director(SCRAMBLE, SOLVE, { catchUp: 99 });
-    d.setTarget(33);
+    const n = Math.min(33, N);
+    d.setTarget(n);
     const seen = [];
     let elapsed = 0;
-    while (d.k < 33 && elapsed < 30) {
+    while (d.k < n && elapsed < 30) {
       for (const c of d.tick(1 / 60)) {
         expect(c.kind).toBe('solve');
         seen.push(d.state.clone());
       }
       elapsed += 1 / 60;
     }
-    expect(seen.length).toBe(33);
+    expect(seen.length).toBe(n);
     seen.forEach((s, i) => expect(s.equals(expected(i + 1)), `state ${i + 1}`).toBe(true));
-    expect(elapsed).toBeLessThan(33 * 0.5); // faster than one by one…
-    expect(elapsed).toBeGreaterThan(33 * 0.26 - 0.1); // …but never a blur
+    expect(elapsed).toBeLessThan(n * 0.5); // faster than one by one…
+    expect(elapsed).toBeGreaterThan(n * 0.26 - 0.1); // …but never a blur
   });
 
   it('a jump speed-solves: every move plays in order, fast, then eases back to the usual pace', () => {
     const d = new Director(SCRAMBLE, SOLVE);
-    d.setTarget(62);
+    d.setTarget(N);
     expect(d.rushing).toBe(true);
     expect(d.tick(1 / 60)).toEqual([]); // nothing snaps
     const seen = [];
     let t = 0;
-    while (d.k < 62 && t < 20) {
+    while (d.k < N && t < 20) {
       for (const c of d.tick(1 / 60)) seen.push(c.move);
       t += 1 / 60;
     }
-    expect(seen).toEqual(SOLVE.slice(0, 62));
+    expect(seen).toEqual(SOLVE);
     expect(t).toBeLessThan(6); // quick…
     expect(t).toBeGreaterThan(2.5); // …but you see it happen
     expect(d.rushing).toBe(false);
@@ -75,90 +77,161 @@ describe('Director', () => {
     expect(d.state.equals(expected(7))).toBe(true);
   });
 
-  it('a click turns that face and goes on the stack', () => {
+  it('arriving mid-page puts the cube in that state at once, with nothing to watch and no milestone', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.arrive(12);
+    expect(d.k).toBe(12);
+    expect(d.state.equals(expected(12))).toBe(true);
+    expect(d.idle).toBe(true);
+    d.arrive(N);
+    expect(d.state.isSolved()).toBe(true);
+    expect(d.solvedOnce).toBe(false); // you didn't see it solve: scrolling up still plays it back
+    d.setTarget(N - 2);
+    expect(run(d, 2).map((c) => c.kind)).toEqual(['unsolve', 'unsolve']);
+  });
+
+  it('a click turns that face', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
-    run(d, 0.6);
-    expect(d.visitor).toEqual(parseMoves('R'));
+    const out = run(d, 0.6);
+    expect(out).toEqual([{ move: parseMoves('R')[0], kind: 'visitor' }]);
+    expect(d.twists).toBe(1);
     expect(d.state.equals(expected(0).applyAll(parseMoves('R')))).toBe(true);
   });
 
   it('clicks mid-twist are queued, never dropped', () => {
     const d = new Director(SCRAMBLE, SOLVE);
+    const out = [];
     d.click('U');
-    d.tick(0.05);
+    out.push(...d.tick(0.05));
     d.click('F');
     d.click('F');
-    d.tick(0.01);
+    out.push(...d.tick(0.01));
     d.click('L', 3);
-    run(d, 2.5);
-    expect(d.visitor).toEqual(parseMoves("U F F L'"));
+    out.push(...run(d, 2.5));
+    expect(out.map((c) => c.move)).toEqual(parseMoves("U F F L'"));
+    expect(d.state.equals(expected(0).applyAll(parseMoves("U F F L'")))).toBe(true);
   });
 
-  it("keeps the visitor's twists while they play, however long", () => {
+  it('a visitor twist is never undone, however long you wait or scroll', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
-    d.click('U');
+    d.click('U', 3);
     const out = run(d, 30);
     expect(out.map((c) => c.kind)).toEqual(['visitor', 'visitor']);
-    expect(d.visitor.length).toBe(2);
-    expect(d.undoing).toBe(false);
+    const twisted = expected(0).applyAll(parseMoves("R U'"));
+    expect(d.state.equals(twisted)).toBe(true);
+    // scroll on and back: only solve moves and their inverses play, the twists stay underneath
+    d.setTarget(9);
+    const on = run(d, 20);
+    d.setTarget(0);
+    const back = run(d, 20);
+    expect([...on, ...back].every((c) => c.kind === 'solve' || c.kind === 'unsolve')).toBe(true);
+    expect(d.state.equals(twisted)).toBe(true);
   });
 
-  it('once let go, undoes the twists one by one', () => {
+  it('scripted moves still advance on top of whatever state the cube is in', () => {
     const d = new Director(SCRAMBLE, SOLVE);
-    d.click('R');
-    d.click('U');
-    run(d, 1.2);
-    d.letGo();
-    expect(d.undoing).toBe(true);
-    const undone = run(d, 2);
-    expect(undone.map((c) => c.kind)).toEqual(['undo', 'undo']);
-    expect(undone.map((c) => c.move)).toEqual(parseMoves("U' R'"));
-    expect(d.state.equals(expected(0))).toBe(true);
-    expect(d.undoing).toBe(false);
-  });
-
-  it('a new click during the undo holds the rest in place again', () => {
-    const d = new Director(SCRAMBLE, SOLVE);
-    d.click('R');
-    d.click('U');
-    run(d, 1.2);
-    d.letGo();
-    run(d, 0.3); // first undo in flight — it finishes, the rest waits
     d.click('F');
-    run(d, 5);
-    expect(d.visitor).toEqual(parseMoves('R F'));
-    d.letGo();
-    run(d, 3);
-    expect(d.visitor.length).toBe(0);
-    expect(d.state.equals(expected(0))).toBe(true);
+    run(d, 1);
+    d.setTarget(5);
+    const out = run(d, 5);
+    expect(out.map((c) => c.kind)).toEqual(Array(5).fill('solve'));
+    expect(out.map((c) => c.move)).toEqual(SOLVE.slice(0, 5));
+    expect(d.k).toBe(5);
+    expect(d.state.equals(expected(0).applyAll(parseMoves('F')).applyAll(SOLVE.slice(0, 5)))).toBe(true);
   });
 
-  it('a solve move asked for by scroll first undoes the stack quickly', () => {
+  it('a click mid-solve goes in between solve moves, and stays', () => {
     const d = new Director(SCRAMBLE, SOLVE);
-    d.click('B');
+    d.setTarget(4);
+    run(d, 0.6); // the first solve move lands
     d.click('D');
-    run(d, 1.2);
-    d.setTarget(1);
-    const out = run(d, 1.2);
-    expect(out.map((c) => c.kind)).toEqual(['flush', 'flush', 'solve']);
-    expect(d.state.equals(expected(1))).toBe(true);
+    run(d, 10);
+    expect(d.k).toBe(4);
+    const want = expected(1).applyAll(parseMoves('D')).applyAll(SOLVE.slice(1, 4));
+    expect(d.state.equals(want)).toBe(true);
   });
 
-  it('the solve state is always reached exactly, whatever the visitor does', () => {
+  it('solved milestone: once, on the move that really solves it, and then it rests', () => {
     const d = new Director(SCRAMBLE, SOLVE);
-    const faces = ['U', 'R', 'F', 'L', 'B', 'D'];
-    for (let i = 0; i < 40; i++) {
-      if (i % 3 === 0) d.click(faces[i % 6]);
-      d.setTarget((i * 7) % 63);
-      run(d, 0.13);
-    }
-    d.setTarget(62);
-    run(d, 40);
-    expect(d.visitor.length).toBe(0);
-    expect(d.k).toBe(62);
+    d.setTarget(N);
+    const out = run(d, 20);
+    const solved = out.filter((c) => c.solved);
+    expect(solved.length).toBe(1);
+    expect(solved[0]).toBe(out.at(-1));
     expect(d.state.isSolved()).toBe(true);
+    expect(d.solvedOnce).toBe(true);
+    // scrolling back up doesn't scramble it again…
+    d.setTarget(0);
+    expect(run(d, 5)).toEqual([]);
+    expect(d.state.isSolved()).toBe(true);
+    // …but you can still twist it, and the twist stays
+    d.click('B');
+    expect(run(d, 1).map((c) => [c.kind, !!c.solved])).toEqual([['visitor', false]]);
+    expect(d.state.isSolved()).toBe(false);
+  });
+
+  it('no solved milestone when a twist leaves the end unsolved', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.click('R');
+    d.setTarget(N);
+    const out = run(d, 20);
+    expect(d.k).toBe(N);
+    expect(d.state.isSolved()).toBe(false);
+    expect(out.some((c) => c.solved)).toBe(false);
+    expect(d.solvedOnce).toBe(false);
+    // and it still follows scroll, both ways
+    d.setTarget(N - 3);
+    expect(run(d, 3).map((c) => c.kind)).toEqual(['unsolve', 'unsolve', 'unsolve']);
+  });
+
+  it('a twist undone by hand (R, then Shift-R) still ends solved', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.click('R');
+    d.click('R', 3);
+    d.setTarget(N);
+    const out = run(d, 20);
+    expect(out.filter((c) => c.solved).length).toBe(1);
+    expect(d.state.isSolved()).toBe(true);
+  });
+
+  it('solving it by hand counts: the milestone fires and scroll plays nothing more over it', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.arrive(N - 1);
+    const last = SOLVE[N - 1];
+    d.click(last.face, last.turns === 2 ? 1 : last.turns);
+    if (last.turns === 2) d.click(last.face, 1);
+    d.setTarget(N);
+    const out = run(d, 3);
+    expect(out.every((c) => c.kind === 'visitor')).toBe(true);
+    expect(out.at(-1).solved).toBe(true);
+    expect(d.state.isSolved()).toBe(true);
+    expect(d.k).toBe(N - 1); // the solve's own last move never plays over it
+  });
+
+  it('whatever the visitor does, only their twists and the solve play, in order', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    const ref = expected(0);
+    const faces = ['U', 'R', 'F', 'L', 'B', 'D'];
+    let k = 0;
+    const check = (c) => {
+      expect(['visitor', 'solve', 'unsolve']).toContain(c.kind);
+      if (c.kind === 'solve') expect(c.move).toEqual(SOLVE[k++]);
+      if (c.kind === 'unsolve') expect(c.move).toEqual(invertMove(SOLVE[--k]));
+      ref.apply(c.move);
+    };
+    for (let i = 0; i < 60; i++) {
+      if (i % 3 === 0) d.click(faces[i % 6], i % 2 ? 3 : 1);
+      d.setTarget((i * 7) % (N + 1));
+      run(d, 0.13).forEach(check);
+    }
+    d.setTarget(N);
+    run(d, 40).forEach(check);
+    expect(d.k).toBe(N);
+    expect(k).toBe(N);
+    expect(d.state.equals(ref)).toBe(true);
+    expect(d.twists).toBe(20);
   });
 
   it('reduced motion applies moves and clicks instantly', () => {
@@ -168,7 +241,7 @@ describe('Director', () => {
     d.click('F');
     expect(d.tick(0).map((c) => c.kind)).toEqual(['visitor']);
     d.setTarget(14);
-    expect(d.tick(0).map((c) => c.kind)).toEqual(['flush', ...Array(8).fill('solve')]);
-    expect(d.state.equals(expected(14))).toBe(true);
+    expect(d.tick(0).map((c) => c.kind)).toEqual(Array(8).fill('solve'));
+    expect(d.state.equals(expected(6).applyAll(parseMoves('F')).applyAll(SOLVE.slice(6, 14)))).toBe(true);
   });
 });

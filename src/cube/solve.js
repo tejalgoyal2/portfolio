@@ -1,4 +1,4 @@
-// The fixed scramble and the verified 62-move solve, read straight from
+// The fixed scramble and the verified staged solve, read straight from
 // docs/cube/solve.json so the site and verify.py can never drift apart.
 import data from '../../docs/cube/solve.json';
 import { parseMoves } from './model';
