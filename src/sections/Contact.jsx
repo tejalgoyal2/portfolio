@@ -62,12 +62,12 @@ export default function Contact() {
             className="contact-title"
             spread={false}
             inview
+            showLoose
           >
             LET&rsquo;S TALK
           </KineticHeadline>
           <p className="contact-sub" data-ink>
-            You read all the way to the last page. Say hi — it&rsquo;s a real
-            inbox, and I read it.
+            The cube&rsquo;s solved. Bring me something that isn&rsquo;t.
           </p>
         </header>
 
@@ -108,7 +108,7 @@ export default function Contact() {
 
         <footer className="contact-colophon">
           <p className="contact-colophon-text">
-            Written, set and occasionally broken by me &middot; &copy; {new Date().getFullYear()}
+            Written, set and occasionally broken by me (and Claude).
           </p>
         </footer>
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
-import { looseType } from '../life/looseType';
+import { looseType, sweep } from '../life/looseType';
 
 /**
  * A headline that sets like movable type — each glyph drops, rotates a touch,
@@ -10,6 +10,7 @@ import { looseType } from '../life/looseType';
  * tell). Reduced-motion → plain appearance.
  *
  *   as: tag name   font: 'name' (Fraunces) | 'impact' (Anton)   misregister: bool
+ *   showLoose: once set, the letters lift once as if a cursor had passed (so people find they're loose)
  *   inview: play on an IntersectionObserver instead of a ScrollTrigger — use it
  *   on terminal/edge sections where ScrollTrigger's computed start can fail to
  *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
@@ -26,6 +27,7 @@ export default function KineticHeadline({
   spread = true,
   intro = false,
   inview = false,
+  showLoose = false,
 }) {
   const rootRef = useRef(null);
   const text = String(children);
@@ -67,6 +69,8 @@ export default function KineticHeadline({
       tl.eventCallback('onComplete', () => {
         loosen?.();
         loosen = looseType(root);
+        // and, where asked, show it once: the letters lift as if a cursor had passed
+        if (showLoose) setTimeout(() => sweep(root), 250);
       });
       if (misregister) {
         tl.fromTo(

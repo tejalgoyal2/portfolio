@@ -81,10 +81,11 @@ export default function Loader() {
           .to(root.querySelectorAll('.loader-kicker, .loader-edition, .loader-ghost'), { opacity: 0, y: -8, duration: 0.3, ease: 'power1.in' }, 0)
           // the name is set into the masthead on a blank sheet first…
           .to(plate, { x: dx, y: dy, scale: s, duration: 0.9, ease: 'expo.inOut' }, 0.05)
-          // …then the real nameplate takes over under it (a soft crossfade, not a cut),
-          // the ink sweeps across it, and the page develops round it
-          .add(() => html.classList.remove('np-handoff'), 0.88)
-          .to(plate, { opacity: 0, duration: 0.3, ease: 'power1.inOut' }, 0.9)
+          // …then the real nameplate takes over under it, the ink sweeps across
+          // it, and the page develops round it
+          // a clean swap the moment it's home (a crossfade would show the scaled copy going soft, then sharp)
+          .add(() => html.classList.remove('np-handoff'), 0.92)
+          .set(plate, { opacity: 0 }, 0.92)
           .add(() => window.dispatchEvent(new Event('press:landed')), 0.9)
           .add(loaded, 0.95)
           .to(root, { backgroundColor: 'rgba(0,0,0,0)', duration: 0.5, ease: 'power1.inOut' }, 0.95)

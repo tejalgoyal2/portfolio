@@ -7,7 +7,8 @@ import { Spring, clamp, smoothstep } from './spring';
 /**
  * Big headlines behave like type still loose in the stick: near the cursor
  * (or a finger), letters lift a little and tip away from it, then drop back
- * into place with a small bounce when it leaves.
+ * into place with a small bounce when it leaves. sweep() plays that once
+ * along a headline on its own, to show the letters are loose.
  *
  * The lift uses the CSS `translate` / `rotate` properties, which compose with
  * the `transform` GSAP already uses for the intro, so the two never fight.
@@ -15,6 +16,7 @@ import { Spring, clamp, smoothstep } from './spring';
  * nothing. Reduced motion: it doesn't run.
  */
 const heads = new Set();
+const SWEEP = 1.6; // seconds for a sweep to cross a headline
 let io = null;
 let started = false;
 
@@ -38,18 +40,31 @@ function tick(time, deltaMs) {
     const live = h.root.getBoundingClientRect();
     const k = live.width / h.w;
     const reach = h.fs * 1.15 * k;
+    // a sweep is a cursor that isn't there, passing once along the line
+    let px = pointer.x;
+    let py = pointer.y;
+    let swept = false;
+    if (h.sweep >= 0) {
+      h.sweep += dt / SWEEP;
+      const u = 1 - (1 - Math.min(1, h.sweep)) ** 2.2; // quick off, long settle
+      px = live.left - reach + (live.width + reach * 2) * u;
+      py = live.top + live.height * 0.55;
+      swept = true;
+      if (h.sweep >= 1) h.sweep = -1;
+    }
     const near =
-      pointer.active &&
-      pointer.x > live.left - reach &&
-      pointer.x < live.right + reach &&
-      pointer.y > live.top - reach &&
-      pointer.y < live.bottom + reach;
+      swept ||
+      (pointer.active &&
+        pointer.x > live.left - reach &&
+        pointer.x < live.right + reach &&
+        pointer.y > live.top - reach &&
+        pointer.y < live.bottom + reach);
     if (!near && !h.awake) continue;
     let moving = false;
     for (let i = 0; i < h.chars.length; i++) {
       const o = h.offs[i];
-      const dx = live.left + o.x * k - pointer.x;
-      const dy = live.top + o.y * k - pointer.y;
+      const dx = live.left + o.x * k - px;
+      const dy = live.top + o.y * k - py;
       const f = near ? 1 - smoothstep(0, reach, Math.hypot(dx, dy * 1.2)) : 0;
       const ly = h.ly[i];
       const lr = h.lr[i];
@@ -85,6 +100,19 @@ function start() {
   gsap.ticker.add(tick);
 }
 
+/**
+ * Run the lift once along a headline, as if a cursor had passed over it — so
+ * people see the letters are loose and go and try it themselves.
+ */
+export function sweep(root) {
+  if (prefs.reduced) return;
+  for (const h of heads) if (h.root === root) {
+    measure(h);
+    h.sweep = 0;
+    h.awake = true;
+  }
+}
+
 /** Let a headline's set glyphs come loose. Returns the undo. */
 export function looseType(root) {
   if (!root) return () => {};
@@ -102,6 +130,7 @@ export function looseType(root) {
     wr: chars.map(() => 0),
     awake: false,
     visible: false,
+    sweep: -1,
   };
   measure(h);
   heads.add(h);
