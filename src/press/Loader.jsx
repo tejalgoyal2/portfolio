@@ -45,6 +45,7 @@ export default function Loader() {
       const loaded = () => window.dispatchEvent(new Event('press:loaded'));
 
       const unlock = () => {
+        releaseHold();
         window.__lenis?.start();
         document.documentElement.classList.remove('press-booting');
         setDone(true);
@@ -134,16 +135,30 @@ export default function Loader() {
         .to({}, { duration: 0.45 }); // hold the front page a beat
     }, root);
 
+    // a click, a key or a scroll skips ahead to the hand-off; the scroll itself
+    // goes nowhere until the name is home (the page is held until then)
     const skip = () => finish();
+    const hold = (e) => {
+      if (e.cancelable) e.preventDefault();
+      finish();
+    };
     window.addEventListener('keydown', skip);
     window.addEventListener('pointerdown', skip);
+    window.addEventListener('wheel', hold, { passive: false });
+    window.addEventListener('touchmove', hold, { passive: false });
     detachSkip = () => {
       window.removeEventListener('keydown', skip);
       window.removeEventListener('pointerdown', skip);
     };
+    // the scroll stays held through the hand-off too, until unlock
+    const releaseHold = () => {
+      window.removeEventListener('wheel', hold);
+      window.removeEventListener('touchmove', hold);
+    };
 
     return () => {
       detachSkip?.();
+      releaseHold();
       ctx.revert();
       // never strand the page locked
       window.__lenis?.start();

@@ -24,6 +24,10 @@ export function usePressScroll() {
       touchMultiplier: 1.6,
     });
     window.__lenis = lenis;
+    // the press may already be running (the loader's effect runs before this
+    // one): the page holds still until it hands over, or a scroll during the
+    // opening would carry the masthead off before the name lands in it
+    if (document.documentElement.classList.contains('press-booting')) lenis.stop();
 
     lenis.on('scroll', ScrollTrigger.update);
 
