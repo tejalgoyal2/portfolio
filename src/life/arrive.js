@@ -13,8 +13,8 @@ gsap.registerPlugin(ScrollTrigger);
  * skills are set into the stick sort by sort, ledger rows and classifieds are
  * pasted in from the margin, margin notes are pinned on. On the way out they're
  * cleared away just as deliberately: files are filed up and back, ledger rows
- * slide off the galley, skills are pied (the sorts spill), the nameplate's
- * letters are distributed back to the case, headlines lift off.
+ * slide off the galley, skills are pied (the sorts spill), headlines lift off.
+ * The nameplate stays put and simply scrolls away, like the masthead it is.
  *
  * All of it is scrubbed to the scroll, so it plays backwards as you scroll
  * back up. An arrival finishes while the block is still low on the screen
@@ -58,8 +58,6 @@ const DEPART = {
   'part-r': () => ({ '--dx': '70px', '--dr': '3deg', '--do': 0.2 }),
   // type pied: the sorts spill off the line and tumble down
   pi: () => ({ '--dx': `${rnd(-60, 60)}px`, '--dy': `${rnd(24, 90)}px`, '--dr': `${rnd(-40, 40)}deg`, '--do': 0 }),
-  // the nameplate distributed back to the case, letter by letter
-  distribute: () => ({ '--dy': `${rnd(-170, -50)}px`, '--dr': `${rnd(-9, 9)}deg`, '--do': 0 }),
 };
 const HOME = { '--dx': '0px', '--dy': '0px', '--dr': '0deg', '--ds': 1, '--do': 1 };
 
@@ -96,10 +94,8 @@ export function startArrivals(root = document) {
     const fx = DEPART[box.dataset.departItems];
     const items = [...box.children];
     if (!fx || !items.length) continue;
-    // the nameplate leaves with the whole front page, not just its own last line
-    const range = box.dataset.departItems === 'distribute' ? { start: 1, end: 'bottom top' } : OUT;
     made.push(
-      scrubbed(box, range, (tl) =>
+      scrubbed(box, OUT, (tl) =>
         items.forEach((it, i) => tl.fromTo(it, HOME, { ...fx(), ease: 'power1.in', duration: 0.6 }, (i / items.length) * 0.4))
       )
     );

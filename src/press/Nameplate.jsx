@@ -24,7 +24,7 @@ import { scroll } from '../life/scroll';
  * along it from the T to the L, inking each letter as it passes, so the
  * nameplate settles into the page with one bright pass of ink.
  */
-const SWEEP = 1.15; // seconds, T to L
+const SWEEP = 2.3; // seconds, T to L: slow enough to watch the ink travel
 const OPSZ_REST = 144;
 const OPSZ_INKED = 28;
 const WGHT_REST = 860;
@@ -51,10 +51,14 @@ export default function Nameplate({ text }) {
     let box = { x: 0, y: 0, w: 0, h: 0 };
     let reach = 120;
     const measure = () => {
+      // measured upright and unscaled, whatever else is moving them, so a
+      // re-measure mid-animation never locks in a tilted letter's wider box
       const unlock = (v) =>
         sorts.forEach((s) => {
           s.style.width = '';
           s.style.transform = '';
+          s.style.translate = 'none';
+          s.style.rotate = 'none';
           s.style.fontVariationSettings = axes(v);
         });
       unlock(0);
@@ -68,6 +72,8 @@ export default function Nameplate({ text }) {
       squeeze = sorts.map((s, i) => Math.min(1, centres[i].w / Math.max(1, s.getBoundingClientRect().width)));
       unlock(0);
       sorts.forEach((s, i) => {
+        s.style.translate = '';
+        s.style.rotate = '';
         s.style.width = `${centres[i].w}px`;
         written[i] = -1; // repaint from rest on the next tick
       });
@@ -122,7 +128,7 @@ export default function Nameplate({ text }) {
           const d = Math.hypot(pointer.x - (live.left + c.x * k), (pointer.y - (live.top + c.y * k)) * 1.15);
           sp.target = 1 - smoothstep(0, reach, d);
         }
-        if (sx !== null) sp.target = Math.max(sp.target, 1 - smoothstep(0, reach * 0.75, Math.abs(sx - c.x)));
+        if (sx !== null) sp.target = Math.max(sp.target, 1 - smoothstep(0, reach * 0.9, Math.abs(sx - c.x)));
         sp.step(dt);
         if (!sp.settled) moving = true;
         const v = Math.max(0, Math.min(1, sp.value));
@@ -150,7 +156,7 @@ export default function Nameplate({ text }) {
   }, [text]);
 
   return (
-    <span ref={ref} className="np" aria-hidden="true" data-depart-items="distribute">
+    <span ref={ref} className="np" aria-hidden="true">
       {[...text].map((ch, i) =>
         ch === ' ' ? (
           <span className="np-space" key={i}>
