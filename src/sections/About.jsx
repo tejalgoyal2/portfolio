@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
+import OffTheClock from '../press/OffTheClock';
 import { handwrite } from '../life/writeIn';
 import { startMarkup } from '../life/markup';
 import { startCar } from '../life/car';
@@ -186,16 +187,7 @@ export default function About() {
               </div>
             </dl>
 
-            <ul className="about-margin" aria-label="Off the clock">
-              <li>F1 on weekends.</li>
-              <li>Speedcubes (hence the cube).</li>
-              <li>Folded an origami MiG-29.</li>
-              <li>Card tricks, on request.</li>
-              <li>Co-founded an NGO with my brother — 1,000+ trees in.</li>
-              <li>State-level badminton, once.</li>
-              <li>Finished the TC10K (slowly).</li>
-              <li>Will bake you a loaf.</li>
-            </ul>
+            <OffTheClock />
           </aside>
         </div>
       </div>
