@@ -1,22 +1,28 @@
-// The whole page in a real browser: it loads clean, every section is there,
-// the pen is the only cursor, the try-its and the profile dial work, the stamp
-// sheet takes a stamp you can see, and reduced motion leaves everything
-// readable. The gratitude API and Turnstile are stubbed, so nothing here
-// touches Cloudflare.
+// The whole page in a real browser: it loads clean, the name is never off the
+// screen while the press hands it to the masthead (and never clipped after),
+// the pen is the only cursor, the profile reads as a feature, the tiles turn
+// over from anywhere but a link, the stamp sheet says plainly what happened
+// to your stamp, the things to find tick off, and reduced motion leaves
+// everything readable. The gratitude API and Turnstile are stubbed, so
+// nothing here touches Cloudflare.
 import { test, expect } from '@playwright/test';
 
 const STAMPS = ['coffee', 'the sea', 'rain', 'friends'].map((word, i) => ({ word, x: 0.2 + i * 0.18, y: 0.3 + (i % 2) * 0.3 }));
 
-async function open(page, { fresh = false } = {}) {
+async function open(page, { fresh = false, post } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await page.route('**/api/gratitude', (r) =>
-    r.request().method() === 'GET' ? r.fulfill({ json: { open: true, stamps: STAMPS } }) : r.fulfill({ json: { word: 'naps', printed: true } })
+    r.request().method() === 'GET'
+      ? r.fulfill({ json: { open: true, stamps: STAMPS } })
+      : r.fulfill(post || { json: { word: 'naps', printed: true } })
   );
   await page.route('**/turnstile/v0/api.js*', (r) =>
     r.fulfill({ contentType: 'text/javascript', body: 'window.turnstile={render:(el,o)=>{setTimeout(()=>o.callback("tok"),30);return "w"},reset(){}}' })
   );
+  // the projects' own sites are never visited from here
+  await page.route(/https:\/\/(?!localhost)[^/]*tgoyal\.me\/.*/, (r) => r.abort());
   if (!fresh) await page.addInitScript(() => sessionStorage.setItem('press-loaded', '1'));
   await page.goto('/');
   await page.waitForTimeout(1500);
@@ -39,7 +45,63 @@ test('loads clean: no errors, no sideways scroll, every section present', async 
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   await expect(page.locator('.mast-deck')).toBeVisible();
+  await expect(page.locator('.loader-edition')).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('the press: a clean first paint, and the name on screen in every frame of the hand-off', async ({ page }) => {
+  // every frame from the first: is the name showing, either the loader's copy or the masthead's own?
+  await page.addInitScript(() => {
+    window.__frames = [];
+    const look = () => {
+      const plate = document.querySelector('.loader-plate');
+      const paper = document.querySelector('.loader-paper');
+      const html = document.documentElement;
+      if (plate || window.__frames.length) {
+        const cs = plate && getComputedStyle(plate);
+        const inked = !!cs && cs.clipPath !== 'none' && !/100%/.test(cs.clipPath);
+        const copy = !!plate && inked && Number(cs.opacity) > 0.5;
+        const paperUp = !!paper && Number(getComputedStyle(paper).opacity) > 0.05;
+        const real = !html.classList.contains('np-handoff') && !paperUp;
+        window.__frames.push({ t: performance.now(), clip: cs?.clipPath || null, inked, copy, real, gone: !plate });
+      }
+      if (window.__frames.length < 600) requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+  });
+  const errors = await open(page, { fresh: true });
+  await page.waitForTimeout(5000);
+  const frames = await page.evaluate(() => window.__frames);
+  expect(frames.length).toBeGreaterThan(30);
+  // the very first paint is a blank sheet: the plate is hidden until the roller inks it
+  expect(frames[0].clip).toMatch(/100%/);
+  // once the name is inked, it never leaves the screen — not for a single frame
+  const from = frames.findIndex((f) => f.inked);
+  expect(from).toBeGreaterThanOrEqual(0);
+  const bare = frames.slice(from).filter((f) => !f.copy && !f.real);
+  expect(bare).toEqual([]);
+  expect(frames.at(-1).gone).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('the nameplate: nothing ever clips its letters, even as they lift on the way down', async ({ page }) => {
+  await open(page);
+  for (const y of [0, 160, 360]) {
+    await page.evaluate((v) => window.__lenis.scrollTo(v, { immediate: true }), y);
+    await page.waitForTimeout(600);
+    const clipped = await page.evaluate(() => {
+      const out = [];
+      for (let el = document.querySelector('.mast-plate .np-sort:last-child'); el && el !== document.body; el = el.parentElement) {
+        const cs = getComputedStyle(el);
+        if (cs.clipPath !== 'none') out.push(`${el.className}: ${cs.clipPath}`);
+        if (!/visible/.test(cs.overflow)) out.push(`${el.className}: overflow ${cs.overflow}`);
+      }
+      const L = document.querySelector('.mast-plate .np-sort:last-child').getBoundingClientRect();
+      if (L.right > innerWidth) out.push('past the edge');
+      return out;
+    });
+    expect(clipped, `at ${y}px`).toEqual([]);
+  }
 });
 
 test('the pen is the only cursor, from the first paint, over links and inputs too', async ({ page, browserName }) => {
@@ -47,7 +109,7 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   const errors = await open(page);
   expect(await page.evaluate(() => document.documentElement.classList.contains('cursor-hidden'))).toBe(true);
   await page.mouse.move(400, 400);
-  for (const sel of ['a', 'button', 'input', '.tile', '.grateful-sheet', '.rh-settings-btn']) {
+  for (const sel of ['a', 'button', 'input', '.tile', '.tile-flip', '.grateful-sheet', '.rh-settings-btn']) {
     const cursor = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).cursor, sel);
     expect(cursor, sel).toMatch(/none|url\(/);
   }
@@ -57,30 +119,72 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   expect(errors).toEqual([]);
 });
 
-test('profile: one calm story, no birth year, no city', async ({ page }) => {
+test('profile: a feature with a drop cap, a linked Sudoku, a box of numbers and the Weekend Edition', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.about-grid');
-  await expect(page.locator('.about-story, .about-dial')).toHaveCount(0);
-  await expect(page.locator('.about-col--story .about-p')).toHaveCount(2);
-  const rail = page.locator('.about-col--rail');
-  await expect(rail).toContainText('Claude Pro since');
-  await expect(rail).not.toContainText(/2002|published paper|Victoria/);
-  await expect(page.locator('.about-margin li')).toHaveCount(7);
+  await page.waitForTimeout(1600); // the figures count up once
+  const about = page.locator('.about');
+  await expect(about.locator('.about-standfirst')).toContainText('I’m Tejal');
+  const sudoku = about.locator('a.about-link');
+  await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
+  await expect(sudoku).toHaveAttribute('target', '_blank');
+  await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
+  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', 'Feb']);
+  await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
+  await expect(about.locator('.weekend-desk')).toHaveCount(4);
+  await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);
+  // the full stop stays on the link's line, never alone on the next
+  const drift = await about.locator('.about-body').evaluate((p) => {
+    const link = p.querySelector('.about-link').getBoundingClientRect();
+    const r = document.createRange();
+    r.selectNodeContents(p.lastChild);
+    return Math.abs(r.getBoundingClientRect().bottom - link.bottom);
+  });
+  expect(drift).toBeLessThan(6);
 });
 
-test('projects: tiles turn over to the full file and back', async ({ page }) => {
+test('projects: a tile turns over from anywhere on it, in a wave of scales, and back', async ({ page }) => {
   await open(page);
-  await scrollTo(page, '.cf-front');
-  const tile = page.locator('.tile').first();
-  await expect(tile.locator('.tile-why')).toContainText('mechanical keyboard');
-  await tile.getByRole('button', { name: /Turn it over/ }).click();
-  await expect(tile).toHaveClass(/is-flipped/);
-  await page.waitForTimeout(1100);
+  await scrollTo(page, '.cf-front .tile:nth-child(2)');
+  const tile = page.locator('.tile').nth(1);
+  await expect(tile.locator('.tile-why')).toContainText('$11 sandwich');
+  await expect(tile).toHaveCSS('user-select', 'none');
+  // somewhere on the story itself, not the button
+  const box = await tile.boundingBox();
+  await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.35);
+  await expect(tile).toHaveClass(/is-back/);
+  await expect(tile.locator('.tile-scale').first()).toBeAttached();
+  await page.waitForTimeout(1400);
+  // the scales are gone once it's turned, and the full file is up and focused
+  await expect(tile.locator('.tile-morph, .tile-clip')).toHaveCount(0);
+  await expect(tile.locator('.tile-back')).toHaveClass(/is-up/);
   await expect(tile.locator('.tile-back .tile-long')).toBeVisible();
   await expect(tile.locator('.tile-back .tile-flip')).toBeFocused();
-  await tile.getByRole('button', { name: /Turn it back/ }).click();
-  await expect(tile).not.toHaveClass(/is-flipped/);
-  await expect(page.locator('.story-link').first()).toHaveCSS('border-top-style', 'solid');
+  // from the keyboard, back to the front
+  await page.keyboard.press('Enter');
+  await expect(tile).not.toHaveClass(/is-back/);
+  await page.waitForTimeout(1400);
+  await expect(tile.locator('.tile-front')).toHaveClass(/is-up/);
+});
+
+test('projects: a link on a tile opens the project and leaves the tile as it is', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.cf-front .tile:nth-child(2)');
+  const tile = page.locator('.tile').nth(1);
+  const [popup] = await Promise.all([page.waitForEvent('popup'), tile.locator('.tile-front .story-link').first().click()]);
+  expect(popup.url()).toContain('dime.tgoyal.me');
+  await popup.close();
+  await expect(tile).not.toHaveClass(/is-back/);
+  await expect(page.locator('.tile-morph')).toHaveCount(0);
+});
+
+test('projects: stamps say LIVE, or one word for what a thing is', async ({ page }) => {
+  await open(page);
+  const labels = await page.locator('.projects .press-stamp').allTextContents();
+  expect(labels.length).toBeGreaterThan(8);
+  expect(labels.map((l) => l.trim())).not.toContain('REPO');
+  for (const l of labels) expect(l.trim()).toMatch(/^[A-Z]+$/);
+  await expect(page.locator('.tile', { hasText: 'Claubi' }).locator('.press-stamp')).toHaveText('OFFLINE');
 });
 
 test('things to find tick themselves off', async ({ page }) => {
@@ -91,6 +195,38 @@ test('things to find tick themselves off', async ({ page }) => {
   await page.mouse.click(1380, 600);
   await page.getByRole('button', { name: 'Page settings' }).click();
   await expect(page.locator('.rh-finds li.is-found')).toContainText(['Make a wave on the paper']);
+  // and picking another pen counts as changing the cursor (pens are offered to a mouse only)
+  const picks = page.locator('.rh-pen-pick');
+  if (await picks.count()) {
+    await picks.nth(2).click();
+    await expect(page.locator('.rh-finds li.is-found')).toHaveCount(2);
+    await expect(page.locator('.rh-finds li.is-found')).toContainText(['Swap your pen']);
+  }
+});
+
+test('page settings over the cube: clicks stay with the settings', async ({ page }) => {
+  await open(page);
+  await page.waitForTimeout(1500); // the cube arrives after the first paint
+  await page.getByRole('button', { name: 'Page settings' }).click();
+  const panel = page.locator('.rh-panel');
+  await expect(panel).toBeVisible();
+  // a bare spot of the panel that has the cube's slot under it
+  const spot = await page.evaluate(() => {
+    const p = document.querySelector('.rh-panel').getBoundingClientRect();
+    const c = document.querySelector('[data-cube-home="hero"]').getBoundingClientRect();
+    for (let y = Math.max(p.top, c.top) + 4; y < Math.min(p.bottom, c.bottom) - 4; y += 6)
+      for (let x = Math.max(p.left, c.left) + 4; x < Math.min(p.right, c.right) - 4; x += 6) {
+        const el = document.elementFromPoint(x, y);
+        if (el && el.closest('.rh-panel') && !el.closest('button, input, label, a')) return { x, y };
+      }
+    return null;
+  });
+  test.skip(!spot, 'the panel does not sit over the cube at this size');
+  await page.mouse.click(spot.x, spot.y);
+  await page.waitForTimeout(700);
+  const finds = await page.evaluate(() => localStorage.getItem('press-finds') || '');
+  expect(finds).not.toContain('twist');
+  await expect(panel).toBeVisible();
 });
 
 test('stamp sheet: stamps are visible, and yours lands where you click', async ({ page }) => {
@@ -112,20 +248,50 @@ test('stamp sheet: stamps are visible, and yours lands where you click', async (
   await expect(page.locator('.grateful-how')).toContainText('Stamped');
 });
 
+test('stamp sheet: when the network has stamped today, it says so', async ({ page }) => {
+  await open(page, { post: { status: 429, json: { error: 'once a day' } } });
+  await scrollTo(page, '.grateful', -200);
+  await page.waitForTimeout(600);
+  await page.locator('.grateful-input').fill('naps');
+  await page.locator('.grateful-input').press('Enter');
+  await expect(page.locator('.grateful-how')).toContainText('Someone on your network already stamped today');
+  await expect(page.locator('.gstamp.is-mine')).toHaveCount(0);
+});
+
+test('contact: the closing line is mine, and the colophon has no ©', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('.contact-sub')).toContainText('argue about F1');
+  await expect(page.locator('.contact-colophon')).toContainText('broken by me (and Claude)');
+  await expect(page.locator('.contact-colophon')).not.toContainText('©');
+});
+
 test('experience: just the line, no nib, no end mark', async ({ page }) => {
   await open(page);
   await expect(page.locator('.led-nib, .led-end')).toHaveCount(0);
   await expect(page.locator('.led-ink path')).toHaveCount(1);
 });
 
-test('reduced motion: everything readable, nothing hidden', async ({ browser }) => {
+test('phone width: no sideways scroll, and the tiles still turn', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  const errors = await open(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  await scrollTo(page, '.cf-front .tile:nth-child(3)');
+  const tile = page.locator('.tile').nth(2);
+  await tile.locator('.tile-name').tap();
+  await expect(tile).toHaveClass(/is-back/);
+  expect(errors).toEqual([]);
+  await ctx.close();
+});
+
+test('reduced motion: everything readable, nothing hidden, tiles swap at once', async ({ browser }) => {
   const ctx = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   const errors = await open(page, { fresh: true });
   await page.waitForTimeout(1500);
   const hidden = await page.evaluate(() =>
     [...document.querySelectorAll('main h2, main h3, main p, main li')]
-      .filter((el) => el.offsetParent && el.textContent.trim() && !el.closest('[aria-hidden="true"], .story-file, .led-more'))
+      .filter((el) => el.offsetParent && el.textContent.trim() && !el.closest('[aria-hidden="true"], .story-file, .led-more, .tile-face:not(.is-up)'))
       .filter((el) => {
         for (let n = el; n && n !== document.body; n = n.parentElement) if (Number(getComputedStyle(n).opacity) < 0.05) return true;
         return false;
@@ -133,6 +299,10 @@ test('reduced motion: everything readable, nothing hidden', async ({ browser }) 
       .map((el) => el.className || el.tagName)
   );
   expect(hidden).toEqual([]);
+  const tile = page.locator('.tile').nth(1);
+  await tile.locator('.tile-front .tile-flip').click();
+  await expect(tile.locator('.tile-back')).toHaveClass(/is-up/);
+  await expect(tile.locator('.tile-scale')).toHaveCount(0);
   expect(errors).toEqual([]);
   await ctx.close();
 });
