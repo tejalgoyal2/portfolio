@@ -5,13 +5,14 @@ import Bug from '../press/Bug';
 import Story from '../press/Story';
 
 /**
- * Projects — a front page. The four lead projects are stories
- * (src/press/Story.jsx), each with a small working piece to try beside it:
- * the lead across the top, three more in columns under it. The rest are
+ * Projects — a front page. The four lead projects are case files on tiles
+ * (src/press/Story.jsx) that turn over to the full file: the lead across the
+ * top, three more in columns under it. The rest are
  * "In brief", the way a paper runs its short items: a still index in
  * columns, each one its name, what it is in a line, and where to find it.
  */
-const STAMP_TONE = { LIVE: 'red', REPO: 'ink', PROTOTYPE: 'ink' };
+// LIVE is in red; anything else is a plain word for what it is, in ink
+const STAMP_TONE = { LIVE: 'red' };
 const LINK_LABEL = { live: 'Live site', github: 'Source', youtube: 'Demo' };
 
 // the lead stories, in their order, and the rest in brief
