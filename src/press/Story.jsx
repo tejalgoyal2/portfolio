@@ -10,8 +10,9 @@ import { prefs } from '../life/prefs';
  * the full file, on manila. Hover and the tile lifts a little and a corner
  * folds back to show the manila underneath; click anywhere on it (but a link)
  * and it turns over. Until you've turned one, each tile, the first time it's
- * well into view, lifts its corner once on its own, so it's plain there's a
- * back to see.
+ * well into view, gives a peek: a few scales in its corner turn over to the
+ * manila and back, in the tile's own wave, so you've seen what it does before
+ * anyone has to tell you to click.
  *
  * It doesn't flip like a playing card. It changes skin: the face breaks into
  * small square scales that turn over one by one in a wave, newsprint to
@@ -21,7 +22,8 @@ import { prefs } from '../life/prefs';
  *   rows    Dime — row by row, left to right, like a receipt printing
  *   spread  IAM Threat Mapper — out from the click, unevenly, node to node,
  *           the way an attacker moves through a network
- *   scan    Claubi — top to bottom, a line at a time, like a terminal printing
+ *   type    Claubi — no flip at all: the new face is typed in, a block at a
+ *           time, left to right and line by line, like a terminal printing
  * The scales exist only while the tile turns, and only move by transform and
  * opacity (a CSS animation each, on the compositor). The face being left is
  * cut away under them through an SVG clip path, a square at a time, exactly
@@ -35,6 +37,7 @@ const MAX_CELLS = 150;
 const LIFE = 540; // ms one scale takes to turn over
 const COVER = 0.42; // how far through its turn a scale is when it hides the face beneath
 const TURNED_KEY = 'press-turned'; // once you've turned a tile, the others stop showing you how
+const PEEK = 1500; // ms the corner peek takes, first scale to last
 
 const turnedYet = () => {
   try {
@@ -58,7 +61,7 @@ const WAVES = {
     axis: (i) => (rand(i) > 0.5 ? 'x' : 'y'),
     at: (c, r, C, R, o, i) => Math.hypot((c + 0.5) / C - o.x, ((r + 0.5) / R - o.y) * (R / C)) * 0.72 + rand(i + 7) * 0.28,
   },
-  scan: { spread: 600, axis: () => 'x', at: (c, r, C, R) => (r + rand(c) * 0.35) / (R + 0.35) },
+  type: { spread: 760, axis: () => 'pop', at: (c, r, C) => r + c / C },
 };
 
 function plan(el, wave, origin) {
@@ -76,6 +79,21 @@ function plan(el, wave, origin) {
   return { cols, rows, cells, total: W.spread + LIFE };
 }
 
+// the corner peek: the scales in a quarter circle round the bottom-right corner,
+// turning out from it, each the way the tile's own wave turns them
+const PEEK_CELL = 38;
+function peekPlan(wave) {
+  const W = WAVES[wave] || WAVES.ripple;
+  const cells = [];
+  for (let y = 0; y < 4; y++)
+    for (let x = 0; x < 5; x++) {
+      const r = Math.hypot(x, y * 1.1);
+      if (r > 3.9) continue;
+      cells.push({ x, y, d: Math.round(r * 95 + rand(x * 7 + y) * 40), ax: W.axis(y * 5 + x) });
+    }
+  return cells;
+}
+
 export default function Story({ project, lead = false, index }) {
   const { name, status, why, eli5, desc, long, note, tech, links, facts, wave } = project;
   const [side, setSide] = useState('front'); // the face that's up (or on its way up)
@@ -87,9 +105,9 @@ export default function Story({ project, lead = false, index }) {
   const clipId = `tile-clip-${index}`;
   const no = String(index).padStart(2, '0');
 
-  const [tease, setTease] = useState(false);
+  const [peek, setPeek] = useState(null); // the corner's scales while it peeks: [{ x, y, d, ax }]
 
-  // the corner lifts once by itself, the first time the tile is well into view
+  // the corner peeks once by itself, the first time the tile is well into view
   useEffect(() => {
     const el = ref.current;
     if (!el || prefs.reduced || turnedYet() || typeof IntersectionObserver === 'undefined') return;
@@ -103,8 +121,8 @@ export default function Story({ project, lead = false, index }) {
         wait = setTimeout(() => {
           if (turnedYet()) return io.disconnect();
           io.disconnect();
-          setTease(true);
-          drop = setTimeout(() => setTease(false), 1100);
+          setPeek(peekPlan(wave));
+          drop = setTimeout(() => setPeek(null), PEEK);
         }, 450 + (index - 1) * 260);
       },
       { threshold: 0.6, rootMargin: '0px 0px -18% 0px' }
@@ -115,19 +133,20 @@ export default function Story({ project, lead = false, index }) {
       clearTimeout(wait);
       clearTimeout(drop);
     };
-  }, [index]);
+  }, [index, wave]);
 
-  const turn = (origin) => {
+  const turn = (origin, keyed = false) => {
     if (morph) return;
-    setTease(false);
+    setPeek(null);
     try {
       sessionStorage.setItem(TURNED_KEY, '1');
     } catch {
       /* private mode: they'll just keep lifting */
     }
     const to = side === 'front' ? 'back' : 'front';
+    // from the keyboard, focus follows to the other side's button; a click leaves it be
     const focusOther = () =>
-      requestAnimationFrame(() => ref.current?.querySelector(`.tile-${to} .tile-flip`)?.focus({ preventScroll: true }));
+      keyed && requestAnimationFrame(() => ref.current?.querySelector(`.tile-${to} .tile-flip`)?.focus({ preventScroll: true }));
     if (prefs.reduced || !ref.current) {
       setSide(to);
       focusOther();
@@ -179,7 +198,7 @@ export default function Story({ project, lead = false, index }) {
     const at = keyed ? e.target.getBoundingClientRect() : null;
     const x = at ? at.left + at.width / 2 : e.clientX;
     const y = at ? at.top + at.height / 2 : e.clientY;
-    turn({ x: (x - r.left) / r.width, y: (y - r.top) / r.height });
+    turn({ x: (x - r.left) / r.width, y: (y - r.top) / r.height }, keyed);
   };
 
   const lean = (e) => {
@@ -220,7 +239,7 @@ export default function Story({ project, lead = false, index }) {
   return (
     <article
       ref={ref}
-      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}${tease ? ' is-teasing' : ''}`}
+      className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
       data-arrive="rise"
       data-name={name}
       data-pen="rotate-cw"
@@ -255,7 +274,7 @@ export default function Story({ project, lead = false, index }) {
             <div className="tile-foot">
               {linkRow}
               <button type="button" className="tile-flip" aria-label={`Turn over: the full file on ${name}`}>
-                More on the back <span aria-hidden="true">↻</span>
+                Turn over <span aria-hidden="true">↻</span>
               </button>
             </div>
           </div>
@@ -279,11 +298,22 @@ export default function Story({ project, lead = false, index }) {
             <div className="tile-foot">
               {linkRow}
               <button type="button" className="tile-flip" aria-label={`Turn back to the front of ${name}`}>
-                Back to the front <span aria-hidden="true">↺</span>
+                Turn back <span aria-hidden="true">↺</span>
               </button>
             </div>
           </div>
 
+          {peek && (
+            <div className="tile-peek" aria-hidden="true">
+              {peek.map((c, i) => (
+                <i
+                  key={i}
+                  className={`tile-peek-scale tile-peek-scale--${c.ax}`}
+                  style={{ right: `${c.x * PEEK_CELL}px`, bottom: `${c.y * PEEK_CELL}px`, animationDelay: `${c.d}ms` }}
+                />
+              ))}
+            </div>
+          )}
           {morph && (
             <>
               {/* the scales, in a wave */}
