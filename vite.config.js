@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // unit tests only; the browser checks in tests/e2e run under Playwright
+  test: { include: ['tests/unit/**/*.test.js'] },
   build: {
     target: 'es2020',
     minify: 'esbuild',
