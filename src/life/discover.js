@@ -20,7 +20,6 @@ export const FINDS = [
   { key: 'orbit', label: 'Spin the whole cube round', here: () => prefs.fine },
   { key: 'bug', label: 'Catch the bug', here: wide },
   { key: 'boulder', label: 'Get the van to toss the boulder', here: () => !prefs.reduced },
-  { key: 'stamp', label: 'Spin the postage stamp' },
   { key: 'sheet', label: 'Leave a stamp on the sheet' },
   { key: 'car', label: 'Find the car' },
   { key: 'solved', label: 'See the cube solved' },

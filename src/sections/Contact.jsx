@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
-import Postage from '../press/Postage';
+import Resume from '../press/Resume';
 import RoadCar from '../press/RoadCar';
 import GratefulFor from '../press/GratefulFor';
 // the marks themselves (src/life/brands, from thesvg — see its README.md), as plain asset URLs
 import gmailIcon from '../life/brands/gmail.svg?url';
 import githubIcon from '../life/brands/github.svg?url';
 import linkedinIcon from '../life/brands/linkedin.svg?url';
-import resumeIcon from '../press/resume.svg?url';
 
 /**
  * Let's talk — the oxblood finale. The cube comes back out of the margin to
@@ -24,8 +23,6 @@ const LINKS = [
   { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
   { name: 'GitHub', href: 'https://github.com/tejalgoyal2', text: 'github.com/tejalgoyal2', icon: githubIcon, external: true },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/in/tejalgoyal', text: 'linkedin.com/in/tejalgoyal', icon: linkedinIcon, external: true },
-  // public/resume.pdf, kept in the repo: upload a new one over it and the next deploy serves it
-  { name: 'Resume', href: '/resume.pdf', text: 'tgoyal.me/resume.pdf', icon: resumeIcon, external: true },
 ];
 
 export default function Contact() {
@@ -77,8 +74,9 @@ export default function Contact() {
           </header>
 
           <div className="contact-body">
+            {/* where a letter's stamp would go: the resume (public/resume.pdf) */}
             <div className="contact-stamp-row">
-              <Postage />
+              <Resume />
             </div>
 
             <ul className="contact-classified" data-arrive-items="paste">

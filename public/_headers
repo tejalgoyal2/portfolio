@@ -26,8 +26,14 @@
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
 # the resume opens in the browser's own viewer under a proper name, and a new
-# upload shows within minutes; kept out of search results
+# upload shows within minutes; kept out of search results. The site shows it in
+# a window of its own (src/press/Resume.jsx), so this site, and only this site,
+# may frame it.
 /resume.pdf
+  ! X-Frame-Options
+  ! Content-Security-Policy
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'none'
   Content-Disposition: inline; filename="Tejal-Goyal-Resume.pdf"
   Cache-Control: public, max-age=300, must-revalidate
   X-Robots-Tag: noindex

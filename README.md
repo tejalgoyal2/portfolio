@@ -28,12 +28,11 @@ The site keeps this list in **Page settings** (top right of the running head) an
 - [ ] **Spin the whole cube round.** Hold and drag.
 - [ ] **Catch the bug.** It lives beside the Projects headline, talks a big game, and is quicker than it looks.
 - [ ] **Get the van to toss the boulder.** A camper van drives the ridge into Experience with a boulder rolling after it. Scroll back so the van turns round into it.
-- [ ] **Spin the postage stamp.** It's on the letter at the bottom. It spins like a fidget spinner and copies my email while it's at it.
 - [ ] **Leave a stamp on the sheet.** Type a word you're grateful for and press it down wherever you like.
 - [ ] **Find the car.** Not the little line-drawn one on the rules. The other one.
 - [ ] **See the cube solved.** Read to the end without touching it, or undo your own mess by hand. It only says solved when it is.
 
-Also in this edition: the section names hang in huge wood type on a washing line and sway when your cursor blows past (wherever the pen touches a letter, it soaks up ink). The big headlines are loose type and lift near the cursor. The lead projects are case files on tiles that lean toward you in real CSS 3D; click one and it turns over to the full file in a wave of little square scales, a different wave for each project. The wire under the masthead crawls faster while you scroll, and a red rule along the running head fills in as you read.
+Also in this edition: the section names hang in huge wood type on a washing line and sway when your cursor blows past (wherever the pen touches a letter, it soaks up ink). The big headlines are loose type and lift near the cursor. The lead projects are case files on tiles that lean toward you in real CSS 3D; a corner of each is dog-eared, and a click turns it over to the full file in a wave of little square scales, a different wave for each project (Claubi's gets typed in, a line at a time, like a terminal). The wire under the masthead crawls faster while you scroll, and a red rule along the running head fills in as you read.
 
 <img src="docs/readme/the-ridge.webp" width="100%" alt="Where the cream page turns to black ink: a mountain ridge with pines, a camper van with a surfboard driving over it, a boulder rolling after it, and the word EXPERIENCE hung in huge outlined wood type on a string behind the heading Where I've worked">
 
@@ -47,7 +46,7 @@ Also in this edition: the section names hang in huge wood type on a washing line
 
 **The cube** (`src/cube`, `src/gl`). A stickerless speedcube in three.js, loaded after the first paint. It starts from one fixed scramble and plays a 44-move layer-by-layer solve spread across the sections, so an untouched cube is solved by the time you reach the bottom. Twist it and the solve carries on from wherever you left it, which usually means it isn't. `docs/cube/verify.py` replays the solve in the test suite, because a cube that ends the page unsolved on its own would be a very specific kind of embarrassing. It only draws a frame when something on it moved. The click it makes when a face turns is synthesised from a burst of noise; there isn't a single audio file in the repo.
 
-**The gratitude sheet** (`functions/api/gratitude`, `lib/gratitude.js`). Anyone can stamp a word they're grateful for onto the sheet in Let's talk, anonymously, once a day. Turnstile checks you're a person, a salted daily hash stands in for your IP, Workers AI (Llama Guard) and a word list keep it kind, anything flagged waits for me in a review queue, and D1 holds the lot. It runs on the free plan, which can't send me a bill: past a limit, it just closes until midnight UTC.
+**The gratitude sheet** (`functions/api/gratitude`, `lib/gratitude.js`). Anyone can stamp a word they're grateful for onto the sheet in Let's talk, anonymously, up to three a day. Turnstile checks you're a person, a salted daily hash stands in for your IP, Workers AI (Llama Guard) and a word list keep it kind, anything flagged waits for me in a review queue, and D1 holds the lot. It runs on the free plan, which can't send me a bill: past a limit, it just closes until midnight UTC.
 
 | Page | What's on it |
 |---|---|
@@ -85,7 +84,7 @@ Cloudflare Pages prints every push. `main` is the live edition at [tgoyal.me](ht
 
 The gratitude sheet wants a D1 binding `DB`, a Workers AI binding `AI`, and three secrets: `TURNSTILE_SECRET`, `SALT` and `ADMIN_SECRET`. Its tables make themselves on first use; `db/gratitude.sql` is the same schema, for reference. Security headers live in `public/_headers`.
 
-The resume is `public/resume.pdf`. To update it, upload the new PDF over that file on GitHub (Add file → Upload files, same name) and commit to `main`; the next print serves it at [tgoyal.me/resume.pdf](https://tgoyal.me/resume.pdf), opening in a new tab.
+The resume is `public/resume.pdf`, the little sheet where a letter's stamp would go in Let's talk; click it and it opens over the page. To update it, upload the new PDF over that file on GitHub (Add file → Upload files, same name) and commit to `main`; the next print serves it, there and at [tgoyal.me/resume.pdf](https://tgoyal.me/resume.pdf).
 
 ## Colophon
 
