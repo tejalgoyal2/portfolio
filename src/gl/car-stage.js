@@ -1,4 +1,4 @@
-// The car in Let's talk (docs/REVAMP.md §5): the little rally car
+// The car in Let's talk: the little rally car
 // (public/models/car-display.glb) on a road along the bottom of the red
 // finale. It drives in from the left the first time the section comes into
 // view — pulling away fast, a long easy roll to a stop — then idles with a

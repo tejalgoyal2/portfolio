@@ -22,7 +22,8 @@ import { scroll } from '../life/scroll';
  * When the name first lands on the page (`press:landed`, from the loader — or
  * straight away if the press already ran this visit), an invisible pen runs
  * along it from the T to the L, inking each letter as it passes, so the
- * nameplate settles into the page with one bright pass of ink.
+ * nameplate settles into the page with one bright pass of ink. When it's
+ * done it says so (`press:inked`), and the lead line under it takes its turn.
  */
 const SWEEP = 2.3; // seconds, T to L: slow enough to watch the ink travel
 const OPSZ_REST = 144;
@@ -101,7 +102,12 @@ export default function Nameplate({ text }) {
         sweepT += dt / SWEEP;
         const u = sweepT < 0.5 ? 2 * sweepT * sweepT : 1 - (-2 * sweepT + 2) ** 2 / 2;
         sx = -reach * 0.6 + (box.w + reach * 1.2) * u;
-        if (sweepT >= 1) sweepT = -1;
+        if (sweepT >= 1) {
+          sweepT = -1;
+          // the name is inked: the lead line under it can go next
+          window.__pressInked = true;
+          window.dispatchEvent(new Event('press:inked'));
+        }
       }
       // read where the plate is now — one rect, and only while a pointer is
       // about somewhere near where the plate sits (judged from its cached box,

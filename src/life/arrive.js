@@ -29,9 +29,10 @@ gsap.registerPlugin(ScrollTrigger);
  * comes up the page, like the section flag of a broadsheet passing under the
  * press roller. Decorative only (aria-hidden), faint, and behind the text.
  *
- * Markup: data-arrive="deal-l | deal-r | rise | paste | pin | drop" and
- * data-depart="file | lift | slide | part-l | part-r" on a block;
- * data-arrive-items="set | pin | paste | drop" and data-depart-items="pi" on a
+ * Markup: data-arrive="deal-l | deal-r | rise | from-left | from-right |
+ * from-top | from-bottom | paste | pin | drop | stamp" and
+ * data-depart="file | lift | slide | peel | part-l | part-r" on a block;
+ * data-arrive-items="set | pin | paste | drop | lay | tick" and data-depart-items="pi" on a
  * container, which moves its children with a stagger.
  */
 
@@ -43,10 +44,19 @@ const ARRIVE = {
   'deal-l': () => ({ '--ax': '-120px', '--ay': '46px', '--ar': '-6deg', '--ao': 0 }),
   'deal-r': () => ({ '--ax': '120px', '--ay': '46px', '--ar': '6deg', '--ao': 0 }),
   rise: () => ({ '--ay': '96px', '--as': 0.94, '--ao': 0 }),
+  // the lead files, each dealt in from its own side of the desk to meet in the middle
+  'from-left': () => ({ '--ax': `${-0.46 * innerWidth}px`, '--ay': '24px', '--ar': '-5deg', '--ao': 0 }),
+  'from-right': () => ({ '--ax': `${0.46 * innerWidth}px`, '--ay': '24px', '--ar': '5deg', '--ao': 0 }),
+  'from-top': () => ({ '--ay': '-180px', '--ar': '-3deg', '--ao': 0 }),
+  'from-bottom': () => ({ '--ay': '200px', '--ar': '2deg', '--as': 0.96, '--ao': 0 }),
   paste: () => ({ '--ax': '-72px', '--ao': 0 }),
   pin: () => ({ '--ar': `${rnd(-16, -8)}deg`, '--as': 1.22, '--ao': 0 }),
   drop: () => ({ '--ay': '-64px', '--ar': `${rnd(-4, 4)}deg`, '--ao': 0 }),
   set: () => ({ '--ay': '-40px', '--ar': `${rnd(-12, 12)}deg`, '--ao': 0 }),
+  // a ledger entry: its date stamped on, its lines laid down, its figures ticked in from the margin
+  stamp: () => ({ '--as': 1.7, '--ar': `${rnd(-14, -8)}deg`, '--ao': 0 }),
+  lay: () => ({ '--ay': '34px', '--ar': `${rnd(-1.5, 1.5)}deg`, '--ao': 0 }),
+  tick: () => ({ '--ax': '36px', '--ay': '-10px', '--ar': `${rnd(3, 7)}deg`, '--ao': 0 }),
 };
 const ARRIVED = { '--ax': '0px', '--ay': '0px', '--ar': '0deg', '--as': 1, '--ao': 1 };
 
@@ -54,6 +64,8 @@ const DEPART = {
   file: () => ({ '--dy': '-56px', '--ds': 0.95, '--do': 0.3 }),
   lift: () => ({ '--dy': '-72px', '--do': 0 }),
   slide: () => ({ '--dx': '-96px', '--do': 0 }),
+  // peeled off the board, a corner first
+  peel: () => ({ '--dy': '-60px', '--dr': '-2.5deg', '--ds': 0.97, '--do': 0.15 }),
   'part-l': () => ({ '--dx': '-70px', '--dr': '-3deg', '--do': 0.2 }),
   'part-r': () => ({ '--dx': '70px', '--dr': '3deg', '--do': 0.2 }),
   // type pied: the sorts spill off the line and tumble down

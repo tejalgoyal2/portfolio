@@ -146,7 +146,7 @@ describe('solve data as the site uses it', () => {
     expect(STAGES.map((s) => s.end)).toEqual([5, 9, 13, 16, 20, 26, 33, 44]);
   });
 
-  it('sections reach the stages in docs/REVAMP.md §2', () => {
+  it('sections reach their stages', () => {
     expect(SECTION_MOVES).toEqual({ hero: 0, about: 5, skills: 13, projects: 20, experience: 26, writing: 33, contact: 44 });
     expect(Object.keys(SECTION_MOVES)).toEqual(SECTION_ORDER);
     const at = (section) => CubeState.solved().applyAll(SCRAMBLE).applyAll(SOLVE.slice(0, SECTION_MOVES[section]));

@@ -25,7 +25,7 @@ export const START_FACES = data.start_state_faces_UDFBRL;
 
 /**
  * Solve-move counts each section has reached by the time you've scrolled
- * through it (docs/REVAMP.md §2): the hero is scrambled, About finishes the
+ * through it: the hero is scrambled, About finishes the
  * cross, Skills pairs 1–2, Projects pairs 3–4, Experience the top cross,
  * Writing the top face, and Contact solves it.
  */

@@ -993,6 +993,17 @@ button.press-stamp {
  * transform (a card's hover tilt, a note's resting slant) instead of replacing
  * it. At rest every variable is its identity, so with no JS (or reduced
  * motion) the page simply sits as laid out. */
+/* not inherited, so a block that arrives inside one that's leaving moves once, not twice */
+@property --ax { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --ay { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --dx { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --dy { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --ar { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --dr { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --as { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --ds { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --ao { syntax: "<number>"; inherits: false; initial-value: 1; }
+@property --do { syntax: "<number>"; inherits: false; initial-value: 1; }
 [data-arrive],
 [data-depart],
 [data-arrive-items] > *,

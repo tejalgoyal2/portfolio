@@ -75,10 +75,10 @@ export default function About() {
         <div className="about-grid">
           <div className="about-col about-col--story">
             <p className="about-standfirst">
-              I&rsquo;m Tejal. I build software that feels obvious: AI agents that
-              talk to real systems, data pipelines that hold up, and small things
-              that are fun to use. Making something feel that simple is usually the
-              hard part, and the hard part is what I like: the problem that takes
+              I&rsquo;m Tejal. I build <strong>software that feels obvious</strong>:{' '}
+              <strong>AI agents that talk to real systems</strong>, data pipelines that
+              hold up, and small things that are fun to use. Making something feel that
+              simple is usually the hard part, and <strong>the hard part is what I like</strong>: the problem that takes
               three attempts and a walk around the block before it gives in. So my
               weekends go to it too, on things nobody asked for (well, I did):{' '}
               <a className="about-link" href="https://type.tgoyal.me" target="_blank" rel="noopener noreferrer">
@@ -123,11 +123,11 @@ export default function About() {
                 </dd>
               </div>
               <div className="about-num">
-                {/* the cube in the margin: an untouched one is solved by the foot of the page */}
-                <dt className="about-num-label">To solve the cube on this page</dt>
+                {/* the Weekend Edition's sports desk, in a number */}
+                <dt className="about-num-label">F1 race weekends, every one</dt>
                 <dd className="about-num-fig">
-                  <CountUp value="44" />
-                  <span className="about-num-of">moves</span>
+                  <CountUp value="24" />
+                  <span className="about-num-of">/24</span>
                 </dd>
               </div>
             </dl>

@@ -6,7 +6,7 @@ import { prefs } from '../life/prefs';
 /**
  * A lead project as a case file on the desk: a tile that leans toward your
  * cursor in real CSS 3D, with a warm desk-lamp glow following the pointer.
- * The front says what it is and why I made it, with three facts; the back is
+ * The front says what it is and why I made it, with a fact or three; the back is
  * the full file, on manila. Its top-right corner is dog-eared, folded down a
  * little to show the manila underneath, and folds further on hover; click
  * anywhere on it (but a link) and it turns over.
@@ -67,7 +67,7 @@ function plan(el, wave, origin) {
 }
 
 export default function Story({ project, lead = false, index }) {
-  const { name, status, why, eli5, desc, long, note, tech, links, facts, wave } = project;
+  const { name, status, why, eli5, desc, long, note, tech, links, facts, wave, from } = project;
   const [side, setSide] = useState('front'); // the face that's up (or on its way up)
   const [morph, setMorph] = useState(null); // { from, cols, rows, cells, total } while it turns
   const ref = useRef(null);
@@ -176,7 +176,7 @@ export default function Story({ project, lead = false, index }) {
     <article
       ref={ref}
       className={`tile${lead ? ' tile--lead' : ''}${side === 'back' ? ' is-back' : ''}${morph ? ' is-morphing' : ''}`}
-      data-arrive="rise"
+      data-arrive={from ? `from-${from}` : 'rise'}
       data-name={name}
       data-pen="rotate-cw"
       onPointerMove={lean}
@@ -198,7 +198,7 @@ export default function Story({ project, lead = false, index }) {
               <p className="tile-why">{why || eli5}</p>
             </div>
             {facts?.length > 0 && (
-              <ul className="tile-facts">
+              <ul className="tile-facts" style={{ '--facts': facts.length }}>
                 {facts.map(([fig, label]) => (
                   <li key={label}>
                     <span className="tile-fact-fig">{fig}</span>

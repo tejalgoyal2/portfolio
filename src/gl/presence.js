@@ -1,4 +1,4 @@
-// Where the cube is and how it behaves (docs/REVAMP.md §2, docs/cube/CUBE.md):
+// Where the cube is and how it behaves:
 // - big in the hero's slot; as the hero scrolls away it travels down to its
 //   one home in the margin (bottom right), sized to the margin, and slides out
 //   past the edge while a full-width band (the wire, the rows, the filmstrip)

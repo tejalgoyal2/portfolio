@@ -14,3 +14,8 @@ playwright-report/
 
 # downloaded font sources for scripts/fonts/build.py
 scripts/fonts/.cache/
+
+# local working notes, not part of the site
+CLAUDE.md
+docs/REVAMP.md
+docs/cube/CUBE.md

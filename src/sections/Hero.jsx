@@ -89,7 +89,7 @@ export default function Hero() {
         {/* lead */}
         <div className="mast-lead">
           <div className="mast-copy">
-            <KineticHeadline as="h2" font="impact" misregister intro showLoose className="mast-headline">
+            <KineticHeadline as="h2" font="impact" misregister intro showLoose="zigzag" className="mast-headline">
               BUILDING SOFTWARE THAT FEELS OBVIOUS
             </KineticHeadline>
 

@@ -163,7 +163,7 @@ test('profile: one paragraph with type, Dime and the Sudoku linked, a box of num
   await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
   await expect(sudoku).toHaveAttribute('target', '_blank');
   await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
-  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', '44']);
+  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', '24']);
   await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
   await expect(about.locator('.weekend-desk')).toHaveCount(4);
   await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);

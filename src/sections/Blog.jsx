@@ -6,14 +6,14 @@ import { BLOG_POSTS } from '../data/blog';
 import { createTow } from '../life/tow';
 import { onLayout } from '../life/layout';
 import KineticHeadline from '../press/KineticHeadline';
-import Redacted from '../press/Redacted';
 
 /**
  * Writing — a horizontal filmstrip of cream clippings on the dark spread. The
  * marquee auto-scrolls via the shared GSAP ticker (no own rAF). Each card tilts
  * in real CSS 3D toward the cursor — pointer-tracked rotateX/Y + a lift on Z,
  * composed with the static sine scatter — so the strip feels tactile, not flat.
- * Punchline words are redacted; hover reveals them. Drag or horizontal-scroll to
+ * Each title's punchline is the word the editor would circle: point at a
+ * clipping and a loop of red pen goes round it. Drag or horizontal-scroll to
  * browse. Reduced motion → a flat static grid, no marquee, no tilt.
  *
  * The strip feels the page move: scroll speed quickens the crawl (smoothly), which
@@ -43,8 +43,8 @@ const towedYet = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// The one word per title we redact. Readers lean in, hover to reveal.
-// These are the *punchline* — the word that changes the meaning of the headline.
+// The one word per title the editor circles in red pen when you point at it:
+// the *punchline*, the word that changes the meaning of the headline.
 // ─────────────────────────────────────────────────────────────────────────────
 const PUNCHLINES = {
   "Building tgoyal.me With Claude: The Full Guide, Every Prompt Included": "Every",
@@ -71,11 +71,11 @@ function formatDate(d) {
   });
 }
 
-// Splits the title string at the punchline word and wraps it in Redacted.
+// Splits the title string at the punchline word and puts the pen's loop round it.
 // the synced titles have curly quotes; the keys above are typed straight
 const straight = (t) => t.replace(/[‘’]/g, "'");
 
-function RedactedTitle({ title }) {
+function MarkedTitle({ title }) {
   const word = PUNCHLINES[straight(title)];
   if (!word) return title;
   const idx = straight(title).indexOf(word);
@@ -83,9 +83,14 @@ function RedactedTitle({ title }) {
   return (
     <>
       {title.slice(0, idx)}
-      <Redacted trigger="hover" tone="ink">
+      <span className="opdesk-punch">
         {title.slice(idx, idx + word.length)}
-      </Redacted>
+        <span className="opdesk-loop" aria-hidden="true">
+          <svg viewBox="0 0 120 44" preserveAspectRatio="none">
+            <path d="M14 30C2 18 30 5 62 4c30-1 56 6 54 19-2 14-34 19-62 18C26 40 8 34 9 22 10 13 28 8 46 7" />
+          </svg>
+        </span>
+      </span>
       {title.slice(idx + word.length)}
     </>
   );
@@ -435,11 +440,11 @@ export default function Blog() {
         <KineticHeadline as="h2" font="impact" className="opdesk-title">
           THINGS I WROTE DOWN
         </KineticHeadline>
-        {!reduced && (
-          <p className="opdesk-hint" aria-hidden="true">
-            {prefs.fine ? <>DRAG OR SCROLL &middot; HOVER TO REVEAL</> : 'DRAG TO BROWSE'}
-          </p>
-        )}
+        {/* the dateline: how much there is, and how fresh */}
+        <p className="opdesk-hint">
+          {BLOG_POSTS.length} pieces &middot; latest {formatDate(BLOG_POSTS[0]?.date)}
+          {!reduced && <span aria-hidden="true"> &middot; {prefs.fine ? 'drag or scroll' : 'drag'} to browse</span>}
+        </p>
       </header>
 
       <div
@@ -469,7 +474,7 @@ export default function Blog() {
             >
               <p className="opdesk-card-date">{formatDate(post.date)}</p>
               <h3 className="opdesk-card-title">
-                <RedactedTitle title={post.title} />
+                <MarkedTitle title={post.title} />
               </h3>
               <p className="opdesk-card-preview">{post.preview}</p>
               {post.tags?.length > 0 && (

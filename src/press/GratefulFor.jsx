@@ -3,7 +3,7 @@ import { TURNSTILE_SITEKEY } from '../data/site';
 import { found } from '../life/discover';
 
 /**
- * Grateful for — the stamp sheet (docs/REVAMP.md §6). A sheet of cream paper
+ * Grateful for — the stamp sheet. A sheet of cream paper
  * on the red, covered in rubber-stamped words: things people passing through
  * were grateful for, each pressed down wherever they chose. Not a question
  * put to anyone and not a form: you type your word or two, it becomes a
@@ -293,13 +293,13 @@ export default function GratefulFor() {
   for (const m of saved) if (!shown.some((s) => keyOf(s) === keyOf(m))) shown.push({ ...m, mine: true });
   const n = shown.length;
 
-  let how = 'Anonymous, up to three a day. Type a word or two, then press it anywhere on the sheet.';
-  if (word && state === 'idle') how = 'Now pick a spot on the sheet and press. Or just hit Enter.';
+  let how = 'A word or two, anonymous. Then press it anywhere.';
+  if (word && state === 'idle') how = 'Now press it anywhere on the sheet.';
   else if (note) how = note;
-  else if (!open) how = 'The press is warming up. Back soon.';
-  else if (state === 'done') how = 'Today’s three are in. Same time tomorrow?';
-  else if (used === PER_DAY - 1) how = 'One more today. Type it, then press it on the sheet.';
-  else if (used > 0) how = 'Two more today. Type one, then press it on the sheet.';
+  else if (!open) how = 'The press is warming up.';
+  else if (state === 'done') how = 'That’s three. See you tomorrow.';
+  else if (used === PER_DAY - 1) how = 'One more today.';
+  else if (used > 0) how = 'Two more today.';
 
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">

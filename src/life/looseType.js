@@ -9,7 +9,9 @@ import { scroll } from './scroll';
  * Big headlines behave like type still loose in the stick: near the cursor
  * (or a finger), letters lift a little and tip away from it, then drop back
  * into place with a small bounce when it leaves. sweep() plays that once
- * along a headline on its own, to show the letters are loose.
+ * along a headline on its own, to show the letters are loose; a zigzag sweep
+ * takes it a line at a time, left to right, then back right to left, and on,
+ * the way a hand would run along it.
  *
  * The lift uses the CSS `translate` / `rotate` properties, which compose with
  * the `transform` GSAP already uses for the intro, so the two never fight.
@@ -20,6 +22,7 @@ import { scroll } from './scroll';
  */
 const heads = new Set();
 const SWEEP = 1.6; // seconds for a sweep to cross a headline
+const ZIG = 0.9; // seconds a zigzag sweep spends on each line
 let io = null;
 let started = false;
 
@@ -60,7 +63,24 @@ function tick(time, deltaMs) {
     let px = pointer.x;
     let py = pointer.y;
     let swept = false;
-    if (h.sweep >= 0) {
+    if (h.sweep >= 0 && h.lines) {
+      const L = h.lines.length;
+      h.sweep += dt / (ZIG * L);
+      const at = Math.min(1, h.sweep) * L;
+      const n = Math.min(L - 1, Math.floor(at));
+      const t = at - n;
+      const u = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      const line = h.lines[n];
+      const a0 = live.left + (line.x0 * k - reach);
+      const a1 = live.left + (line.x1 * k + reach);
+      px = n % 2 ? a1 + (a0 - a1) * u : a0 + (a1 - a0) * u;
+      py = live.top + line.y * k;
+      swept = true;
+      if (h.sweep >= 1) {
+        h.sweep = -1;
+        h.lines = null;
+      }
+    } else if (h.sweep >= 0) {
       h.sweep += dt / SWEEP;
       const u = 1 - (1 - Math.min(1, h.sweep)) ** 2.2; // quick off, long settle
       px = live.left - reach + (live.width + reach * 2) * u;
@@ -120,13 +140,27 @@ function start() {
  * Run the lift once along a headline, as if a cursor had passed over it — so
  * people see the letters are loose and go and try it themselves.
  */
-export function sweep(root) {
+export function sweep(root, zigzag = false) {
   if (prefs.reduced) return;
   for (const h of heads) if (h.root === root) {
     measure(h);
+    h.lines = zigzag ? linesOf(h) : null;
     h.sweep = 0;
     h.awake = true;
   }
+}
+
+// the headline's lines as it's set now: each one's middle and its two ends
+function linesOf(h) {
+  const lines = [];
+  for (const o of h.offs) {
+    const line = lines.find((l) => Math.abs(l.y - o.y) < h.fs * 0.4);
+    if (line) {
+      line.x0 = Math.min(line.x0, o.x);
+      line.x1 = Math.max(line.x1, o.x);
+    } else lines.push({ y: o.y, x0: o.x, x1: o.x });
+  }
+  return lines.sort((a, b) => a.y - b.y);
 }
 
 /** Let a headline's set glyphs come loose. Returns the undo. */

@@ -10,7 +10,8 @@ import { looseType, sweep } from '../life/looseType';
  * tell). Reduced-motion → plain appearance.
  *
  *   as: tag name   font: 'name' (Fraunces) | 'impact' (Anton)   misregister: bool
- *   showLoose: once set, the letters lift once as if a cursor had passed (so people find they're loose)
+ *   showLoose: once set, the letters lift once as if a cursor had passed (so people find they're loose);
+ *     'zigzag' waits for the nameplate to finish inking, then runs it line by line, back and forth
  *   inview: play on an IntersectionObserver instead of a ScrollTrigger — use it
  *   on terminal/edge sections where ScrollTrigger's computed start can fail to
  *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
@@ -70,7 +71,19 @@ export default function KineticHeadline({
         loosen?.();
         loosen = looseType(root);
         // and, where asked, show it once: the letters lift as if a cursor had passed
-        if (showLoose) setTimeout(() => sweep(root), 250);
+        if (showLoose === 'zigzag') {
+          // after the nameplate's ink pass: line by line, back and forth
+          const go = () => setTimeout(() => sweep(root, true), 150);
+          if (window.__pressInked) go();
+          else {
+            window.addEventListener('press:inked', go, { once: true });
+            const was = detach;
+            detach = () => {
+              was?.();
+              window.removeEventListener('press:inked', go);
+            };
+          }
+        } else if (showLoose) setTimeout(() => sweep(root), 250);
       });
       if (misregister) {
         tl.fromTo(

@@ -5,7 +5,9 @@
 // for what it is.
 // The four leads also have a `why`: what it is and why I made it, in a line or
 // two, told as a story rather than a pitch — that's the front of their tile,
-// with three `facts` under it; `desc` and `long` are the back (the full file).
+// with a few `facts` under it (only the ones worth a number: one, two or three);
+// `desc` and `long` are the back (the full file). `from` is the side of the
+// page each one is dealt in from, so the four meet in the middle.
 // `wave` is how the tile turns over (src/press/Story.jsx): rows, ripple,
 // spread or scan, each picked to suit the project.
 export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];
@@ -14,8 +16,8 @@ export const PROJECTS = [
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
     why: "I wanted to log spending the way I’d text a friend: \u201c$16 sandwich.\u201d A friend would also tell me that’s a crime. I didn’t have one on call, so I built a tracker that does both: it gets what I mean, and roasts me for it.",
-    facts: [["7", "API routes"], ["0", "database writes from the browser"], ["1", "roast per questionable purchase"]],
-    wave: "rows",
+    facts: [["0", "database writes from the browser"], ["1", "roast per questionable purchase"]],
+    wave: "rows", from: "top",
     eli5: "Tell it what you spent, the way you’d tell a friend, and it keeps track of your money — and teases you about it.",
     desc: "An expense tracker you text like a friend. It reads plain English (and Hinglish), files it, and has opinions.",
     long: "A ground-up rewrite of my first tracker, WalletRIP, on Cloudflare Workers with Next.js 16. The browser never writes to the database: every change goes through an API route with auth, Zod validation and Upstash rate limits. Gemini reads what you type, writes the insights, and delivers the roasts. There’s a Quick Add endpoint for Siri and Shortcuts, a CSV export that’s safe from formula injection, and optimistic updates that roll back if the server says no.",
@@ -26,7 +28,7 @@ export const PROJECTS = [
     tier: 1, name: "IAM Threat Mapper", status: "LIVE", color: "#8b8eff",
     why: "I wanted to understand how real systems get broken into: where each piece is weak, how an attacker walks from one to the next, and what would have shut the door. So I took five real breaches apart, step by step, from both sides.",
     facts: [["5", "real breaches"], ["32", "attack steps"], ["17", "ATT&CK techniques"]],
-    wave: "spread",
+    wave: "spread", from: "bottom",
     eli5: "Shows, step by step, how hackers broke into real companies by stealing logins, and what would have stopped them.",
     desc: "Five real breaches, taken apart one login at a time and mapped to the attacker’s playbook, MITRE ATT&CK.",
     long: "MGM and Caesars, Uber and Lapsus$, Twilio and 0ktapus, Midnight Blizzard at Microsoft, and M365 token theft: 32 steps across 17 ATT&CK techniques, drawn as interactive Cytoscape.js graphs and coloured by severity. Then it turns the lens on you: a 20-question IAM maturity check, aligned to NIST 800-63 and the CIS Controls and scored across seven categories, where every gap links to the breach that used it.",
@@ -36,8 +38,8 @@ export const PROJECTS = [
   {
     tier: 1, name: "Claubi", status: "OFFLINE", color: "#f97316",
     why: "I like AI writing code. I’m less keen on it running questionable commands on my machine without asking. So I’m building one that runs offline, has to ask first, and writes down every answer.",
-    facts: [["0", "cloud calls: models run locally"], ["1", "append-only audit log"], ["Every", "command asks first"]],
-    wave: "scan",
+    facts: [["0", "cloud calls: every model runs on your machine"]],
+    wave: "scan", from: "right",
     eli5: "A coding helper that lives on your own computer and has to ask permission before it touches anything.",
     desc: "A coding agent in Rust that lives on your own machine, treats AI-written code as untrusted, and asks before it acts.",
     long: "Any model runs locally through Ollama, so nothing leaves the laptop and no vendor holds the keys. Permissions are deny-first, modelled on AWS IAM and CrowdStrike prevention policies: the agent has to ask, and every ask and answer goes into an append-only audit log (JSONL). Today it has a full Ollama client with streaming chat, model switching and a CLI REPL. Next: routing between models, a planner, executor and reviewer pipeline, a Ratatui TUI, and a local MCP server.",
@@ -80,8 +82,8 @@ export const PROJECTS = [
   {
     tier: 2, name: "type", status: "LIVE", color: "#fda4af",
     why: "I got a new mechanical keyboard and wanted somewhere to just type. Notepad felt like a waste of a good keyboard, so I made a page where every letter lands like it has weight.",
-    facts: [["6", "styles, a new one on F4"], ["0", "timers, scores or prompts"], ["1", "physics engine, hand-rolled"]],
-    wave: "ripple",
+    facts: [["6", "styles, a new one on F4"], ["0", "timers, scores or prompts"]],
+    wave: "ripple", from: "left",
     eli5: "A blank page where every letter you type lands like it has weight. No score, no timer — it just feels nice.",
     desc: "A blank page for typing, just for the feel of it. No timer and no score: letters land with weight, the page has mass, and six styles answer your rhythm.",
     long: "Everything is hand-rolled on canvas, with no animation libraries: the renderer, the physics, the springs. How hard you strike a key sets that letter’s weight on a variable-font axis, and each glyph settles on a closed-form underdamped spring. Every keystroke kicks the page, which hangs on a spring of its own. Six styles (Print, Clean, Ember, Tide, Frost and Gale) cycle on F4 and shed matter as your flow builds. There are streaks, secret words that switch styles mid-sentence, a 12-second seismograph and a lifetime odometer, and all of it stays in your browser.",

@@ -1,7 +1,7 @@
 // Decides which quarter turn the cube plays next. Pure and clock-free: the
 // caller feeds it time with tick(dt) and reads `active` to animate.
 //
-// Rules (docs/cube/CUBE.md):
+// Rules:
 // - scroll sets a target solve-move count; moves play one at a time, never skipped — a long queue
 //   (a fast scroll) speeds them up only a little, so the cube always takes its time;
 // - a jump (Home/End, a fling, a menu link) more than `catchUp` moves away becomes a speed-solve:

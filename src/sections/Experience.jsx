@@ -179,13 +179,12 @@ export default function Experience() {
             <article
               key={`${entry.org}-${entry.period}`}
               className={`led-entry${reduced ? ' is-open' : ''}`}
-              data-arrive="paste"
-              data-depart="slide"
+              data-depart="peel"
             >
               <span className="led-dot-mark" aria-hidden="true" />
-              <div className="led-period">{entry.period}</div>
+              <div className="led-period" data-arrive="stamp">{entry.period}</div>
 
-              <div className="led-body">
+              <div className="led-body" data-arrive-items="lay">
                 <h3 className="led-role">
                   {entry.role}
                   {entry.active && (
@@ -200,7 +199,7 @@ export default function Experience() {
                   <Plain text={entry.story} />
                 </p>
                 {entry.figures.length > 0 && (
-                  <dl className="led-figs">
+                  <dl className="led-figs" data-arrive-items="tick">
                     {entry.figures.map(([fig, label]) => (
                       <div className="led-fig" key={label}>
                         <dt className="led-fig-label">{label}</dt>

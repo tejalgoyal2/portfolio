@@ -3,7 +3,7 @@ import KineticHeadline from '../press/KineticHeadline';
 import Resume from '../press/Resume';
 import RoadCar from '../press/RoadCar';
 import GratefulFor from '../press/GratefulFor';
-// the marks themselves (src/life/brands, from thesvg — see its README.md), as plain asset URLs
+// the marks themselves (src/life/brands, from thesvg, MIT — see its LICENSE), as plain asset URLs
 import gmailIcon from '../life/brands/gmail.svg?url';
 import githubIcon from '../life/brands/github.svg?url';
 import linkedinIcon from '../life/brands/linkedin.svg?url';
@@ -17,7 +17,9 @@ import linkedinIcon from '../life/brands/linkedin.svg?url';
  * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
  * stagger them back in. Worst case is the entrance not playing — never a blank
  * red screen. The headline uses KineticHeadline's `inview` mode for the same
- * reason.
+ * reason. Each way to reach me comes in like a wire on the teleprinter: its
+ * mark stamped down, then the address struck letter by letter, one line after
+ * the other.
  */
 const LINKS = [
   { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
@@ -79,9 +81,9 @@ export default function Contact() {
               <Resume />
             </div>
 
-            <ul className="contact-classified" data-arrive-items="paste">
-              {LINKS.map(({ name, href, text, icon, external }) => (
-                <li className="contact-line" key={name}>
+            <ul className="contact-classified">
+              {LINKS.map(({ name, href, text, icon, external }, line) => (
+                <li className="contact-line" key={name} style={{ '--line': line }}>
                   {/* the mark is a way in too (the text link carries the name for screen readers) */}
                   <a
                     href={href}
@@ -100,7 +102,12 @@ export default function Contact() {
                     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   >
                     <span className="sr-only">{name}: </span>
-                    {text}
+                    {/* struck letter by letter, like a wire coming in on the teleprinter */}
+                    {[...text].map((ch, i) => (
+                      <span className="tp" key={i} style={{ '--i': i }}>
+                        {ch}
+                      </span>
+                    ))}
                   </a>
                 </li>
               ))}
