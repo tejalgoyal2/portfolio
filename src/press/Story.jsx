@@ -15,8 +15,8 @@ import { prefs } from '../life/prefs';
  * small square scales that turn over one by one in a wave, newsprint to
  * manila, and the other face is there under them as they settle. Each project
  * has its own wave (`wave` in src/data/projects.js):
- *   keys    type — row by row, left to right, each scale pressed like a key
- *   ripple  Dime — rings out from where you clicked, like a coin dropped in
+ *   ripple  type — rings out from where you clicked, like a key landing
+ *   rows    Dime — row by row, left to right, like a receipt printing
  *   spread  IAM Threat Mapper — out from the click, unevenly, node to node,
  *           the way an attacker moves through a network
  *   scan    Claubi — top to bottom, a line at a time, like a terminal printing
@@ -40,7 +40,7 @@ const rand = (i) => {
 };
 // each wave: the order the scales go in (0..1) and the way they turn
 const WAVES = {
-  keys: { spread: 640, axis: () => 'x', at: (c, r, C, R) => (r + (c / C) * 0.9) / (R + 0.9) },
+  rows: { spread: 640, axis: () => 'x', at: (c, r, C, R) => (r + (c / C) * 0.9) / (R + 0.9) },
   ripple: { spread: 560, axis: () => 'y', at: (c, r, C, R, o) => Math.hypot((c + 0.5) / C - o.x, ((r + 0.5) / R - o.y) * (R / C)) },
   spread: {
     spread: 620,

@@ -217,6 +217,7 @@ export default function Experience() {
                   {entry.role}
                   {entry.active && (
                     <span className="led-developing">
+                      <span className="sr-only">, </span>
                       Now
                     </span>
                   )}

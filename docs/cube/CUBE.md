@@ -36,7 +36,7 @@ Decided with Tejal, 2026-10-17. The cube starts from one fixed scramble, and a h
 - Each chapter's moves are spread evenly over that chapter's scroll length. Crossing a move's threshold plays that quarter turn with a spring (about 180 ms).
 - Scrolling back plays the inverse moves.
 - Fast scrolling queues the moves and plays them faster, so the cube never skips a state.
-- Caption: a small label beside the cube when a stage completes (the captions above), plus a move counter ("move 23 / 62"), set in Host Grotesk, 12 px (see the reference page).
+- Caption: a small label beside the cube when a stage completes (the captions above), plus a move counter ("move 23 / 44"), set in Host Grotesk, 12 px (see the reference page).
 
 ## Constant motion and presence (Tejal: constant motion, reacting when the visitor comes close)
 - **Always alive:** a slow tumble and a gentle float, so it is never still. Each chapter defines a home spot in the margins, never over text.

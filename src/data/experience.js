@@ -4,19 +4,19 @@ export const EXPERIENCE = [
   {
     role: "Software Engineering Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "May 2026 – Present", active: true,
-    desc: "Enterprise Solutions: building and modernizing the financial apps BCI's investment & risk teams run on — React/Azure rebuilds, Power Platform, data pipelines, and AI-agent plumbing.",
+    desc: "Enterprise Solutions: building and modernizing the financial apps BCI’s investment & risk teams run on — React/Azure rebuilds, Power Platform, data pipelines, and AI-agent plumbing.",
     details: [
       "Developing Python MCP servers so AI agents can query enterprise financial DBs and app APIs directly — local implementation shipped, in code review",
       "Contributing to the flagship React/Azure app rebuilt off a vendor-locked .NET/WPF stack — eliminated licensing risk, moved on-prem to cloud, made the codebase AI-readable",
       "Automated a manual quarterly commission report in Power Automate — caught a wrong parameter count and a stored-proc name typo in the ticket, root-caused a SQL-connector DATE-type 500/503",
-      "Built the first modal-overlay pattern in a 13-screen PowerApps ops app — surfaced {{28}} fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
+      "Built the first modal-overlay pattern in a 13-screen Power Apps ops app — surfaced {{28}} fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
       "Working across Azure resource groups, Data Factory pipelines, and PIM; bridged Okta/IAM knowledge from the security desk into the new team",
     ],
   },
   {
     role: "Cybersecurity & Risk Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "Jan – Apr 2026",
-    desc: "Identity, detection, and incident response across an institutional investment manager's security stack.",
+    desc: "Identity, detection, and incident response across an institutional investment manager’s security stack.",
     details: [
       "Engineered Shadow AI detection via CrowdStrike LogScale, surfacing {{47}} unsanctioned AI tools across {{1,200+}} endpoints",
       "Spearheaded breakglass documentation for {{163+}} SSO apps, reducing undocumented gaps from {{86%}} to {{22%}}",
@@ -41,10 +41,10 @@ export const EXPERIENCE = [
     period: "Jan – Jul 2024",
     desc: "Implemented and benchmarked federated learning algorithms from scratch. Contributed implementations to a published paper on game-theoretic federated learning.",
     details: [
-      "Built FedAVG from scratch in PyTorch, scaled experiments from 50 to 1M simulated clients across MNIST, CIFAR-10/100, FEMNIST",
+      "Built FedAvg from scratch in PyTorch, scaled experiments from 50 to 1M simulated clients across MNIST, CIFAR-10/100, FEMNIST",
       "Developed Dirichlet-based non-IID distribution, reducing communication rounds by {{~15%}} under severe heterogeneity",
       "Implemented CMAB framework for class imbalance, improving minority-class accuracy by {{~11%}}",
-      "Benchmarked {{8+}} FL algorithms (FedAVG, FedProx, DITTO) with modular experimentation framework",
+      "Benchmarked {{8+}} FL algorithms (FedAvg, FedProx, DITTO) with modular experimentation framework",
       "Contributed implementations to a published paper on game-theoretic federated learning",
       "Co-created shared Ubuntu dev server for {{6}} researchers, standardized CUDA/PyTorch toolchain",
     ],

@@ -79,11 +79,12 @@ export default function About() {
               that are fun to use.
             </p>
             <p className="about-body">
-              Before software, there was electronics engineering. Then I scaled
-              federated-learning experiments from fifty simulated clients to a
-              million, and spent four months on a security team, hunting shadow
-              AI and untangling who can log in to what. Now I&rsquo;m teaching AI
-              agents to talk to real systems. Weekends, I ship my own: type, Dime,
+              Started out in electronics engineering, then wandered over to the
+              software side and stayed. I&rsquo;ve pushed a federated-learning
+              experiment from fifty simulated clients to a million, and spent four
+              months on a security team chasing shadow AI and untangling who can
+              log in to what. These days I&rsquo;m teaching AI agents to talk to
+              real systems. Weekends are for things nobody asked for: type, Dime,
               and{' '}
               <a className="about-link" href="https://sudoku.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 a Sudoku with no ads<span className="about-link-arrow" aria-hidden="true">↗</span>
