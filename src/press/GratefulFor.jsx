@@ -157,6 +157,8 @@ export default function GratefulFor() {
           token.current = t;
           waiting.current?.(t);
         },
+        // when it does want a click, say so: the box is just under the sheet
+        'before-interactive-callback': () => setNote('One quick check just below the sheet, then it’s down.'),
         'expired-callback': () => (token.current = ''),
         'error-callback': () => {
           token.current = '';
@@ -218,9 +220,19 @@ export default function GratefulFor() {
           setState('done');
           setNote('The sheet’s full for today. Come back tomorrow?');
         } else if (r.status === 429) {
+          // one a day for each connection: say whose it was, if it's this browser's
+          const mineToday = !!readMine() && store.get(TODAY_KEY) === today();
           store.set(TODAY_KEY, today());
           setState('done');
-          setNote('One stamp a day. Yours is already on the sheet.');
+          setNote(
+            mineToday
+              ? 'One stamp a day, and yours is already on the sheet.'
+              : 'Someone on your network already stamped today (it’s one a day each). Back tomorrow?'
+          );
+        } else if (r.status === 403) {
+          setState('error');
+          setNote('The person check didn’t pass. Try once more?');
+          setValue(word);
         } else {
           setState('error');
           setNote(r.status === 422 ? 'One or two words, letters only.' : 'That didn’t go through. Try again?');
@@ -266,7 +278,7 @@ export default function GratefulFor() {
   let how = 'Anonymous, one a day. It goes wherever you press it.';
   if (note) how = note;
   else if (!open) how = 'The sheet’s being set up. Back soon.';
-  else if (state === 'done') how = 'You’ve stamped today. Back tomorrow?';
+  else if (state === 'done') how = 'There’s a stamp from here today. Back tomorrow?';
   else if (word) how = 'Now click anywhere on the sheet to press it down, or hit Enter.';
 
   return (

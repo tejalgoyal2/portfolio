@@ -784,7 +784,8 @@ button.press-stamp {
   border-radius: 4px;
   box-shadow: 5px 5px 0 var(--ink);
   letter-spacing: 0.14em;
-  animation: rh-panel-in 0.32s var(--ease-stamp);
+  /* it just appears: a short fade and a few pixels of drop, nothing more */
+  animation: rh-panel-in 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .rh-panel[hidden] { display: none; }
 .rh-panel { max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; }
@@ -825,8 +826,11 @@ button.press-stamp {
 }
 .rh-finds-all { margin: 0.6rem 0 0; font-family: var(--font-pen); font-size: 1.2rem; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--red); }
 @keyframes rh-panel-in {
-  from { opacity: 0; translate: 0 -8px; rotate: 0.6deg; }
-  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+  from { opacity: 0; translate: 0 -4px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-panel { animation: none; }
 }
 .rh-panel-title {
   margin: 0 0 0.8rem;
