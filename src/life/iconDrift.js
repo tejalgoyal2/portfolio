@@ -26,9 +26,10 @@ import { scroll } from './scroll';
  * How many icons there are follows Page settings (src/life/settings.js), and
  * ripples can be switched off there.
  *
- * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
- * Paused while the tab is hidden. Reduced motion: the icons sit still and
- * there are no ripples.
+ * One fixed canvas, redrawn each frame while anything is moving fast (a
+ * ripple, sparks, an icon swaying back, the page scrolling) and at 30 fps
+ * while the icons only drift. Paused while the tab is hidden. Reduced motion:
+ * the icons sit still and there are no ripples.
  */
 
 const PX = 40; // css px the sprites are rasterised at
@@ -68,6 +69,8 @@ export function startIconDrift(canvas) {
   const ripples = [];
   let clock = 0;
   let lastDrawKey = '';
+  let lastDrawY = NaN;
+  let sinceDraw = 0;
 
   const resize = () => {
     // faint doodles and soft rings don't need a full retina buffer: 1.5× is
@@ -117,7 +120,8 @@ export function startIconDrift(canvas) {
         y,
         r,
         size,
-        sprite: (Math.random() * sprites.length) | 0,
+        sprite: (Math.random() * sprites.count) | 0,
+        img: null,
         accent: Math.random() < 0.16,
         dir: Math.random() * Math.PI * 2,
         speed: 6 + Math.random() * 8,
@@ -282,7 +286,8 @@ export function startIconDrift(canvas) {
     drawRipples(sy0);
     for (const sp of sparks) {
       const inks = INKS_FOR[sp.ground] || INKS_FOR.paper;
-      const img = sprites[sp.sprite][inks[sp.accent ? 1 : 0]];
+      const img = (sp.img = sprites.get(sp.sprite, inks[sp.accent ? 1 : 0]) || sp.img);
+      if (!img) continue;
       // in quick, out slow
       const t = sp.age / sp.life;
       ctx.globalAlpha = Math.min(1, sp.age / 0.08) * (1 - t) ** 1.6 * 0.6;
@@ -295,7 +300,9 @@ export function startIconDrift(canvas) {
     }
     for (const ic of icons) {
       const inks = INKS_FOR[groundAtDoc(ic.y)] || INKS_FOR.paper;
-      const img = sprites[ic.sprite][inks[ic.accent ? 1 : 0]];
+      // a new ink is made the first time it's needed; until then the old one stands in
+      const img = (ic.img = sprites.get(ic.sprite, inks[ic.accent ? 1 : 0]) || ic.img);
+      if (!img) continue;
       ctx.globalAlpha = Math.max(0, ic.alpha) * ic.peak;
       ctx.save();
       ctx.translate(ic.x + ic.ox, ic.y + ic.oy - sy0);
@@ -317,6 +324,16 @@ export function startIconDrift(canvas) {
       if (key === lastDrawKey) return;
       lastDrawKey = key;
     }
+    // only drifting: a slow wander reads the same at 30 fps, for half the work
+    sinceDraw += dt;
+    const busy =
+      ripples.length > 0 ||
+      sparks.length > 0 ||
+      scroll.y !== lastDrawY ||
+      icons.some((ic) => ic.alpha < 1 || Math.abs(ic.ox) + Math.abs(ic.oy) > 0.3 || Math.abs(ic.rock) > 0.004);
+    if (!busy && sinceDraw < 1 / 30 - 0.002) return;
+    sinceDraw = 0;
+    lastDrawY = scroll.y;
     draw();
   };
 
@@ -341,7 +358,8 @@ export function startIconDrift(canvas) {
         size: 16 + Math.random() * 7,
         a: Math.random() * Math.PI * 2,
         av: (Math.random() - 0.5) * 9,
-        sprite: (Math.random() * sprites.length) | 0,
+        sprite: (Math.random() * sprites.count) | 0,
+        img: null,
         accent: Math.random() < 0.4,
         ground,
         age: 0,

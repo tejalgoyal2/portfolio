@@ -295,7 +295,8 @@ export function createPresence(view, hitBtn) {
         lastHit = key;
         hitBtn.style.width = hitBtn.style.height = `${s}px`;
       }
-      const at = `translate3d(${(cx - rad).toFixed(1)}px,${(cy - rad).toFixed(1)}px,0)`;
+      // whole pixels: an invisible target needs no more, and the float then writes it a few times a second, not every frame
+      const at = `translate3d(${Math.round(cx - rad)}px,${Math.round(cy - rad)}px,0)`;
       if (at !== lastHitAt) hitBtn.style.transform = lastHitAt = at;
     }
   }

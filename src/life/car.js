@@ -72,6 +72,7 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   let puffClock = 0;
   let on = false;
   const state = { s, v: 0, face: 1, x: 0, y: 0, angle: 0 };
+  const wrote = { at: '', tilt: '', deg: '' };
 
   const place = (dt, draw = true) => {
     const len = Math.max(1, length());
@@ -111,10 +112,16 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
     Object.assign(state, { s, v, face, x: p.x, y: p.y, angle: p.angle });
     if (!draw) return;
     const k = scale;
-    el.style.transform = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k - hop).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${faceV.toFixed(3)})`;
-    body.setAttribute('transform', `rotate(${(pitch * face).toFixed(2)} 16 22)`);
+    // written only when something changed: a parked van costs nothing
+    const at = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k - hop).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${faceV.toFixed(3)})`;
+    if (at !== wrote.at) el.style.transform = wrote.at = at;
+    const tilt = `rotate(${(pitch * face).toFixed(2)} 16 22)`;
+    if (tilt !== wrote.tilt) body.setAttribute('transform', (wrote.tilt = tilt));
     const deg = ((spin * 180) / Math.PI).toFixed(1);
-    wheels.forEach((w) => w.setAttribute('transform', `rotate(${deg})`));
+    if (deg !== wrote.deg) {
+      wrote.deg = deg;
+      wheels.forEach((w) => w.setAttribute('transform', `rotate(${deg})`));
+    }
 
     // exhaust while it's moving: more often the faster it goes
     const speed = Math.abs(v);

@@ -32,7 +32,9 @@ export function usePressScroll() {
     // and the scroll is sampled once, there, for everyone (src/life/scroll.js)
     const raf = (time, deltaMs) => {
       lenis.raf(time * 1000);
-      sampleScroll(deltaMs);
+      // Lenis knows where it just put the page; asking the window would make
+      // the browser settle the styles ScrollTrigger just wrote, mid-frame
+      sampleScroll(deltaMs, lenis.animatedScroll);
     };
     gsap.ticker.add(raf, false, true);
     gsap.ticker.lagSmoothing(0);

@@ -27,10 +27,10 @@ export function startScroll() {
 }
 
 /** Once a frame, first thing (after Lenis has moved the page). */
-export function sampleScroll(deltaMs) {
+export function sampleScroll(deltaMs, at) {
   if (!started) startScroll();
   const dt = Math.max(1e-3, deltaMs / 1000);
-  const y = window.scrollY;
+  const y = Number.isFinite(at) ? at : window.scrollY;
   const raw = (y - scroll.y) / dt;
   scroll.v += (raw - scroll.v) * Math.min(1, dt * 14);
   if (Math.abs(scroll.v) < 0.5) scroll.v = 0;

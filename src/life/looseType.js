@@ -3,6 +3,7 @@ import { pointer } from './pointer';
 import { prefs } from './prefs';
 import { onLayout } from './layout';
 import { Spring, clamp, smoothstep } from './spring';
+import { scroll } from './scroll';
 
 /**
  * Big headlines behave like type still loose in the stick: near the cursor
@@ -13,7 +14,9 @@ import { Spring, clamp, smoothstep } from './spring';
  * The lift uses the CSS `translate` / `rotate` properties, which compose with
  * the `transform` GSAP already uses for the intro, so the two never fight.
  * One ticker serves every headline; headlines off-screen or at rest cost
- * nothing. Reduced motion: it doesn't run.
+ * nothing, and a headline's box is only read while the pointer is somewhere
+ * near where it sits (judged from where it was last laid out), all the reads
+ * before any of the writes. Reduced motion: it doesn't run.
  */
 const heads = new Set();
 const SWEEP = 1.6; // seconds for a sweep to cross a headline
@@ -23,6 +26,8 @@ let started = false;
 function measure(h) {
   const r = h.root.getBoundingClientRect();
   h.w = r.width || 1;
+  h.top = r.top + window.scrollY;
+  h.h = r.height;
   h.fs = parseFloat(getComputedStyle(h.root).fontSize) || 48;
   h.offs = h.chars.map((c) => {
     const cr = c.getBoundingClientRect();
@@ -33,11 +38,22 @@ function measure(h) {
 function tick(time, deltaMs) {
   if (prefs.reduced) return;
   const dt = Math.min(0.05, deltaMs / 1000);
+  // which headlines need a look this frame, then every rect read at once
+  const due = [];
   for (const h of heads) {
     if (!h.visible) continue;
-    if (!pointer.active && !h.awake) continue;
-    // where this headline is now (one rect, only while a pointer is about)
-    const live = h.root.getBoundingClientRect();
+    if (!h.awake && h.sweep < 0) {
+      if (!pointer.active) continue;
+      const top = h.top - scroll.y;
+      const margin = h.fs * 3 + 160;
+      if (pointer.y < top - margin || pointer.y > top + h.h + margin) continue;
+    }
+    due.push(h);
+  }
+  const rects = due.map((h) => h.root.getBoundingClientRect());
+  for (let n = 0; n < due.length; n++) {
+    const h = due[n];
+    const live = rects[n];
     const k = live.width / h.w;
     const reach = h.fs * 1.15 * k;
     // a sweep is a cursor that isn't there, passing once along the line

@@ -40,7 +40,9 @@ export default function Redacted({ children, trigger = 'scroll', tone = 'ink' })
   useLayoutEffect(() => {
     const flaps = [...wrapRef.current.querySelectorAll('.flap')];
     flaps.forEach((f) => (f.style.width = ''));
-    flaps.forEach((f) => (f.style.width = `${f.getBoundingClientRect().width.toFixed(2)}px`));
+    // every width read first, then all written: one layout, not one per letter
+    const widths = flaps.map((f) => f.getBoundingClientRect().width.toFixed(2));
+    flaps.forEach((f, i) => (f.style.width = `${widths[i]}px`));
   }, [text]);
 
   useEffect(() => {

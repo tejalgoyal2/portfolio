@@ -251,7 +251,8 @@ html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
 .kh-char {
   display: inline-block;
   opacity: 0;
-  will-change: transform, opacity;
+  /* no standing will-change: GSAP lifts each letter onto its own layer only
+     while it moves, so a page of set headlines isn't hundreds of layers */
 }
 .kh-space {
   display: inline-block;
@@ -348,7 +349,6 @@ button.press-stamp {
   position: absolute;
   inset: 0;
   clip-path: inset(0 calc(100% - (var(--i) + 1) * 100% / var(--n) - 1px) 0 calc(var(--i) * 100% / var(--n)));
-  will-change: transform;
 }
 .seam-tear {
   position: absolute;
