@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /letters-admin.html
+Disallow: /api/
 
 Sitemap: https://tgoyal.me/sitemap.xml

@@ -4,3 +4,6 @@ dist
 *.local
 .claude/
 .playwright-mcp/
+
+# local Cloudflare dev state
+.wrangler/

@@ -13,3 +13,6 @@
 # fonts, models and built assets never change under the same name
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+/letters-admin.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
