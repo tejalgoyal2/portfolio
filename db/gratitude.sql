@@ -1,4 +1,4 @@
--- The gratitude corner's database (Cloudflare D1). The functions make these
+-- The gratitude line's database (Cloudflare D1). The functions make these
 -- tables themselves on first use; this file is the same schema, for reference
 -- or to run by hand:  npx wrangler d1 execute gratitude --remote --file=db/gratitude.sql
 
@@ -18,3 +18,13 @@ CREATE TABLE IF NOT EXISTS daily (
   hash TEXT PRIMARY KEY,
   day TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS daily_by_day ON daily (day);
+
+-- The line itself: one row per printed word and how many people left it, so
+-- showing the newest sixty reads sixty rows, however many words there are.
+CREATE TABLE IF NOT EXISTS tally (
+  word TEXT PRIMARY KEY,
+  n INTEGER NOT NULL,
+  last INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS tally_by_last ON tally (last);

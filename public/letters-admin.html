@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Letters waiting</title>
+<title>The gratitude line</title>
 <style>
   :root { color-scheme: light; --ink: #1c140e; --paper: #f4f0e6; --red: #d51e22; }
   body { margin: 0; padding: 2rem 16px; font: 16px/1.5 ui-monospace, Menlo, monospace; color: var(--ink); background: var(--paper); }
@@ -18,14 +18,17 @@
   li span { flex: 1; font-size: 1.1rem; }
   ul { list-style: none; padding: 0; }
   #msg { color: #555; }
+  h2 { font-size: .9rem; letter-spacing: .15em; text-transform: uppercase; margin-top: 2.5rem; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Letters waiting for a look</h1>
+  <h1>The gratitude line</h1>
   <form id="auth"><input id="key" type="password" placeholder="admin secret" autocomplete="current-password"> <button>Open</button></form>
   <p id="msg"></p>
   <ul id="list"></ul>
+  <h2>On the line</h2>
+  <ul id="printed"></ul>
 </main>
 <script>
   // Words flagged by the check wait here. The secret stays in this tab only.
@@ -35,24 +38,28 @@
   async function load() {
     const r = await api();
     if (!r.ok) return msg(r.status === 401 ? 'Wrong secret.' : 'Not set up yet.');
-    const { pending } = await r.json();
+    const { pending, printed } = await r.json();
     const list = document.getElementById('list');
     list.textContent = '';
-    msg(pending.length ? pending.length + ' waiting.' : 'Nothing waiting.');
-    for (const p of pending) {
+    msg(pending.length ? pending.length + ' waiting for a look.' : 'Nothing waiting.');
+    const row = (text, buttons) => {
       const li = document.createElement('li');
       const w = document.createElement('span');
-      w.textContent = p.word;
+      w.textContent = text;
       li.append(w);
-      for (const [label, action, cls] of [['Print it', 'approve', 'ok'], ['Bin it', 'reject', 'no']]) {
+      for (const [label, cls, body] of buttons) {
         const b = document.createElement('button');
         b.textContent = label;
         b.className = cls;
-        b.onclick = async () => { await api({ method: 'POST', body: JSON.stringify({ id: p.id, action }) }); load(); };
+        b.onclick = async () => { await api({ method: 'POST', body: JSON.stringify(body) }); load(); };
         li.append(b);
       }
-      list.append(li);
-    }
+      return li;
+    };
+    for (const p of pending) list.append(row(p.word, [['Print it', 'ok', { id: p.id, action: 'approve' }], ['Bin it', 'no', { id: p.id, action: 'reject' }]]));
+    const on = document.getElementById('printed');
+    on.textContent = '';
+    for (const p of printed) on.append(row(p.n > 1 ? p.word + ' ×' + p.n : p.word, [['Take it down', 'no', { action: 'remove', word: p.word }]]));
   }
   document.getElementById('auth').onsubmit = (e) => { e.preventDefault(); sessionStorage.setItem('letters-key', document.getElementById('key').value); load(); };
   if (key()) load();

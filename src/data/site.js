@@ -5,8 +5,8 @@ export const PLAY_LIVE = false;
 export const PLAY_URL = 'https://play.tgoyal.me';
 
 /**
- * The gratitude corner's Turnstile site key (public; the secret lives in the
- * Pages Functions settings). Empty: the corner still prints the words, but the
- * form says the letters desk opens soon. VITE_TURNSTILE_SITEKEY overrides it.
+ * The gratitude line's Turnstile site key. It's public by design (every visitor's
+ * browser sees it); the secret lives only in the Pages settings.
+ * VITE_TURNSTILE_SITEKEY overrides it (Turnstile's test key, for local runs).
  */
-export const TURNSTILE_SITEKEY = import.meta.env?.VITE_TURNSTILE_SITEKEY || '';
+export const TURNSTILE_SITEKEY = import.meta.env?.VITE_TURNSTILE_SITEKEY || '0x4AAAAAAFcLB_DEyKajOJ8i';
