@@ -50,6 +50,32 @@ test('loads clean: no errors, no sideways scroll, every section present', async 
   expect(errors).toEqual([]);
 });
 
+test('the press: a scroll during the opening skips ahead, and the page waits for the name to land', async ({ page }) => {
+  const errors = await open(page, { fresh: true });
+  await page.mouse.move(700, 400);
+  for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 600);
+  await expect(page.locator('.press-loader')).toHaveCount(0, { timeout: 6000 });
+  expect(await page.evaluate(() => scrollY)).toBeLessThan(5);
+  await expect(page.locator('.mast-plate')).toBeVisible();
+  // and once it's home, the page scrolls as normal
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 500);
+  await page.waitForTimeout(900);
+  expect(await page.evaluate(() => scrollY)).toBeGreaterThan(300);
+  expect(errors).toEqual([]);
+});
+
+test('projects: an unturned tile peeks once in its corner; Claubi types its face in', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.tile--lead', -80);
+  await expect(page.locator('.tile--lead .tile-peek')).toHaveCount(1, { timeout: 4000 });
+  await expect(page.locator('.tile--lead .tile-peek')).toHaveCount(0, { timeout: 4000 });
+  const claubi = page.locator('.tile[data-name="Claubi"]');
+  await scrollTo(page, '.tile[data-name="Claubi"]', -200);
+  await claubi.click({ position: { x: 60, y: 60 } });
+  await expect(claubi.locator('.tile-scale--pop').first()).toBeAttached();
+  await expect(claubi.locator('.tile-flip:focus')).toHaveCount(0);
+});
+
 test('the press: a clean first paint, and the name on screen in every frame of the hand-off', async ({ page }) => {
   // every frame from the first: is the name showing, either the loader's copy or the masthead's own?
   await page.addInitScript(() => {
@@ -150,13 +176,15 @@ test('projects: a tile turns over from anywhere on it, in a wave of scales, and 
   await expect(tile).toHaveClass(/is-back/);
   await expect(tile.locator('.tile-scale').first()).toBeAttached();
   await page.waitForTimeout(1400);
-  // the scales are gone once it's turned, and the full file is up and focused
+  // the scales are gone once it's turned, and the full file is up; a click leaves focus be
   await expect(tile.locator('.tile-morph, .tile-clip')).toHaveCount(0);
   await expect(tile.locator('.tile-back')).toHaveClass(/is-up/);
   await expect(tile.locator('.tile-back .tile-long')).toBeVisible();
-  await expect(tile.locator('.tile-back .tile-flip')).toBeFocused();
-  // from the keyboard, back to the front
+  await expect(tile.locator('.tile-back .tile-flip')).not.toBeFocused();
+  // from the keyboard, back to the front, and focus follows to the front's button
+  await tile.locator('.tile-back .tile-flip').focus();
   await page.keyboard.press('Enter');
+  await expect(tile.locator('.tile-front .tile-flip')).toBeFocused();
   await expect(tile).not.toHaveClass(/is-back/);
   await page.waitForTimeout(1400);
   await expect(tile.locator('.tile-front')).toHaveClass(/is-up/);

@@ -26,7 +26,7 @@ const LINKS = [
   { name: 'LinkedIn', href: 'https://www.linkedin.com/in/tejalgoyal', text: 'linkedin.com/in/tejalgoyal', icon: linkedinIcon, external: true },
   // public/resume.pdf, kept in the repo; the line appears once the file is there (vite.config.js)
   ...(import.meta.env.VITE_HAS_RESUME
-    ? [{ name: 'Resume', href: '/resume.pdf', text: 'The resume, as a PDF', icon: resumeIcon, external: true }]
+    ? [{ name: 'Resume', href: '/resume.pdf', text: 'tgoyal.me/resume.pdf', icon: resumeIcon, external: true }]
     : []),
 ];
 

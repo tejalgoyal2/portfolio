@@ -953,7 +953,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* typed, not turned: a block cursor that fills its cell from the left edge */
 .tile-scale--pop { transform-origin: 0 50%; animation-name: tile-scale-pop; animation-timing-function: steps(4, jump-start), ease; }
 .tile-scale--pop::before { display: none; }
-.tile-scale--pop::after { background: var(--to-stock); box-shadow: inset 2px 0 0 oklch(56% 0.214 27 / 0.55); }
+.tile-scale--pop::after { background: var(--to-stock); }
 @keyframes tile-scale-pop {
   0% { opacity: 1; transform: scaleX(0); }
   42% { transform: scaleX(1); }
