@@ -15,13 +15,14 @@ import { gsap } from 'gsap';
  * Pauses on hover (read it); holds dead still under reduced motion.
  */
 const WIRE = [
-  { t: 'NOW — PLATFORM ENGINEERING AT BCI' },
-  { t: 'PREVIOUSLY — SECURITY DESK · ML RESEARCH' },
+  { t: 'DEVELOPING — ENGINEER SHIPS SIDE PROJECT, STARTS ANOTHER BY LUNCH' },
   { t: 'still reading the docs, probably', pen: true },
-  { t: 'BASED IN VICTORIA, BC' },
-  { t: 'OPEN TO INTERESTING PROBLEMS' },
+  { t: 'FORECAST — 100% CHANCE OF REFACTORING' },
+  { t: 'SPORTS — CUBE SOLVED, CROWD GOES MILD' },
   { t: 'will bake you a loaf', pen: true },
-  { t: 'F1 ON WEEKENDS' },
+  { t: 'F1 — WEEKENDS ARE SPOKEN FOR' },
+  { t: 'CLASSIFIEDS — INTERESTING PROBLEMS WANTED' },
+  { t: 'correction: it was the cache. it’s always the cache', pen: true },
 ];
 
 function Run() {

@@ -1,63 +1,66 @@
-import { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
+import { useEffect, useRef, useState } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
 import OffTheClock from '../press/OffTheClock';
-import Hand from '../press/Hand';
 import { handwrite } from '../life/writeIn';
-import { startMarkup } from '../life/markup';
 import { startCar } from '../life/car';
 import { afterPrint } from '../life/idle';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
 
 /**
- * The Profile, as an interview: the editor's questions written into the copy
- * in red pencil, in a natural hand (src/press/Hand.jsx), each one written out
- * by the pencil as you reach it (src/life/writeIn.js), and the answers set in
- * type under them — the first with a drop cap, then a red pull-quote. The
- * answers ink in line by line as you read, and the editor circles or
- * underlines a phrase here and there in red pen (src/life/markup.js). The
- * rail: the numbers (pasted in; the hard ones declassify on scroll) and what
- * I do off the clock. A little car drives the rule under the headline.
+ * The Profile — "How long have you got?" The same story, cut to fit: five
+ * seconds is one line set big, like a headline; thirty seconds is a short
+ * column; two minutes is the whole thing, set as body text. You pick, and the
+ * copy re-sets itself (the paragraphs that come in fade in, nothing slides).
+ * Beside it, a short rail of numbers (the hard ones rattle like a split-flap
+ * as they appear) and the pull quote; under it, what I do off the clock, jotted along the foot
+ * of the page by a pencil. A little car drives the rule under the headline.
  */
-/** One of the editor's questions, in red pencil. */
-function Q({ children }) {
-  return (
-    <p className="about-q">
-      <Hand>{children}</Hand>
-    </p>
-  );
-}
+const LENGTHS = [
+  { key: 's', label: '5 sec' },
+  { key: 'm', label: '30 sec' },
+  { key: 'l', label: '2 min' },
+];
+
+// each paragraph says which cuts it's in
+const STORY = [
+  {
+    in: 's',
+    text: 'I build software that feels obvious: AI agents, data pipelines, and small things that are fun to use.',
+  },
+  {
+    in: 'ml',
+    text: 'I’m Tejal. I build software that feels obvious — AI agents that talk to real systems, data pipelines that hold up, and small things that are fun to use.',
+  },
+  {
+    in: 'm',
+    text: 'I started in electronics engineering, scaled federated-learning experiments from fifty simulated clients to a million in a research lab, spent a winter on a security desk, and now build the plumbing that lets AI agents do real work. Weekends, I ship my own: type, Dime, a Sudoku with no ads.',
+  },
+  {
+    in: 'l',
+    text: 'I started in electronics engineering. In a research lab I scaled federated-learning experiments from fifty simulated clients to a million. It taught me that a result you can’t reproduce at scale isn’t a result, so I kept rebuilding the harness until a million clients behaved like fifty.',
+  },
+  {
+    in: 'l',
+    text: 'Then a winter on a security desk, which is why every door I build, I then try to kick in.',
+  },
+  {
+    in: 'l',
+    text: 'These days I build MCP servers so AI agents can query real databases and APIs directly, and I automate the reports people used to put together by hand.',
+  },
+  {
+    in: 'l',
+    text: 'Off the clock I ship my own: type, a page where every keystroke has weight; Dime, the expense tracker that roasts your spending; a Sudoku with no ads; and Claubi, a coding helper that asks before it touches anything.',
+  },
+  { in: 'l', text: 'If you read all of this, we’d probably get along. Say hi at the bottom of the page.' },
+];
 
 export default function About() {
   const rootRef = useRef(null);
+  const [cut, setCut] = useState('m');
 
-  useEffect(() => {
-    const root = rootRef.current;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const ctx = gsap.context(() => {
-      if (reduced) return;
-
-      gsap.fromTo(
-        '.about-pq-ghost',
-        { x: 4, y: 3, opacity: 0.8 },
-        {
-          x: 0,
-          y: 0,
-          opacity: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '.about-pq', start: 'top 78%', once: true },
-        }
-      );
-    }, root);
-
-    return () => ctx.revert();
-  }, []);
-
-  // the words, once fonts and layout have settled
+  // the pencil and the car, once fonts and layout have settled
   useEffect(
     () =>
       afterPrint(() => {
@@ -78,10 +81,7 @@ export default function About() {
           };
           measureRoad();
           stops = [
-            startMarkup(grid),
             handwrite(root.querySelector('.about-margin'), ICON.pencil),
-            // the editor writes each question as you reach it
-            ...[...root.querySelectorAll('.about-q')].map((q) => handwrite(q, ICON.pencil)),
             // the car on the rule: across as the rule climbs the screen
             startCar(grid, {
               pathAt: (x) => ({ x: 34 + x, y: -3, angle: 0 }),
@@ -106,8 +106,6 @@ export default function About() {
     []
   );
 
-  const PQ = '“The best software feels obvious. Getting it there never is.”';
-
   return (
     <section ref={rootRef} className="about" aria-label="Profile" data-ground="paper" data-section="about">
       <div className="press-container">
@@ -116,74 +114,38 @@ export default function About() {
           <KineticHeadline as="h2" font="name" className="about-headline">
             I build the version that just works
           </KineticHeadline>
-          <p className="about-deck">Five questions from the editor, answered.</p>
         </header>
 
         <div className="about-grid">
-          {/* Column 1 — the first two questions, and the pull-quote */}
-          <div className="about-col about-col--lead" data-depart="part-l">
-            <Q>So what do you actually do?</Q>
-            <p className="about-lead" data-ink="block">
-              Right now I&rsquo;m on BCI&rsquo;s Enterprise Solutions team,
-              rebuilding the financial apps its investment teams run on — React and Azure, data
-              pipelines, and the plumbing that lets{' '}
-              <span data-mark="underline" data-mark-id="agents">
-                AI agents talk to real systems.
-              </span>
-            </p>
-            <Q>How did you end up here?</Q>
-            <p className="about-a" data-ink>
-              Electronics engineering first. Then a lab stint scaling
-              federated-learning experiments from{' '}
-              <span data-mark="circle" data-mark-id="scale">50 to a million</span>{' '}
-              simulated clients, and a winter on a security desk.
-            </p>
+          <div className="about-col about-col--story" data-depart="part-l">
+            <div className="about-dial" role="radiogroup" aria-label="How long have you got?">
+              <span className="about-dial-q">How long have you got?</span>
+              {LENGTHS.map((l) => (
+                <button
+                  key={l.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={cut === l.key}
+                  className={`about-dial-opt${cut === l.key ? ' is-on' : ''}`}
+                  onClick={() => setCut(l.key)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
 
-            <blockquote className="about-pq" data-arrive="pin">
-              <span className="about-pq-ghost" aria-hidden="true">{PQ}</span>
-              {PQ}
-            </blockquote>
+            <div className={`about-story about-story--${cut}`} aria-live="polite">
+              {STORY.filter((p) => p.in.includes(cut)).map((p) => (
+                <p key={`${cut}-${p.text.slice(0, 24)}`} className="about-p">
+                  {p.text}
+                </p>
+              ))}
+            </div>
+
           </div>
 
-          {/* Column 2 — the rest of the interview */}
-          <div className="about-col about-col--body" data-depart="lift">
-            <Q>What did the lab teach you?</Q>
-            <p className="about-a" data-ink>
-              That{' '}
-              <span data-mark="underline" data-mark-id="repro">
-                a result you can&rsquo;t reproduce at scale isn&rsquo;t a result.
-              </span>{' '}
-              I kept rebuilding the harness until a million clients behaved
-              like fifty.
-            </p>
-            <Q>And at BCI?</Q>
-            <p className="about-a" data-ink>
-              Building{' '}
-              <span data-mark="circle" data-mark-id="mcp">
-                MCP servers
-              </span>{' '}
-              so AI agents can query financial databases and app APIs directly,
-              and automating the reports people used to put together by hand.
-            </p>
-            <Q>What do you build when nobody&rsquo;s asking?</Q>
-            <p className="about-a" data-ink>
-              My own things: type, a page where every keystroke has weight; Dime,
-              the expense tracker that roasts your spending; a Sudoku with no ads.
-              The security years didn&rsquo;t go anywhere — they&rsquo;re why
-              every door I build, I then try to{' '}
-              <span data-mark="scribble" data-mark-id="kick">
-                kick in.
-              </span>
-            </p>
-          </div>
-
-          {/* Column 3 — stats + marginalia */}
           <aside className="about-col about-col--rail" aria-label="By the numbers" data-depart="part-r">
             <dl className="about-stats" data-arrive-items="paste">
-              <div className="about-stat">
-                <dt>Based in</dt>
-                <dd>Victoria, BC</dd>
-              </div>
               <div className="about-stat">
                 <dt>Since</dt>
                 <dd>2002</dd>
@@ -197,18 +159,15 @@ export default function About() {
                 <dd><Redacted trigger="scroll">167 / 170</Redacted></dd>
               </div>
               <div className="about-stat">
-                <dt>Contributed to</dt>
-                <dd>1 published paper</dd>
-              </div>
-              <div className="about-stat">
                 <dt>Side projects live</dt>
                 <dd><Redacted trigger="scroll" tone="red">5</Redacted> and counting</dd>
               </div>
             </dl>
-
-            <OffTheClock />
+            <blockquote className="about-pq">“The best software feels obvious. Getting it there never is.”</blockquote>
           </aside>
         </div>
+
+        <OffTheClock />
       </div>
     </section>
   );

@@ -96,8 +96,7 @@ export default function Hero() {
             <p className="mast-deck">
               I&rsquo;m Tejal — a software engineer who turns new ideas into
               products: AI agents, data pipelines, and things that are fun to
-              use. Right now I&rsquo;m connecting AI agents to BCI&rsquo;s
-              financial systems.
+              use. Right now I&rsquo;m teaching AI agents to talk to real systems.
             </p>
             <div className="mast-byline-row">
               <p className="mast-byline">Software · AI · Data</p>

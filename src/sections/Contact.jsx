@@ -66,7 +66,8 @@ export default function Contact() {
             LET&rsquo;S TALK
           </KineticHeadline>
           <p className="contact-sub" data-ink>
-            Building something interesting? I&rsquo;d like to hear about it.
+            You read all the way to the last page. Say hi — it&rsquo;s a real
+            inbox, and I read it.
           </p>
         </header>
 
@@ -107,7 +108,7 @@ export default function Contact() {
 
         <footer className="contact-colophon">
           <p className="contact-colophon-text">
-            Written, set and occasionally broken by Tejal Goyal &middot; &copy; {new Date().getFullYear()}
+            Written, set and occasionally broken by me &middot; &copy; {new Date().getFullYear()}
           </p>
         </footer>
       </div>

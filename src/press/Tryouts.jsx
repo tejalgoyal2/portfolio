@@ -208,8 +208,11 @@ function PermitTry() {
   const [at, setAt] = useState(0);
   const [log, setLog] = useState([]);
   const ask = ASKS[at % ASKS.length];
+  const [aside, setAside] = useState('');
   const answer = (you) => {
     setLog((l) => [...l, { key: l.length, line: `{"at":"${clock()}","${ask.verb}":"${ask.what}","you":"${you}"}` }]);
+    // the one you really shouldn't say yes to
+    setAside(you === 'allow' && ask.what.includes('.ssh') ? 'bold. that was your SSH key.' : '');
     setAt((a) => a + 1);
   };
   return (
@@ -228,6 +231,11 @@ function PermitTry() {
           </button>
         </div>
       </div>
+      {aside && (
+        <Hand as="p" key={log.length} className="try-permit-aside">
+          {aside}
+        </Hand>
+      )}
       <div className="try-permit-log">
         <p className="try-permit-file">audit.jsonl · only ever grows</p>
         {log.length === 0 ? (

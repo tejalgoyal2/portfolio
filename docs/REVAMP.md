@@ -74,7 +74,7 @@ Each item below is caused by the visitor (cursor, click, scroll) or is a slow am
 ## 4. Content (facts only from `src/data/*` and the notes below)
 - **Hero headline:** `BUILDING SOFTWARE THAT FEELS OBVIOUS`.
 - **Byline:** `Software · AI · Data`.
-- **Deck:** "I'm Tejal — a software engineer who turns new ideas into products: AI agents, data pipelines, and things that are fun to use. Right now I'm connecting AI agents to BCI's financial systems."
+- **Deck:** "I'm Tejal — a software engineer who turns new ideas into products: AI agents, data pipelines, and things that are fun to use. Right now I'm teaching AI agents to talk to real systems."
 - **Positioning:** innovative products, code, AI and data engineering. Security is a small part of the story, not the headline.
   - Rewrite the About headline, pull quote and paragraphs on that basis, using only real facts, and show Tejal the draft.
   - Drop "Classified … emails".
