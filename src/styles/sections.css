@@ -222,8 +222,12 @@ html.np-handoff .mast-plate { visibility: hidden; }
 /* see main.jsx — the type set first waits for its faces, so a font swap never
    moves anything you can see (the loader's sheet, the nameplate, the lead) */
 html.fonts-pending .loader-sheet,
-html.fonts-pending .mast-plate,
-html.fonts-pending .mast-lead { visibility: hidden; }
+html.fonts-pending .mast-plate { visibility: hidden; }
+/* (a phone shows the lead from the first paint: on a slow line its fonts can
+   take seconds, and the story shouldn't wait for them) */
+@media (min-width: 721px) {
+  html.fonts-pending .mast-lead { visibility: hidden; }
+}
 
 /* lead story — the copy on the left, the cube's slot on the right */
 .mast-lead {
@@ -424,7 +428,7 @@ html.fonts-pending .mast-lead { visibility: hidden; }
   font-weight: 500;
   font-size: 0.86rem;
   letter-spacing: 0.02em;
-  color: var(--ink-ghost);
+  color: var(--ink-soft);
 }
 .about-num-yr { color: var(--red); }
 .about-num-label {
@@ -434,7 +438,7 @@ html.fonts-pending .mast-lead { visibility: hidden; }
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-ghost);
+  color: var(--ink-soft);
 }
 
 /* off the clock: the Weekend Edition, a boxed insert with its own masthead */
@@ -471,7 +475,7 @@ html.fonts-pending .mast-lead { visibility: hidden; }
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-ghost);
+  color: var(--ink-soft);
 }
 .weekend-meta--end { text-align: right; }
 .weekend-desks {
@@ -994,7 +998,7 @@ html.fonts-pending .mast-lead { visibility: hidden; }
   letter-spacing: 0.16em;
   color: var(--red);
 }
-.tile-kicker .press-stamp { font-size: 0.58rem; }
+.tile-kicker .press-stamp { font-size: 0.58rem; opacity: 1; } /* full ink at this size, so it stays readable */
 .tile-file { letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
 .story-pen {
   display: inline-block;

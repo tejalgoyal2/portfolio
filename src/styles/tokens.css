@@ -50,11 +50,11 @@
 
   --ink:         oklch(20%   0.018 60);
   --ink-soft:    oklch(38%   0.012 60);
-  --ink-ghost:   oklch(58%   0.010 60);
+  --ink-ghost:   oklch(50%   0.010 60);
 
   --ground:      oklch(19%   0.015 60);  /* warm ink-black — the dark spreads */
 
-  --red:         oklch(56%   0.214 27);
+  --red:         oklch(53%   0.212 27);
   --red-deep:    oklch(46%   0.190 28);
   /* the finale's stock: an oxblood that's warm without glaring — easy on the eyes at full screen */
   --red-stock:   oklch(37%   0.115 25);
