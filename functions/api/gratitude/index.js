@@ -14,12 +14,13 @@
 // the body is small JSON; the word is one or two words of letters, ≤ 24
 // characters; Turnstile says it's a person, on this site, for this form; the
 // site hasn't taken its DAILY_CAP today and the review queue isn't full; and
-// this address (hashed with a salt and the day, never stored) hasn't left one
-// today. Only then is Workers AI asked, once.
+// this address (hashed with a salt and the day, never stored) hasn't left its
+// PER_DAY yet today. Only then is Workers AI asked, once.
 import { json, clean, listFlags, aiCheck, sha256, ensure, addToTally, hostAllowed, addressKey, readCapped, isJson } from '../../../lib/gratitude.js';
 
 const SHOWN = 80;
 const PENDING_MAX = 500;
+const PER_DAY = 3; // stamps a day from each address
 
 export async function onRequestGet({ request, env, waitUntil }) {
   const open = !!(env.DB && env.TURNSTILE_SECRET && env.SALT);
@@ -89,15 +90,20 @@ export async function onRequestPost({ request, env }) {
 
   // the whole site takes so many a day, and stops taking more while the review queue is full
   const cap = Math.max(1, Number(env.DAILY_CAP) || 300);
-  const today = await env.DB.prepare('SELECT COUNT(*) AS n FROM daily WHERE day = ?1').bind(day).first();
+  const today = await env.DB.prepare('SELECT COALESCE(SUM(n), 0) AS n FROM daily WHERE day = ?1').bind(day).first();
   if ((today?.n || 0) >= cap) return json({ error: 'full today' }, 429);
   const queued = await env.DB.prepare("SELECT COUNT(*) AS n FROM words WHERE status = 'pending'").first();
   if ((queued?.n || 0) >= PENDING_MAX) return json({ error: 'full today' }, 429);
 
-  // once a day: a salted hash of the day and the address (IPv6 by its /64, the part a person holds)
+  // a few a day: a salted hash of the day and the address (IPv6 by its /64, the part a person
+  // holds), and how many it's left; the count only goes up while it's under the limit
   const hash = await sha256(`${env.SALT}|${day}|${addressKey(ip)}`);
-  const put = await env.DB.prepare('INSERT OR IGNORE INTO daily (hash, day) VALUES (?1, ?2)').bind(hash, day).run();
-  if (!put.meta?.changes) return json({ error: 'once a day' }, 429);
+  const put = await env.DB.prepare(
+    'INSERT INTO daily (hash, day, n) VALUES (?1, ?2, 1) ON CONFLICT(hash) DO UPDATE SET n = n + 1 WHERE n < ?3 RETURNING n'
+  )
+    .bind(hash, day, PER_DAY)
+    .first();
+  if (!put) return json({ error: 'enough today' }, 429);
 
   // checked before it's printed: anything doubtful waits for a person
   const ai = listFlags(word) ? 'unsafe' : await aiCheck(env, word);
@@ -107,5 +113,5 @@ export async function onRequestPost({ request, env }) {
     .bind(word, ok ? 'approved' : 'pending', now, x, y)
     .run();
   if (ok) await addToTally(env, word, now);
-  return json({ received: true, printed: ok, word });
+  return json({ received: true, printed: ok, word, left: PER_DAY - put.n });
 }

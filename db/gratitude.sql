@@ -14,11 +14,13 @@ CREATE TABLE IF NOT EXISTS words (
 );
 CREATE INDEX IF NOT EXISTS words_by_status ON words (status, created_at);
 
--- One word a day per visitor: a salted hash of (day, IP), never the IP itself.
--- Rows from earlier days are cleared as new ones come in.
+-- Up to three words a day per visitor: a salted hash of (day, IP), never the IP
+-- itself, and how many it has left today. Rows from earlier days are cleared as
+-- new ones come in.
 CREATE TABLE IF NOT EXISTS daily (
   hash TEXT PRIMARY KEY,
-  day TEXT NOT NULL
+  day TEXT NOT NULL,
+  n INTEGER NOT NULL DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS daily_by_day ON daily (day);
 

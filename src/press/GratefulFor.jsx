@@ -10,8 +10,8 @@ import { found } from '../life/discover';
  * stamp that follows your pointer over the sheet, and you press it down where
  * you like (or press Enter and it finds a spot). Each stamp is inked in one of
  * a few colours and lands at its own angle; the older ones have faded a
- * little. Anonymous, once a day. Your own stays where you put it for you,
- * even while it waits for a quick check.
+ * little. Anonymous, up to three a day. Your own stay where you put them for
+ * you, even while they wait for a quick check.
  *
  * The stamps come from /api/gratitude (functions/api/gratitude), newest
  * eighty. The person check (Cloudflare Turnstile, invisible unless it's
@@ -19,7 +19,8 @@ import { found } from '../life/discover';
  * yet, it says so and takes nothing.
  */
 const MAX = 24;
-const TODAY_KEY = 'press-letter-day';
+const PER_DAY = 3; // the same limit the server keeps
+const TODAY_KEY = 'press-letter-day'; // "day:how many", this browser's count for today
 const MINE_KEY = 'press-stamp-mine';
 const today = () => new Date().toISOString().slice(0, 10);
 const store = {
@@ -38,11 +39,19 @@ const store = {
     }
   },
 };
+// how many this browser has stamped today (a plain day from before the count means one)
+const usedToday = () => {
+  const [day, n] = (store.get(TODAY_KEY) || '').split(':');
+  return day === today() ? Math.min(PER_DAY, Number(n) || 1) : 0;
+};
+const setUsed = (n) => store.set(TODAY_KEY, `${today()}:${n}`);
+// your last few stamps (one, as an object, from before there could be more)
 const readMine = () => {
   try {
-    return JSON.parse(store.get(MINE_KEY) || 'null');
+    const v = JSON.parse(store.get(MINE_KEY) || 'null');
+    return Array.isArray(v) ? v : v ? [v] : [];
   } catch {
-    return null;
+    return [];
   }
 };
 
@@ -103,8 +112,9 @@ export default function GratefulFor() {
   const [stamps, setStamps] = useState([]);
   const [open, setOpen] = useState(!!TURNSTILE_SITEKEY);
   const [value, setValue] = useState('');
-  // idle | sending | set (printed) | held (waiting for a look) | done (already today) | error
-  const [state, setState] = useState(store.get(TODAY_KEY) === today() ? 'done' : 'idle');
+  // idle | sending | done (today's are all in) | error
+  const [state, setState] = useState(usedToday() >= PER_DAY ? 'done' : 'idle');
+  const [used, setUsedState] = useState(usedToday);
   const [note, setNote] = useState('');
   const [fresh, setFresh] = useState(null);
   const box = useRef(null);
@@ -221,14 +231,15 @@ export default function GratefulFor() {
           setState('done');
           setNote('Today’s sheet is full. A fresh one goes up tomorrow.');
         } else if (r.status === 429) {
-          // one a day for each connection: say whose it was, if it's this browser's
-          const mineToday = !!readMine() && store.get(TODAY_KEY) === today();
-          store.set(TODAY_KEY, today());
+          // a few a day for each connection: say whose they were, if they're this browser's
+          const mineToday = usedToday() > 0;
+          setUsed(PER_DAY);
+          setUsedState(PER_DAY);
           setState('done');
           setNote(
             mineToday
-              ? 'One a day, and yours is already on the sheet.'
-              : 'Someone on your network beat you to it (it’s one a day each). Tomorrow?'
+              ? 'That’s your three for today, all on the sheet.'
+              : 'Someone on your network used up today’s three. Tomorrow?'
           );
         } else if (r.status === 403) {
           setState('error');
@@ -242,10 +253,15 @@ export default function GratefulFor() {
         return;
       }
       found('sheet');
-      store.set(TODAY_KEY, today());
-      store.set(MINE_KEY, JSON.stringify({ word: d.word, x, y }));
-      setState(d.printed ? 'set' : 'held');
-      setNote(d.printed ? 'Stamped. It’s on the sheet for everyone now.' : 'Stamped. Everyone else sees it once it’s been proofread.');
+      // the server's count wins; without one, this browser's own
+      const n = Number.isFinite(d.left) ? PER_DAY - d.left : Math.min(PER_DAY, usedToday() + 1);
+      setUsed(n);
+      setUsedState(n);
+      store.set(MINE_KEY, JSON.stringify([...readMine(), { word: d.word, x, y }].slice(-PER_DAY)));
+      setState(n >= PER_DAY ? 'done' : 'idle');
+      const more = PER_DAY - n;
+      const then = more === 2 ? ' Two more today, if you’ve got them.' : more === 1 ? ' One more today.' : '';
+      setNote((d.printed ? 'Stamped. It’s on the sheet for everyone now.' : 'Stamped. Everyone else sees it once it’s been proofread.') + then);
     } catch {
       unstamp();
       setState('error');
@@ -270,17 +286,20 @@ export default function GratefulFor() {
     stamp({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
   };
 
-  // yours is kept where you put it, for you, even before everyone else can see it
+  // yours are kept where you put them, for you, even before everyone else can see them
   const saved = readMine();
-  const shown = stamps.slice(-80).map((s) => (saved && keyOf(s) === keyOf(saved) ? { ...s, mine: true } : s));
-  if (saved && state === 'done' && !shown.some((s) => keyOf(s) === keyOf(saved))) shown.push({ ...saved, mine: true });
+  const mineKeys = new Set(saved.map(keyOf));
+  const shown = stamps.slice(-80).map((s) => (mineKeys.has(keyOf(s)) ? { ...s, mine: true } : s));
+  for (const m of saved) if (!shown.some((s) => keyOf(s) === keyOf(m))) shown.push({ ...m, mine: true });
   const n = shown.length;
 
-  let how = 'Anonymous, one a day. Type a word or two, then press it anywhere on the sheet.';
-  if (note) how = note;
+  let how = 'Anonymous, up to three a day. Type a word or two, then press it anywhere on the sheet.';
+  if (word && state === 'idle') how = 'Now pick a spot on the sheet and press. Or just hit Enter.';
+  else if (note) how = note;
   else if (!open) how = 'The press is warming up. Back soon.';
-  else if (state === 'done') how = 'Today’s is in. Same time tomorrow?';
-  else if (word) how = 'Now pick a spot on the sheet and press. Or just hit Enter.';
+  else if (state === 'done') how = 'Today’s three are in. Same time tomorrow?';
+  else if (used === PER_DAY - 1) how = 'One more today. Type it, then press it on the sheet.';
+  else if (used > 0) how = 'Two more today. Type one, then press it on the sheet.';
 
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">

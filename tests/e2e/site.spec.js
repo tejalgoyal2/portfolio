@@ -64,15 +64,21 @@ test('the press: a scroll during the opening skips ahead, and the page waits for
   expect(errors).toEqual([]);
 });
 
-test('projects: an unturned tile peeks once in its corner; Claubi types its face in', async ({ page }) => {
+test('projects: each tile is dog-eared at the top right; Claubi types its face in', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.tile--lead', -80);
-  await expect(page.locator('.tile--lead .tile-peek')).toHaveCount(1, { timeout: 4000 });
-  await expect(page.locator('.tile--lead .tile-peek')).toHaveCount(0, { timeout: 4000 });
+  const lead = page.locator('.tile--lead');
+  const [t, ear] = await Promise.all([lead.boundingBox(), lead.locator('.tile-ear').boundingBox()]);
+  expect(Math.abs(ear.x + ear.width - (t.x + t.width))).toBeLessThan(4);
+  expect(Math.abs(ear.y - t.y)).toBeLessThan(4);
+  await expect(page.locator('.tile-peek')).toHaveCount(0);
   const claubi = page.locator('.tile[data-name="Claubi"]');
   await scrollTo(page, '.tile[data-name="Claubi"]', -200);
   await claubi.click({ position: { x: 60, y: 60 } });
-  await expect(claubi.locator('.tile-scale--pop').first()).toBeAttached();
+  await expect(claubi.locator('.tile-cursor')).toBeAttached();
+  await expect(claubi.locator('.tile-scale')).toHaveCount(0);
+  await expect(claubi.locator('.tile-cursor')).toHaveCount(0, { timeout: 3000 });
+  await expect(claubi).toHaveClass(/is-back/);
   await expect(claubi.locator('.tile-flip:focus')).toHaveCount(0);
 });
 
@@ -158,7 +164,9 @@ test('profile: one paragraph with type, Dime and the Sudoku linked, a box of num
   await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
   await expect(sudoku).toHaveAttribute('target', '_blank');
   await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
-  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', 'Feb']);
+  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', 'months']);
+  // the plan's own mark says whose it is
+  await expect(about.locator('.about-num-mark')).toHaveCount(1);
   await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
   await expect(about.locator('.weekend-desk')).toHaveCount(4);
   await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);
@@ -269,15 +277,31 @@ test('stamp sheet: stamps are visible, and yours lands where you click', async (
   const at = await mine.boundingBox();
   expect(Math.abs(at.x + at.width / 2 - (sheet.x + sheet.width * 0.7))).toBeLessThan(40);
   await expect(page.locator('.grateful-how')).toContainText('Stamped');
+  // and there's room for two more today
+  await expect(page.locator('.grateful-how')).toContainText('Two more today');
+  await expect(page.locator('.grateful-input')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('press-letter-day'))).toMatch(/:1$/);
+});
+
+test('stamp sheet: three a day, then it says so and takes no more', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('press-letter-day', `${new Date().toISOString().slice(0, 10)}:2`));
+  await open(page);
+  await scrollTo(page, '.grateful', -200);
+  await page.waitForTimeout(600);
+  await expect(page.locator('.grateful-how')).toContainText('One more today');
+  await page.locator('.grateful-input').fill('naps');
+  await page.locator('.grateful-input').press('Enter');
+  await expect(page.locator('.grateful-how')).toContainText('Stamped');
+  await expect(page.locator('.grateful-input')).toHaveCount(0);
 });
 
 test('stamp sheet: when the network has stamped today, it says so', async ({ page }) => {
-  await open(page, { post: { status: 429, json: { error: 'once a day' } } });
+  await open(page, { post: { status: 429, json: { error: 'enough today' } } });
   await scrollTo(page, '.grateful', -200);
   await page.waitForTimeout(600);
   await page.locator('.grateful-input').fill('naps');
   await page.locator('.grateful-input').press('Enter');
-  await expect(page.locator('.grateful-how')).toContainText('Someone on your network beat you to it');
+  await expect(page.locator('.grateful-how')).toContainText('Someone on your network used up today’s three');
   await expect(page.locator('.gstamp.is-mine')).toHaveCount(0);
 });
 
@@ -321,6 +345,17 @@ test('writing: the plane flies the posts in once, lets go, and they crawl on', a
   const x = await page.locator('.opdesk-card').first().evaluate((c) => c.getBoundingClientRect().left);
   expect(x).toBeLessThan(await page.evaluate(() => innerWidth));
   expect(await page.evaluate(() => sessionStorage.getItem('press-towed'))).toBe('1');
+  // picked up straight after, it moves with the pointer, never a whole set of posts along
+  const card = page.locator('.opdesk-card').first();
+  const wrap = await page.locator('.opdesk-strip-wrap').boundingBox();
+  const before = await card.evaluate((c) => c.getBoundingClientRect().left);
+  const y = wrap.y + wrap.height / 2;
+  await page.mouse.move(wrap.x + 700, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(wrap.x + 700 - i * 16, y);
+  const during = await card.evaluate((c) => c.getBoundingClientRect().left);
+  await page.mouse.up();
+  expect(Math.abs(during - (before - 160))).toBeLessThan(40);
   expect(errors).toEqual([]);
 });
 
@@ -356,6 +391,21 @@ test('phone: things to find only lists what a phone can do', async ({ browser })
   expect(labels.join('|')).not.toMatch(/Swap your pen|Spin the whole cube|Catch the bug/);
   await expect(page.locator('.rh-finds legend')).toContainText(`/ ${labels.length}`);
   await ctx.close();
+});
+
+test('contact: the resume sits where the stamp was and opens over the page', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('.postage')).toHaveCount(0);
+  await expect(page.locator('.contact-line')).toHaveCount(3);
+  await scrollTo(page, '.contact', 0);
+  await page.waitForTimeout(600);
+  await page.locator('a.resume').click();
+  const win = page.locator('.resume-window');
+  await expect(win).toHaveAttribute('open', '');
+  await expect(win.locator('iframe')).toHaveAttribute('src', /\/resume\.pdf/);
+  await page.keyboard.press('Escape');
+  await expect(win).not.toHaveAttribute('open', '');
+  await expect(win.locator('iframe')).toHaveCount(0);
 });
 
 test('contact: the closing line is mine, and the colophon has no ©', async ({ page }) => {
