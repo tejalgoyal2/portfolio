@@ -11,7 +11,7 @@ import { onLayout } from '../life/layout';
  * its ink background, so the bright text is legible no matter where the scroll
  * sits (no scrubbed layer to desync). Every entry shows in full — role, place,
  * a short dispatch of what I actually did, and a few figures from it — so
- * there's no hover-expand to reflow the page. One security word stays redacted
+ * there's no hover-expand to reflow the page. One security phrase stays redacted
  * until you scroll it into the clear. Entrance
  * staggers in once; reduced motion just reads it static.
  *
@@ -22,10 +22,10 @@ import { onLayout } from '../life/layout';
  * galley on the way out (src/life/arrive.js), and the figures count up as
  * they arrive.
  */
-const REDACT = 'C2';
+const REDACT = 'shadow AI';
 
 function Plain({ text }) {
-  const i = text.indexOf(`${REDACT} indicators`);
+  const i = text.indexOf(REDACT);
   if (i === -1) return text;
   return (
     <>

@@ -393,13 +393,13 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   margin: 0;
   display: flex;
   align-items: baseline;
-  gap: 0.35rem;
-  font-family: var(--font-name);
-  font-weight: 900;
-  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
-  font-size: clamp(2.1rem, 3.1vw, 2.9rem);
+  gap: 0.4rem;
+  /* the paper's condensed headline face: open, even figures that read at a glance */
+  font-family: var(--font-impact);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 3.2vw, 3rem);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--ink);
 }
@@ -410,7 +410,13 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   letter-spacing: 0.02em;
   color: var(--ink-soft);
 }
-.about-num-yr { color: var(--red); }
+/* whose plan it is, said with its mark, so the figure needs no explaining */
+.about-num-mark {
+  align-self: center;
+  width: 0.62em;
+  height: 0.62em;
+  margin-right: 0.05em;
+}
 .about-num-label {
   margin-top: 0.3rem;
   font-family: var(--font-data);
@@ -813,7 +819,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   /* newsprint on the front, a manila case file on the back */
   --front-stock: var(--paper-stock);
   --back-stock: oklch(88% 0.052 84);
-  --ear: 0px;
+  --ear: 22px;
   position: relative;
   perspective: 1400px;
   cursor: pointer;
@@ -858,8 +864,8 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   border: 1.5px solid var(--ink);
   border-radius: 4px;
   visibility: hidden;
-  /* the corner that folds back (see .tile-ear) is cut out of the face that's up */
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--ear)), calc(100% - var(--ear)) 100%, 0 100%);
+  /* the dog-eared corner (see .tile-ear) is cut out of the face that's up */
+  clip-path: polygon(0 0, calc(100% - var(--ear)) 0, 100% var(--ear), 100% 100%, 0 100%);
   transition: border-color 0.3s var(--ease-set), clip-path 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
 }
 .tile-back { background: var(--back-stock); }
@@ -868,7 +874,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 /* while it turns, what's left of the old face sits over the new one */
 .tile-face.is-leaving { z-index: 2; transition: none; }
 .tile:hover .tile-face { border-color: var(--red); }
-.tile:hover:not(.is-morphing) { --ear: 30px; }
+.tile:hover:not(.is-morphing) { --ear: 38px; }
 /* the desk lamp: a soft pool of warm red under the pointer, soaked into the stock */
 .tile-glow {
   position: absolute;
@@ -887,36 +893,35 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .tile:hover .tile-glow { opacity: 1; }
 .tile-face > *:not(.tile-glow) { position: relative; z-index: 1; }
 
-/* the dog-ear: the cut corner, folded back over the tile in real 3D so you
-   see the other side's stock — the hint that it turns over */
+/* the dog-ear: the top-right corner, folded down over the tile in real 3D so
+   you see the other side's stock — the hint that it turns over. It's always
+   turned down a little, and folds further when you point at the tile. */
 .tile-ear {
   position: absolute;
+  top: 0;
   right: 0;
-  bottom: 0;
   z-index: 4;
-  width: 30px;
-  height: 30px;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
+  width: 38px;
+  height: 38px;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
   background:
-    linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
-    linear-gradient(315deg, color-mix(in oklch, var(--back-stock), oklch(20% 0.03 60) 16%) 20%, var(--back-stock) 75%);
-  transform: rotate3d(1, -1, 0, 180deg);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+    linear-gradient(45deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
+    linear-gradient(225deg, color-mix(in oklch, var(--back-stock), oklch(20% 0.03 60) 16%) 20%, var(--back-stock) 75%);
+  /* sized by scale from its corner, to match the cut in the face (--ear) */
+  transform-origin: 100% 0;
+  transform: scale(calc(22 / 38));
   transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.5, 1);
   pointer-events: none;
 }
+.tile:hover:not(.is-morphing) .tile-ear { transform: scale(1); }
 .tile.is-back .tile-ear {
   background:
-    linear-gradient(135deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
-    linear-gradient(315deg, color-mix(in oklch, var(--front-stock), oklch(20% 0.03 60) 12%) 20%, var(--front-stock) 75%);
+    linear-gradient(45deg, transparent calc(50% - 0.9px), var(--ink) 50%, transparent calc(50% + 0.9px)),
+    linear-gradient(225deg, color-mix(in oklch, var(--front-stock), oklch(20% 0.03 60) 12%) 20%, var(--front-stock) 75%);
 }
-.tile:hover:not(.is-morphing) .tile-ear { transform: rotate3d(1, -1, 0, 0deg); }
-/* no hover on a touch screen: the corner stays turned a little, so it still says "turn me" */
-@media (hover: none) {
-  .tile:not(.is-morphing) { --ear: 18px; }
-  .tile:not(.is-morphing) .tile-ear { width: 18px; height: 18px; transform: none; }
-}
+/* mid-turn the corner is part of the face that's going */
+.tile.is-morphing { --ear: 0px; }
+.tile.is-morphing .tile-ear { visibility: hidden; }
 
 /* the turn: the face breaks into square scales that turn over in a wave
    (Story.jsx sets the grid and each scale's delay); transform and opacity only */
@@ -950,16 +955,6 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .tile-scale--y::after { background: var(--to-stock); transform: rotateY(180deg); }
 .tile-scale--x::after { background: var(--to-stock); transform: rotateX(180deg); }
-/* typed, not turned: a block cursor that fills its cell from the left edge */
-.tile-scale--pop { transform-origin: 0 50%; animation-name: tile-scale-pop; animation-timing-function: steps(4, jump-start), ease; }
-.tile-scale--pop::before { display: none; }
-.tile-scale--pop::after { background: var(--to-stock); }
-@keyframes tile-scale-pop {
-  0% { opacity: 1; transform: scaleX(0); }
-  42% { transform: scaleX(1); }
-  85% { opacity: 1; transform: scaleX(1); }
-  100% { opacity: 0; transform: scaleX(1); }
-}
 @keyframes tile-scale-y {
   0% { opacity: 0; transform: translateZ(0) rotateY(0deg) scale(1); }
   10% { opacity: 1; transform: translateZ(10px) rotateY(0deg) scale(1.04); }
@@ -976,45 +971,22 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 }
 .tile-clip { position: absolute; width: 0; height: 0; overflow: hidden; }
 
-/* the peek (Story.jsx): a few scales in the corner turn over to the other
-   side's stock and back, once, so the tile has shown what it does */
-.tile-peek {
+/* Claubi's turn (Story.jsx): a block cursor runs each line and the new face
+   is typed in behind it; it blinks once at the end of the last line, and goes */
+.tile-cursor {
   position: absolute;
-  inset: 1.5px;
+  top: 0;
+  left: 0;
   z-index: 3;
-  overflow: hidden;
-  border-radius: 3px;
-  perspective: 600px;
+  background: var(--ink);
   pointer-events: none;
+  will-change: transform;
 }
-.tile-peek-scale {
-  position: absolute;
-  width: 38px;
-  height: 38px;
-  background: var(--back-stock);
-  box-shadow: inset 0 0 0 0.5px oklch(20% 0.02 60 / 0.18);
-  opacity: 0;
-  animation: tile-peek-y 1000ms cubic-bezier(0.45, 0.05, 0.3, 1) both;
-}
-.tile.is-back .tile-peek-scale { background: var(--front-stock); }
-.tile-peek-scale--x { animation-name: tile-peek-x; }
-.tile-peek-scale--pop { transform-origin: 0 50%; animation-name: tile-peek-pop; animation-timing-function: steps(5, jump-start); }
-@keyframes tile-peek-y {
-  0% { opacity: 1; transform: translateZ(18px) rotateY(-90deg); }
-  28% { transform: translateZ(6px) rotateY(0deg); }
-  60% { opacity: 1; transform: translateZ(0) rotateY(0deg); }
-  92%, 100% { opacity: 1; transform: translateZ(18px) rotateY(90deg); }
-}
-@keyframes tile-peek-pop {
-  0% { opacity: 1; transform: scaleX(0); }
-  30%, 62% { opacity: 1; transform: scaleX(1); }
-  63%, 100% { opacity: 0; transform: scaleX(1); }
-}
-@keyframes tile-peek-x {
-  0% { opacity: 1; transform: translateZ(18px) rotateX(90deg); }
-  28% { transform: translateZ(6px) rotateX(0deg); }
-  60% { opacity: 1; transform: translateZ(0) rotateX(0deg); }
-  92%, 100% { opacity: 1; transform: translateZ(18px) rotateX(-90deg); }
+.tile-cursor.is-done { animation: tile-cursor-blink 520ms steps(1, end) forwards; }
+@keyframes tile-cursor-blink {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  70%, 100% { opacity: 0; }
 }
 
 .tile-kicker {
@@ -1378,12 +1350,11 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .led-fig { display: flex; flex-direction: column-reverse; margin: 0; }
 .led-fig-num {
   margin: 0;
-  font-family: var(--font-name);
-  font-weight: 900;
-  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
-  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  font-family: var(--font-impact);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 2.5vw, 2.3rem);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.015em;
   font-variant-numeric: tabular-nums lining-nums;
   color: var(--paper);
 }
@@ -2045,77 +2016,41 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   flex-shrink: 0;
   padding-top: 0.6rem;
 }
-/* the postage stamp (Postage.jsx): perforated, a little cube, a postmark struck on hover */
-.postage {
+/* the resume (Resume.jsx): a cartoon of one, in ink on white, where the stamp would go */
+.resume {
   position: relative;
   display: block;
-  width: 108px;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
+  width: 104px;
+  color: var(--ink);
+  text-decoration: none;
 }
-.postage-paper {
+.resume-art {
   display: block;
-  padding: 7px;
-  background: var(--paper);
-  rotate: -5deg;
-  /* perforations: holes all round the edge, solid inside */
-  -webkit-mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle 3.6px at 50% 50%, #0000 96%, #000) -6px -6px / 12px 12px round;
-  -webkit-mask-composite: source-over;
-  mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle 3.6px at 50% 50%, #0000 96%, #000) -6px -6px / 12px 12px round;
-  mask-composite: add;
-  filter: drop-shadow(0 6px 10px oklch(15% 0.03 25 / 0.35));
-  transition: translate 0.45s var(--ease-stamp);
-}
-/* the stamp and its postmark, turning together about the stamp's centre */
-.postage-spin { position: relative; display: block; }
-.postage:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
-.postage-face {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 7px 7px 6px;
-  border: 1.5px solid var(--red-stock);
-  color: var(--red-stock);
-  font-family: var(--font-data);
-}
-.postage-top { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; white-space: nowrap; }
-.postage-art { width: 100%; height: auto; }
-.postage-art path { stroke: var(--red-stock); stroke-width: 1.4; stroke-linejoin: round; }
-.pa-top { fill: oklch(86% 0.13 90); }
-.pa-left { fill: oklch(62% 0.15 150); }
-.pa-right { fill: oklch(52% 0.17 260); }
-.pa-grid { fill: none; stroke-width: 0.9 !important; }
-.postage-value { align-self: flex-end; font-family: var(--font-impact); font-size: 1.4rem; line-height: 1; }
-.postage-value small { font-size: 0.7em; }
-.postage-mark {
-  position: absolute;
-  top: 30px;
-  left: 50px;
-  width: 190px;
-  height: 114px;
+  width: 100%;
+  height: auto;
   overflow: visible;
-  fill: none;
-  stroke: oklch(16% 0.02 40 / 0.8);
-  stroke-width: 2.2;
-  pointer-events: none;
-  opacity: 0;
-  rotate: -14deg;
-  scale: 1.35;
+  rotate: -4deg;
+  transition: translate 0.4s var(--ease-stamp), rotate 0.4s var(--ease-stamp);
 }
-.postage.is-struck .postage-mark { animation: pm-strike 0.42s var(--ease-stamp) forwards; }
-@keyframes pm-strike {
-  0% { opacity: 0; scale: 1.35; rotate: -14deg; }
-  60% { opacity: 0.95; scale: 0.96; rotate: -9deg; }
-  100% { opacity: 0.85; scale: 1; rotate: -10deg; }
-}
-.pm-ring-text { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-data); font-size: 6.4px; font-weight: 700; letter-spacing: 0.08em; }
-.pm-centre { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-impact); font-size: 14px; letter-spacing: 0.06em; }
-.pm-waves { stroke-linecap: round; }
-.postage-tip {
+.resume:hover .resume-art,
+.resume:focus-visible .resume-art { translate: 0 -5px; rotate: -1.5deg; }
+.resume:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
+.ra-shadow { fill: oklch(16% 0.02 40); transition: translate 0.4s var(--ease-stamp); }
+.resume:hover .ra-shadow,
+.resume:focus-visible .ra-shadow { translate: 2px 3px; }
+.ra-sheet { fill: oklch(99% 0.004 85); stroke: oklch(16% 0.02 40); stroke-width: 2.6; stroke-linejoin: round; }
+.ra-fold { fill: oklch(90% 0.006 85); stroke: oklch(16% 0.02 40); stroke-width: 2.6; stroke-linejoin: round; }
+.ra-line { fill: none; stroke: oklch(16% 0.02 40); stroke-width: 2.4; }
+.ra-ink { fill: oklch(16% 0.02 40); }
+.ra-rule { fill: none; stroke: oklch(16% 0.02 40); stroke-width: 1.6; stroke-linecap: round; }
+.ra-bar { fill: none; stroke: oklch(16% 0.02 40 / 0.55); stroke-width: 3.2; stroke-linecap: round; }
+.ra-bar--name { stroke: oklch(16% 0.02 40); stroke-width: 6; }
+.ra-bar--sub { stroke-width: 3.4; }
+.ra-bar--head { stroke: oklch(16% 0.02 40); stroke-width: 4.4; }
+.resume-tip {
   position: absolute;
-  top: calc(100% + 14px);
-  left: -4px;
+  top: calc(100% + 12px);
+  left: -6px;
   font-family: var(--font-pen);
   font-size: 1.1rem;
   white-space: nowrap;
@@ -2124,10 +2059,110 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   translate: 0 -4px;
   transition: opacity 0.25s var(--ease-set), translate 0.3s var(--ease-stamp);
 }
-.postage:hover .postage-tip,
-.postage.is-copied .postage-tip { opacity: 0.85; translate: 0 0; }
+.resume:hover .resume-tip,
+.resume:focus-visible .resume-tip { opacity: 0.85; translate: 0 0; }
+/* no hover to find it with: the note is just there */
+@media (hover: none) {
+  .resume-tip { position: static; display: block; margin-top: 0.7rem; opacity: 0.85; translate: 0 0; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .postage.is-struck .postage-mark { animation: none; opacity: 0.85; scale: 1; rotate: -10deg; }
+  .resume-art, .ra-shadow, .resume-tip { transition: none; }
+}
+
+/* the window it opens in: a sheet of the paper over the dimmed page */
+.resume-window {
+  width: min(880px, calc(100vw - 48px));
+  height: min(1100px, calc(100dvh - 48px));
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow: visible;
+}
+.resume-window::backdrop { background: oklch(16% 0.02 40 / 0.62); }
+.resume-window[open] { animation: resume-in 0.38s var(--ease-stamp) both; }
+.resume-window[open]::backdrop { animation: resume-dim 0.3s var(--ease-set) both; }
+.resume-window.is-still[open],
+.resume-window.is-still[open]::backdrop { animation: none; }
+@keyframes resume-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes resume-dim { from { opacity: 0; } }
+.resume-window-paper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.resume-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem 0.7rem 1.2rem;
+  border-bottom: 3px double var(--ink);
+}
+.resume-window-kicker {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.resume-window-actions { display: flex; align-items: center; gap: 1.3rem; }
+.resume-window-actions a,
+.resume-window-close {
+  padding: 0.3em 0;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  cursor: inherit;
+  transition: color 0.2s, border-color 0.2s;
+}
+.resume-window-actions a:hover,
+.resume-window-close:hover { color: var(--red); border-color: var(--red); }
+.resume-window-actions a:focus-visible,
+.resume-window-close:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.resume-window-close span { font-size: 1.3em; line-height: 0; vertical-align: -0.08em; }
+.resume-window-page {
+  position: relative;
+  flex: 1;
+  background: oklch(from var(--paper) calc(l - 0.04) c h);
+}
+/* while the PDF comes in */
+.resume-window-page::before {
+  content: "Setting the type\2026";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-pen);
+  font-size: 1.3rem;
+  color: var(--ink-soft);
+}
+.resume-window-page.is-loaded::before { content: none; }
+.resume-window-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 /* Stamp on red ground: override to paper color, no multiply blend */

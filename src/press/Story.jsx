@@ -7,12 +7,9 @@ import { prefs } from '../life/prefs';
  * A lead project as a case file on the desk: a tile that leans toward your
  * cursor in real CSS 3D, with a warm desk-lamp glow following the pointer.
  * The front says what it is and why I made it, with three facts; the back is
- * the full file, on manila. Hover and the tile lifts a little and a corner
- * folds back to show the manila underneath; click anywhere on it (but a link)
- * and it turns over. Until you've turned one, each tile, the first time it's
- * well into view, gives a peek: a few scales in its corner turn over to the
- * manila and back, in the tile's own wave, so you've seen what it does before
- * anyone has to tell you to click.
+ * the full file, on manila. Its top-right corner is dog-eared, folded down a
+ * little to show the manila underneath, and folds further on hover; click
+ * anywhere on it (but a link) and it turns over.
  *
  * It doesn't flip like a playing card. It changes skin: the face breaks into
  * small square scales that turn over one by one in a wave, newsprint to
@@ -22,12 +19,14 @@ import { prefs } from '../life/prefs';
  *   rows    Dime — row by row, left to right, like a receipt printing
  *   spread  IAM Threat Mapper — out from the click, unevenly, node to node,
  *           the way an attacker moves through a network
- *   type    Claubi — no flip at all: the new face is typed in, a block at a
- *           time, left to right and line by line, like a terminal printing
+ *   type    Claubi — no scales at all: a block cursor runs along each line,
+ *           top to bottom, and the new face is typed in behind it a
+ *           character at a time, like a terminal printing its output
  * The scales exist only while the tile turns, and only move by transform and
  * opacity (a CSS animation each, on the compositor). The face being left is
  * cut away under them through an SVG clip path, a square at a time, exactly
- * where each scale covers it. Reduced motion: the faces simply swap.
+ * where each scale covers it (for Claubi, a line at a time, from the left, as
+ * the cursor passes). Reduced motion: the faces simply swap.
  */
 const LINK_LABEL = { live: 'Live site', github: 'Source', youtube: 'Demo' };
 const STAMP_TONE = { LIVE: 'red' };
@@ -36,16 +35,10 @@ const CELL = 44; // px: the size of one scale, about
 const MAX_CELLS = 150;
 const LIFE = 540; // ms one scale takes to turn over
 const COVER = 0.42; // how far through its turn a scale is when it hides the face beneath
-const TURNED_KEY = 'press-turned'; // once you've turned a tile, the others stop showing you how
-const PEEK = 1500; // ms the corner peek takes, first scale to last
-
-const turnedYet = () => {
-  try {
-    return !!sessionStorage.getItem(TURNED_KEY);
-  } catch {
-    return false;
-  }
-};
+const LINE = 26; // px: one line of Claubi's typed face
+const CHAR = 11; // px: one character of it
+const TYPE_MS = 820; // the whole face, first line to last
+const BLINK = 520; // and the cursor blinks once at the end before it goes
 
 // a small seeded random, so a wave is the same every time
 const rand = (i) => {
@@ -61,8 +54,14 @@ const WAVES = {
     axis: (i) => (rand(i) > 0.5 ? 'x' : 'y'),
     at: (c, r, C, R, o, i) => Math.hypot((c + 0.5) / C - o.x, ((r + 0.5) / R - o.y) * (R / C)) * 0.72 + rand(i + 7) * 0.28,
   },
-  type: { spread: 760, axis: () => 'pop', at: (c, r, C) => r + c / C },
 };
+
+// Claubi's face: lines of characters, typed in one line after the next
+function typePlan(el) {
+  const { width: w, height: h } = el.getBoundingClientRect();
+  const rows = Math.max(1, Math.round(h / LINE));
+  return { kind: 'type', rows, chars: Math.max(1, Math.round(w / CHAR)), w, h, total: TYPE_MS + BLINK };
+}
 
 function plan(el, wave, origin) {
   const { width: w, height: h } = el.getBoundingClientRect();
@@ -79,21 +78,6 @@ function plan(el, wave, origin) {
   return { cols, rows, cells, total: W.spread + LIFE };
 }
 
-// the corner peek: the scales in a quarter circle round the bottom-right corner,
-// turning out from it, each the way the tile's own wave turns them
-const PEEK_CELL = 38;
-function peekPlan(wave) {
-  const W = WAVES[wave] || WAVES.ripple;
-  const cells = [];
-  for (let y = 0; y < 4; y++)
-    for (let x = 0; x < 5; x++) {
-      const r = Math.hypot(x, y * 1.1);
-      if (r > 3.9) continue;
-      cells.push({ x, y, d: Math.round(r * 95 + rand(x * 7 + y) * 40), ax: W.axis(y * 5 + x) });
-    }
-  return cells;
-}
-
 export default function Story({ project, lead = false, index }) {
   const { name, status, why, eli5, desc, long, note, tech, links, facts, wave } = project;
   const [side, setSide] = useState('front'); // the face that's up (or on its way up)
@@ -105,44 +89,10 @@ export default function Story({ project, lead = false, index }) {
   const clipId = `tile-clip-${index}`;
   const no = String(index).padStart(2, '0');
 
-  const [peek, setPeek] = useState(null); // the corner's scales while it peeks: [{ x, y, d, ax }]
-
-  // the corner peeks once by itself, the first time the tile is well into view
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || prefs.reduced || turnedYet() || typeof IntersectionObserver === 'undefined') return;
-    let wait = 0;
-    let drop = 0;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        clearTimeout(wait);
-        if (!e.isIntersecting) return;
-        // a beat after it settles, the lead first and the rest in turn
-        wait = setTimeout(() => {
-          if (turnedYet()) return io.disconnect();
-          io.disconnect();
-          setPeek(peekPlan(wave));
-          drop = setTimeout(() => setPeek(null), PEEK);
-        }, 450 + (index - 1) * 260);
-      },
-      { threshold: 0.6, rootMargin: '0px 0px -18% 0px' }
-    );
-    io.observe(el);
-    return () => {
-      io.disconnect();
-      clearTimeout(wait);
-      clearTimeout(drop);
-    };
-  }, [index, wave]);
+  const cursorRef = useRef(null);
 
   const turn = (origin, keyed = false) => {
     if (morph) return;
-    setPeek(null);
-    try {
-      sessionStorage.setItem(TURNED_KEY, '1');
-    } catch {
-      /* private mode: they'll just keep lifting */
-    }
     const to = side === 'front' ? 'back' : 'front';
     // from the keyboard, focus follows to the other side's button; a click leaves it be
     const focusOther = () =>
@@ -152,18 +102,37 @@ export default function Story({ project, lead = false, index }) {
       focusOther();
       return;
     }
-    setMorph({ from: side, ...plan(ref.current, wave, origin) });
+    setMorph({ from: side, ...(wave === 'type' ? typePlan(ref.current) : plan(ref.current, wave, origin)) });
     setSide(to);
     focusOther();
   };
 
   // the face being left is cut away a square at a time, as each scale covers it
+  // (Claubi's a line at a time, from the left, behind the cursor)
   useEffect(() => {
     if (!morph) return;
     const rects = [...(clipRef.current?.querySelectorAll('rect') || [])];
     const start = performance.now();
     let left = rects.length;
     let raf = 0;
+    const typeStep = (now) => {
+      const t = now - start;
+      const per = TYPE_MS / morph.rows;
+      const row = Math.min(morph.rows - 1, Math.floor(t / per));
+      let at = 0;
+      for (let i = 0; i < morph.rows; i++) {
+        // whole characters only: it types, it doesn't wipe
+        const p = Math.min(1, Math.max(0, (t - i * per) / per));
+        const typed = Math.floor(p * morph.chars) / morph.chars;
+        rects[i].setAttribute('x', typed.toFixed(4));
+        rects[i].setAttribute('width', Math.max(0, 1 - typed + 0.002).toFixed(4));
+        if (i === row) at = typed;
+      }
+      const cur = cursorRef.current;
+      if (cur) cur.style.transform = `translate3d(${(Math.min(at, 1 - CHAR / morph.w) * morph.w).toFixed(1)}px, ${(row * (morph.h / morph.rows)).toFixed(1)}px, 0)`;
+      if (t < TYPE_MS) raf = requestAnimationFrame(typeStep);
+      else cur?.classList.add('is-done');
+    };
     const step = (now) => {
       const t = now - start;
       for (let i = 0; i < rects.length; i++) {
@@ -177,7 +146,7 @@ export default function Story({ project, lead = false, index }) {
       }
       if (left > 0) raf = requestAnimationFrame(step);
     };
-    raf = requestAnimationFrame(step);
+    raf = requestAnimationFrame(morph.kind === 'type' ? typeStep : step);
     const done = setTimeout(() => setMorph(null), morph.total + 40);
     return () => {
       cancelAnimationFrame(raf);
@@ -303,18 +272,25 @@ export default function Story({ project, lead = false, index }) {
             </div>
           </div>
 
-          {peek && (
-            <div className="tile-peek" aria-hidden="true">
-              {peek.map((c, i) => (
-                <i
-                  key={i}
-                  className={`tile-peek-scale tile-peek-scale--${c.ax}`}
-                  style={{ right: `${c.x * PEEK_CELL}px`, bottom: `${c.y * PEEK_CELL}px`, animationDelay: `${c.d}ms` }}
-                />
-              ))}
-            </div>
+          {morph?.kind === 'type' && (
+            <>
+              {/* the cursor, and what's still left of the face being typed over, line by line */}
+              <span
+                ref={cursorRef}
+                className={`tile-cursor tile-cursor--to-${side}`}
+                aria-hidden="true"
+                style={{ width: `${CHAR}px`, height: `${morph.h / morph.rows}px` }}
+              />
+              <svg className="tile-clip" aria-hidden="true" width="0" height="0">
+                <clipPath id={clipId} clipPathUnits="objectBoundingBox" ref={clipRef}>
+                  {Array.from({ length: morph.rows }, (_, i) => (
+                    <rect key={i} x="0" y={i / morph.rows} width="1.002" height={1 / morph.rows + 0.002} />
+                  ))}
+                </clipPath>
+              </svg>
+            </>
           )}
-          {morph && (
+          {morph && morph.kind !== 'type' && (
             <>
               {/* the scales, in a wave */}
               <div
@@ -340,7 +316,7 @@ export default function Story({ project, lead = false, index }) {
             </>
           )}
         </div>
-        {/* the corner that folds back on hover to show the other side's stock */}
+        {/* the dog-eared corner, folded down to show the other side's stock */}
         <span className="tile-ear" aria-hidden="true" />
       </div>
     </article>

@@ -26,6 +26,11 @@ import Redacted from '../press/Redacted';
  * plane lets go and carries on off the left edge, and the strip, still moving
  * at the plane's speed, eases down into its crawl. Scroll away mid-flight, or
  * grab the strip, and it lets go there and then.
+ *
+ * The strip loops, one set of posts after the other; until it has caught up
+ * with its first card after the flight there's nothing to its left yet, so a
+ * drag or a swipe moves it as it is and never jumps it a whole set along. Let
+ * go of a drag and it glides on at the speed you threw it, then settles.
  */
 const CRAWL = 27; // px/s at rest
 const TOWED_KEY = 'press-towed';
@@ -97,6 +102,20 @@ export default function Blog() {
   const tiltFrame = useRef(0);
   const tiltData = useRef(null);
   const towRef = useRef(null); // the flight, while there is one: { phase, letGo() }
+  const loopRef = useRef({ period: 0, filled: true }); // one set's length; whether the strip has caught up since the flight
+  const flingRef = useRef(null); // px/s a drag was let go at, for the ticker to pick up
+
+  // where the strip is, kept within one set; until it has caught up after the
+  // flight it may sit short of its first card, and that's left as it is
+  const wrap = (o) => {
+    const loop = loopRef.current;
+    if (!loop.filled) {
+      if (o < 0) return o;
+      loop.filled = true;
+    }
+    const P = loop.period;
+    return P > 0 ? ((o % P) + P) % P : o;
+  };
 
   const [reduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -123,11 +142,21 @@ export default function Blog() {
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
     let wrote = '';
     // the crawl's speed rides a soft spring: it eases to a stop when you hover,
-    // pulls away (a little past its cruise) when you leave, and a scroll of the
+    // pulls away when you leave (and glides down from a throw), and a scroll of the
     // page quickens it smoothly instead of kicking it
     // the strip's length, measured when it changes size (never per frame)
-    let half = strip.scrollWidth / 2;
-    const sized = new ResizeObserver(() => (half = strip.scrollWidth / 2));
+    // one set of posts, card to card (not half the strip: its padding isn't repeated)
+    const loop = loopRef.current;
+    const measure = () => {
+      const n = cards.length / 2;
+      loop.period = n >= 1 && cards[n] ? cards[n].offsetLeft - cards[0].offsetLeft : strip.scrollWidth / 2;
+    };
+    measure();
+    let half = loop.period;
+    const sized = new ResizeObserver(() => {
+      measure();
+      half = loop.period;
+    });
     sized.observe(strip);
     let v = CRAWL;
     let a = 0;
@@ -152,6 +181,7 @@ export default function Blog() {
       offTowLayout = onLayout(measureTow);
       flight = { phase: 'wait', t: 0, x: 0, unhook: 0 };
       offsetRef.current = -(geo.W * 1.6 + 600); // the cards wait off to the right
+      loop.filled = false;
       strip.style.transform = `translateX(${-offsetRef.current}px)`;
     }
     const speed = () => (geo.small ? 270 : 380); // px/s: quick enough to feel flown, slow enough to watch
@@ -179,6 +209,7 @@ export default function Blog() {
       // gone: off the edge, or the section left the screen mid-flight
       if (flight?.phase === 'wait' || flight?.phase === 'tow') {
         offsetRef.current = 0;
+        loop.filled = true;
         v = CRAWL;
         a = 0;
         try {
@@ -243,11 +274,17 @@ export default function Blog() {
       const held = hoverRef.current || dragRef.current.active || wheelRef.current;
       boost += (Math.min(Math.abs(scroll.v) * 0.22, 320) - boost) * (1 - Math.exp(-2.5 * dt));
       const target = held ? 0 : CRAWL + boost;
-      const [k, c] = held ? [10, 6.4] : [4, 2.2];
+      // let go of a drag: it carries on at the speed it was thrown, either way
+      if (flingRef.current !== null) {
+        v = flingRef.current;
+        a = 0;
+        flingRef.current = null;
+      }
+      const [k, c] = held ? [10, 6.4] : [2.6, 3.4];
       a += (k * (target - v) - c * a) * dt;
-      v = Math.max(0, v + a * dt);
-      if (held && v < 0.4) v = a = 0;
-      if (!dragRef.current.active && !wheelRef.current) offsetRef.current = (offsetRef.current + v * dt) % half;
+      v += a * dt;
+      if (held && Math.abs(v) < 0.4) v = a = 0;
+      if (!dragRef.current.active && !wheelRef.current) offsetRef.current = wrap(offsetRef.current + v * dt);
       const next = `translateX(${(-offsetRef.current).toFixed(2)}px)`;
       if (next !== wrote) {
         wrote = next;
@@ -271,7 +308,7 @@ export default function Blog() {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical → let the page scroll
       if (half <= 0) return;
       e.preventDefault();
-      offsetRef.current = (((offsetRef.current + e.deltaX) % half) + half) % half;
+      offsetRef.current = wrap(offsetRef.current + e.deltaX);
       strip.style.transform = `translateX(${-offsetRef.current}px)`;
       wheelRef.current = true; // pause the marquee so it doesn't fight the user
       clearTimeout(wheelIdle);
@@ -311,6 +348,7 @@ export default function Blog() {
       moved: false,
       pointerId: e.pointerId,
       captured: false,
+      trail: [{ t: performance.now(), x: e.clientX }],
     };
   };
   const onPointerMove = (e) => {
@@ -328,17 +366,27 @@ export default function Blog() {
     }
     const strip = stripRef.current;
     if (!strip) return;
-    const half = strip.scrollWidth / 2;
-    if (half <= 0) return;
-    // Clamp to valid range to prevent over-scrolling
-    offsetRef.current = ((dragRef.current.base + delta) % half + half) % half;
+    const trail = dragRef.current.trail;
+    trail.push({ t: performance.now(), x: e.clientX });
+    if (trail.length > 6) trail.shift();
+    // the strip follows the pointer exactly, from wherever it was picked up
+    offsetRef.current = wrap(dragRef.current.base + delta);
+    dragRef.current.base = offsetRef.current - delta;
     strip.style.transform = `translateX(${-offsetRef.current}px)`;
   };
   const onPointerUp = (e) => {
-    if (dragRef.current.captured) {
-      e.currentTarget.releasePointerCapture(dragRef.current.pointerId);
+    const d = dragRef.current;
+    if (!d.active) return;
+    if (d.captured) e.currentTarget.releasePointerCapture(d.pointerId);
+    d.active = false;
+    // how fast it was moving over the last few moves (none if it was held still)
+    const trail = d.trail || [];
+    const last = trail[trail.length - 1];
+    const firstAt = trail.find((p) => last && last.t - p.t < 100) || last;
+    if (d.moved && last && firstAt && last !== firstAt && performance.now() - last.t < 80) {
+      const vx = (firstAt.x - last.x) / ((last.t - firstAt.t) / 1000);
+      flingRef.current = Math.max(-2400, Math.min(2400, vx));
     }
-    dragRef.current.active = false;
   };
   // Block link navigation if the pointer moved (drag, not click)
   const onClickCapture = (e) => {
