@@ -1,3 +1,9 @@
+// The four lead stories on the Projects front page, in order (src/sections/Projects.jsx).
+// `story` gives each its headline and deck; `loop` names a screen recording in
+// public/loops/<loop>.{webm,mp4,webp}, and projects without one get a
+// typographic poster instead. Everything else runs in the rows below.
+export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];
+
 export const PROJECTS = [
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
@@ -5,6 +11,11 @@ export const PROJECTS = [
     long: "Ground-up rewrite of WalletRIP on Cloudflare Workers. Next.js 16 with @opennextjs/cloudflare adapter. Zero client-side database writes. All mutations through API routes with auth, Zod v4 validation, and Upstash Redis rate limiting. 7 API routes including Gemini NLP parse, Quick Add for Siri/Shortcuts, AI insights, and Hinglish roast. Origin header checking, CSV export with formula injection protection, optimistic UI updates with rollback.",
     tech: ["React 19", "TypeScript", "Tailwind CSS", "Cloudflare Workers", "Supabase", "Gemini API"],
     links: { live: "https://dime.tgoyal.me", github: "https://github.com/tejalgoyal2/Dime" },
+    story: {
+      headline: "An expense tracker that roasts your spending",
+      deck: "Type what you spent in plain words and Gemini sorts it out. A ground-up rewrite of WalletRIP on Cloudflare Workers, with zero client-side database writes.",
+      poster: { word: "Dime", line: "every cent has a story.", pen: "usually a bad one." },
+    },
   },
   {
     tier: 1, name: "IAM Threat Mapper", status: "LIVE", color: "#8b8eff",
@@ -12,6 +23,11 @@ export const PROJECTS = [
     long: "5 breach case studies (MGM/Caesars, Uber Lapsus$, Twilio 0ktapus, Microsoft Midnight Blizzard, M365 token theft) mapped across 32 nodes to 17 ATT&CK techniques. Interactive Cytoscape.js graphs with severity-coded nodes. 20-question IAM maturity assessment aligned to NIST 800-63 and CIS Controls, with weighted scoring across 7 security categories. Assessment gaps link directly to exploitable attack scenarios.",
     tech: ["React 19", "Cytoscape.js", "Tailwind CSS", "Cloudflare Pages"],
     links: { live: "https://iam.tgoyal.me", github: "https://github.com/tejalgoyal2/iam-threat-mapper" },
+    story: {
+      headline: "Real breaches, mapped step by step",
+      deck: "Five real identity breaches traced across 32 nodes to 17 MITRE ATT&CK techniques, plus a 20-question maturity check that links every gap to the attack it opens.",
+      loop: "iam",
+    },
   },
   {
     tier: 1, name: "Claubi", status: "REPO", color: "#f97316",
@@ -20,6 +36,11 @@ export const PROJECTS = [
     note: "where my weekends go",
     tech: ["Rust", "Ollama"],
     links: { github: "https://github.com/tejalgoyal2/claubi" },
+    story: {
+      headline: "A coding agent that trusts nothing it writes",
+      deck: "A local-first AI coding agent in Rust. It runs any model through Ollama, with deny-first permissions and an append-only audit log.",
+      poster: { word: "deny first.", line: "local-first · any model · audit log", pen: "where my weekends go", dark: true },
+    },
   },
   {
     tier: 2, name: "ThreatScope", status: "REPO", color: "#67e8f9",
@@ -55,6 +76,11 @@ export const PROJECTS = [
     long: "Hand-rolled canvas renderer and physics engine, zero animation libraries. Variable font weight records how hard each key was struck; glyphs settle via closed-form underdamped springs. Six styles — Print, Clean, Ember, Tide, Frost, Gale — cycle on F4, each shedding matter proportional to flow. Every keystroke imparts a real impulse to a spring-mounted page. Streak tracking, secret words that swap styles mid-sentence, a 12-second seismograph, and a lifetime odometer — all local, nothing leaves the browser.",
     tech: ["TypeScript", "Canvas API", "Vite", "Cloudflare Workers"],
     links: { live: "https://type.tgoyal.me", github: "https://github.com/tejalgoyal2/type" },
+    story: {
+      headline: "A page where typing has real physics",
+      deck: "Every key lands with spring weight and the page itself has mass. Six styles react to your rhythm, and there's no timer, no prompts and no judging.",
+      loop: "type",
+    },
   },
   {
     tier: 2, name: "Phishing Classifier", status: "REPO", color: "#f87171",

@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { PROJECTS } from '../data/projects';
+import { PROJECTS, LEADS } from '../data/projects';
 import { CONNECTIONS, METRICS } from '../data/connections';
 import KineticHeadline from '../press/KineticHeadline';
 import Stamp from '../press/Stamp';
 import Bug from '../press/Bug';
+import Story from '../press/Story';
 
 /**
- * Projects — a board of project cards. Tier-1 files render their full dossier
- * always (deck + metrics + notes + links). The rest run past on three curved
+ * Projects — a front page. The four lead projects are stories (src/press/Story.jsx):
+ * the lead across the top, its loop beside it, and three more in columns
+ * under it, each with a headline, a short deck, a screen recording or a
+ * poster, and the full file folded away. The rest run past on curved
  * rows, like a wraparound display: real CSS 3D, each card turned to face you
  * as it comes round from the side, the rows running in alternating directions
  * slowly enough to read. Hover a row and it eases to a stop; leave and it
@@ -163,9 +166,9 @@ const ROWS = 2;
 const GAP = 64; // px between cards, measured along the curve
 const CRUISE = [27, 32]; // px per second, slow enough to read
 
-// the cards of a project row stay fixed for the page's life
-const TIER1 = PROJECTS.filter((p) => p.tier === 1);
-const REST = PROJECTS.filter((p) => p.tier !== 1);
+// the lead stories, in their order, and the rest for the rows
+const STORIES = LEADS.map((n) => PROJECTS.find((p) => p.name === n)).filter(Boolean);
+const REST = PROJECTS.filter((p) => !LEADS.includes(p.name));
 
 /**
  * How fast a row runs, as a function of time since it was last held or let
@@ -341,7 +344,6 @@ export default function Projects() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
-  const tier1 = TIER1;
   const rest = REST;
 
   const onEnter = (name) => setActive(name);
@@ -352,38 +354,32 @@ export default function Projects() {
   return (
     <section className="projects" id="projects" aria-label="Projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
-        <Bug />
-        <header className="cf-head" data-depart="lift">
-          <span className="kicker">Projects</span>
-          <KineticHeadline as="h2" font="impact" className="cf-headline">
-            Things I&rsquo;ve built. Some broke.
-          </KineticHeadline>
-          <p className="cf-sub">
-            Hover a file — the cases it&rsquo;s related to light up alongside it.
-          </p>
-        </header>
-
-        <div className="cf-features">
-          {tier1.map((p, i) => {
-            return (
-              <CaseFile
-                key={p.name}
-                project={p}
-                index={i + 1}
-                variant="feature"
-                tilt={tilt}
-                onEnter={onEnter}
-                onLeave={onLeave}
-                linked={linkedSet?.has(p.name) || false}
-              />
-            );
-          })}
+        {/* the bug keeps to the paper beside the headline, never over the stories */}
+        <div className="cf-headrow">
+          <Bug />
+          <header className="cf-head" data-depart="lift">
+            <span className="kicker">Projects</span>
+            <KineticHeadline as="h2" font="impact" className="cf-headline">
+              Things I&rsquo;ve built. Some broke.
+            </KineticHeadline>
+          </header>
         </div>
+
+        <div className="cf-front">
+          {STORIES.map((p, i) => (
+            <Story key={p.name} project={p} index={i + 1} lead={i === 0} />
+          ))}
+        </div>
+
+        <p className="cf-also">
+          <span>Also in this edition</span>
+          <span className="cf-also-hint">hover a file and its related cases light up</span>
+        </p>
 
         {tilt ? (
           <CurvedRows
             projects={rest}
-            first={tier1.length + 1}
+            first={STORIES.length + 1}
             tilt={tilt}
             onEnter={onEnter}
             onLeave={onLeave}
@@ -396,7 +392,7 @@ export default function Projects() {
                 <CaseFile
                   key={p.name}
                   project={p}
-                  index={tier1.length + i + 1}
+                  index={STORIES.length + i + 1}
                   variant="index"
                   tilt={tilt}
                   onEnter={onEnter}
