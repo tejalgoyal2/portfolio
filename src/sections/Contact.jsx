@@ -24,10 +24,8 @@ const LINKS = [
   { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
   { name: 'GitHub', href: 'https://github.com/tejalgoyal2', text: 'github.com/tejalgoyal2', icon: githubIcon, external: true },
   { name: 'LinkedIn', href: 'https://www.linkedin.com/in/tejalgoyal', text: 'linkedin.com/in/tejalgoyal', icon: linkedinIcon, external: true },
-  // public/resume.pdf, kept in the repo; the line appears once the file is there (vite.config.js)
-  ...(import.meta.env.VITE_HAS_RESUME
-    ? [{ name: 'Resume', href: '/resume.pdf', text: 'tgoyal.me/resume.pdf', icon: resumeIcon, external: true }]
-    : []),
+  // public/resume.pdf, kept in the repo: upload a new one over it and the next deploy serves it
+  { name: 'Resume', href: '/resume.pdf', text: 'tgoyal.me/resume.pdf', icon: resumeIcon, external: true },
 ];
 
 export default function Contact() {
