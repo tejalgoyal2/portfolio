@@ -254,7 +254,7 @@ test('stamp sheet: when the network has stamped today, it says so', async ({ pag
   await page.waitForTimeout(600);
   await page.locator('.grateful-input').fill('naps');
   await page.locator('.grateful-input').press('Enter');
-  await expect(page.locator('.grateful-how')).toContainText('Someone on your network already stamped today');
+  await expect(page.locator('.grateful-how')).toContainText('Someone on your network beat you to it');
   await expect(page.locator('.gstamp.is-mine')).toHaveCount(0);
 });
 
@@ -287,6 +287,31 @@ test('the car: pointing at it winks the lights, shows the note and counts as fou
   await expect(page.locator('.car-note')).toHaveClass(/is-on/);
   expect(await page.evaluate(() => localStorage.getItem('press-finds') || '')).toContain('car');
   expect(errors).toEqual([]);
+});
+
+test('writing: the plane flies the posts in once, lets go, and they crawl on', async ({ page }) => {
+  const errors = await open(page);
+  await scrollTo(page, '.opdesk-strip-wrap', -300);
+  await expect(page.locator('.tow.is-on')).toHaveCount(1, { timeout: 5000 });
+  // off the left edge, and the first clipping is on the spread
+  await expect(page.locator('.tow.is-on')).toHaveCount(0, { timeout: 8000 });
+  const x = await page.locator('.opdesk-card').first().evaluate((c) => c.getBoundingClientRect().left);
+  expect(x).toBeLessThan(await page.evaluate(() => innerWidth));
+  expect(await page.evaluate(() => sessionStorage.getItem('press-towed'))).toBe('1');
+  expect(errors).toEqual([]);
+});
+
+test('nameplate: back from the bottom, every letter keeps the width it was set at', async ({ page }) => {
+  await open(page);
+  const widths = () => page.locator('.np-sort').evaluateAll((els) => els.map((e) => e.style.width));
+  const before = await widths();
+  await page.evaluate(() => (window.__lenis ? window.__lenis.scrollTo(document.documentElement.scrollHeight, { immediate: true }) : scrollTo(0, 1e6)));
+  await page.waitForTimeout(600);
+  await page.setViewportSize({ width: page.viewportSize().width, height: page.viewportSize().height - 1 });
+  await page.waitForTimeout(600);
+  await page.evaluate(() => (window.__lenis ? window.__lenis.scrollTo(0, { immediate: true }) : scrollTo(0, 0)));
+  await page.waitForTimeout(600);
+  expect(await widths()).toEqual(before);
 });
 
 test('in brief: the projects sit in three columns, all in view of the section', async ({ page }) => {
