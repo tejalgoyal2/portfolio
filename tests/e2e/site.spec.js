@@ -43,7 +43,8 @@ test('loads clean: no errors, no sideways scroll, every section present', async 
   for (const s of ['hero', 'about', 'skills', 'projects', 'experience', 'writing', 'contact']) {
     await expect(page.locator(`[data-section="${s}"]`)).toHaveCount(1);
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  // nothing wider than the page (with the scrollbar's room kept, it can be a little narrower)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   await expect(page.locator('.mast-deck')).toBeVisible();
   await expect(page.locator('.loader-edition')).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -352,7 +353,8 @@ test('phone width: no sideways scroll, and the tiles still turn', async ({ brows
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
   const errors = await open(page);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+  // nothing wider than the page (with the scrollbar's room kept, it can be a little narrower)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   await scrollTo(page, '.cf-front .tile:nth-child(3)');
   const tile = page.locator('.tile').nth(2);
   await tile.locator('.tile-name').tap();

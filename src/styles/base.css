@@ -14,6 +14,9 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: auto; /* lenis controls scroll */
+  /* the scrollbar's room is kept from the first paint, so where it shows as a
+     bar (Windows, some Linux) the page never shifts sideways when it appears */
+  scrollbar-gutter: stable;
 }
 
 html, body {
