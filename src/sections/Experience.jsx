@@ -16,9 +16,9 @@ import { onLayout } from '../life/layout';
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
  * margin — not ruled straight: it winds down in long, easy bends like a snake,
- * pressing a dot in beside each job as it passes. At the bottom it
- * rounds the corner onto the closing rule and runs along it, off the side of
- * the screen. The pen nib rides its very tip, held like a pen — leaning into
+ * pressing a dot in beside each job as it passes. At the bottom the nib
+ * lifts and the line ends the way a newspaper story does, with a small red
+ * end mark (■) pressed in. The pen nib rides its very tip, held like a pen — leaning into
  * the stroke, never spinning (one eased scroll value drives
  * line and nib, so they never drift apart); each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
@@ -86,15 +86,14 @@ export default function Experience() {
     const path = svg.querySelector('path');
     const nib = root.querySelector('.led-nib');
     const dots = [...root.querySelectorAll('.led-dot-mark')];
+    const endMark = root.querySelector('.led-end');
     let total = 1;
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
     // a snake's path: long, easy S-bends, never a kink
     const wave = (y) => CX + Math.sin(y * 0.0118) * 15 + Math.sin(y * 0.0047 + 1) * 6;
     let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
-    let exitAt = 0; // the point where it turns onto the closing rule
-    let downLen = 1;
-    const DOWN = 0.86; // the share of the scroll that draws the run down the margin
+    let tip = { x: 0, y: 0 }; // where the line stops
     const bez = (a, b, c, e, t) => {
       const u = 1 - t;
       const w0 = u * u * u;
@@ -122,8 +121,7 @@ export default function Experience() {
       return { x, y, a: Math.atan2(y1 - y0, x1 - x0) };
     };
 
-    // the line: a snake down the margin, then
-    // round the corner at the bottom and out along the closing rule
+    // the line: a snake down the margin, stopping short of the closing rule
     const build = () => {
       const H = ledger.offsetHeight;
       const Wd = ledger.clientWidth;
@@ -137,14 +135,8 @@ export default function Experience() {
       const raw = [];
       const end = H - 46;
       for (let y = 0; y <= end; y += 6) raw.push([wave(y), y]);
-      // round the corner onto the closing rule, and out along it, off the side of the screen
-      const ex = wave(end);
-      const ry = H - 1;
-      const RC = 44;
-      for (let a = Math.PI; a >= Math.PI / 2 - 1e-6; a -= Math.PI / 14) raw.push([ex + RC + Math.cos(a) * RC, ry - RC + Math.sin(a) * RC]);
-      exitAt = raw.length;
-      const off = document.documentElement.clientWidth - lr.left - left + 90;
-      for (let x = ex + RC + 30; x <= off; x += 30) raw.push([x, ry]);
+      tip = { x: left + wave(end), y: end };
+      endMark.style.transform = `translate3d(${tip.x.toFixed(1)}px, ${(tip.y + 14).toFixed(1)}px, 0)`;
       // smooth it (Catmull-Rom → cubic Béziers), keeping each piece so the nib
       // can ride the curve by plain arithmetic, never by asking the SVG
       segs = [];
@@ -180,11 +172,9 @@ export default function Experience() {
       });
       // where along the line each dot sits
       marks = at.map((y) => {
-        for (let k = 1; k < exitAt; k++) if (raw[k][1] >= y - 1 && raw[k][0] > raw[k - 1][0] - 4) return segs[k - 1].at + segs[k - 1].len;
+        for (let k = 1; k < raw.length; k++) if (raw[k][1] >= y - 1) return segs[k - 1].at + segs[k - 1].len;
         return total;
       });
-      // how much of the line is the run down the margin (the rest is the exit)
-      downLen = segs[Math.max(0, exitAt - 2)].at;
       dots.forEach((dot, i) => {
         dot.style.left = `${(left - dot.parentElement.offsetLeft + wave(at[i]) - 6).toFixed(1)}px`;
       });
@@ -194,8 +184,7 @@ export default function Experience() {
     let ang = 0;
     let lastT = 0;
     const draw = (p, snap = false) => {
-      // most of the scroll draws the run down the margin; the last stretch is the exit
-      const L = p < DOWN ? (p / DOWN) * downLen : downLen + ((p - DOWN) / (1 - DOWN)) * (total - downLen);
+      const L = p * total;
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
       const pt = along(L);
       // the nib doesn't spin with the line — it's held like a pen, leaning a
@@ -209,7 +198,9 @@ export default function Experience() {
       lastT = now;
       ang += (want - ang) * k;
       nib.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) rotate(${ang.toFixed(1)}deg)`;
-      nib.classList.toggle('is-on', p > 0.002);
+      // at the end the nib lifts off and the story's end mark is pressed in
+      nib.classList.toggle('is-on', p > 0.002 && p < 0.995);
+      endMark.classList.toggle('is-in', p >= 0.995);
       dots.forEach((d, i) => d.classList.toggle('is-in', L >= marks[i] - 2));
     };
     build();
@@ -255,6 +246,7 @@ export default function Experience() {
           <svg className="led-ink" aria-hidden="true">
             <path />
           </svg>
+          <span className="led-end" aria-hidden="true" />
           <span className="led-nib" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <path d="M12 22 6.5 12.5 9 4h6l2.5 8.5z" />
