@@ -2,21 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 import { TURNSTILE_SITEKEY } from '../data/site';
 
 /**
- * Grateful for — the gratitude line (docs/REVAMP.md §6). Not a question put
- * to anyone and not a form: one running line of type across the bottom of the
- * paper, "Grateful for coffee · the sea · my mum · …", and at the end of it
- * a blank that's yours. Write a word or two, press Enter, and it's set into
- * the line with the others. Anonymous, once a day. The same word from
- * different people is set bigger each time; the newest sixty are shown.
+ * Grateful for — the stamp sheet (docs/REVAMP.md §6). A sheet of cream paper
+ * on the red, covered in rubber-stamped words: things people passing through
+ * were grateful for, each pressed down wherever they chose. Not a question
+ * put to anyone and not a form: you type your word or two, it becomes a
+ * stamp that follows your pointer over the sheet, and you press it down where
+ * you like (or press Enter and it finds a spot). Each stamp is inked in one of
+ * a few colours and lands at its own angle; the older ones have faded a
+ * little. Anonymous, once a day. Your own stays where you put it for you,
+ * even while it waits for a quick check.
  *
- * The words come from /api/gratitude (functions/api/gratitude). The person
- * check (Cloudflare Turnstile, invisible unless it's unsure of you) loads only
- * when you start writing. Each word is checked before it's printed; anything
- * doubtful waits for Tejal. If the line isn't set up yet, the blank says so.
+ * The stamps come from /api/gratitude (functions/api/gratitude), newest
+ * eighty. The person check (Cloudflare Turnstile, invisible unless it's
+ * unsure of you) loads only when you start typing. If the sheet isn't set up
+ * yet, it says so and takes nothing.
  */
 const MAX = 24;
 const TODAY_KEY = 'press-letter-day';
-const MINE_KEY = 'press-letter-word';
+const MINE_KEY = 'press-stamp-mine';
 const today = () => new Date().toISOString().slice(0, 10);
 const store = {
   get(k) {
@@ -34,6 +37,42 @@ const store = {
     }
   },
 };
+const readMine = () => {
+  try {
+    return JSON.parse(store.get(MINE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+};
+
+// a stamp's ink and angle come from its word and place, so it's the same for everyone
+const INKS = ['red', 'ink', 'blue'];
+function seed(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+const looks = (word, x, y) => {
+  const h = seed(`${word}|${x}|${y}`);
+  return { ink: INKS[h % INKS.length], rot: ((h >>> 3) % 1700) / 100 - 8.5 };
+};
+// a spot for a stamp that wasn't placed by hand: away from the edges, away from the last few
+function freeSpot(stamps) {
+  let best = { x: 0.5, y: 0.5 };
+  let far = -1;
+  for (let k = 0; k < 24; k++) {
+    const x = 0.12 + Math.random() * 0.76;
+    const y = 0.18 + Math.random() * 0.64;
+    const d = Math.min(1, ...stamps.slice(-14).map((s) => Math.hypot((s.x - x) * 1.6, s.y - y)));
+    if (d > far) {
+      far = d;
+      best = { x, y };
+    }
+  }
+  return best;
+}
+const within = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const keyOf = (s) => `${s.word}|${s.x}|${s.y}`;
 
 let turnstileLoading = null;
 const loadTurnstile = () =>
@@ -47,20 +86,35 @@ const loadTurnstile = () =>
     document.head.appendChild(s);
   }));
 
+function Impression({ s, age, fresh }) {
+  const { ink, rot } = looks(s.word, s.x, s.y);
+  return (
+    <li
+      className={`gstamp gstamp--${ink}${fresh ? ' is-fresh' : ''}${s.mine ? ' is-mine' : ''}`}
+      style={{ left: `${(s.x * 100).toFixed(2)}%`, top: `${(s.y * 100).toFixed(2)}%`, '--rot': `${rot.toFixed(1)}deg`, '--age': age.toFixed(2) }}
+    >
+      <span className="gstamp-face">{s.word}</span>
+    </li>
+  );
+}
+
 export default function GratefulFor() {
-  const [words, setWords] = useState([]);
+  const [stamps, setStamps] = useState([]);
   const [open, setOpen] = useState(!!TURNSTILE_SITEKEY);
   const [value, setValue] = useState('');
   // idle | sending | set (printed) | held (waiting for a look) | done (already today) | error
   const [state, setState] = useState(store.get(TODAY_KEY) === today() ? 'done' : 'idle');
   const [note, setNote] = useState('');
+  const [fresh, setFresh] = useState(null);
   const box = useRef(null);
   const widget = useRef(null);
   const token = useRef('');
   const waiting = useRef(null);
   const rootRef = useRef(null);
+  const sheetRef = useRef(null);
+  const ghostRef = useRef(null);
 
-  // the words, fetched once the line is near
+  // the stamps, fetched once the sheet is near
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -71,7 +125,13 @@ export default function GratefulFor() {
         fetch('/api/gratitude')
           .then((r) => (r.ok ? r.json() : Promise.reject()))
           .then((d) => {
-            setWords(d.words || []);
+            // a stamp from before stamps had a place gets one from its word
+            const list = (d.stamps || []).map((s) => {
+              if (Number.isFinite(s.x) && Number.isFinite(s.y)) return s;
+              const h = seed(s.word);
+              return { ...s, x: 0.12 + ((h % 1000) / 1000) * 0.76, y: 0.18 + (((h >>> 10) % 1000) / 1000) * 0.64 };
+            });
+            setStamps(list);
             if (!d.open) setOpen(false);
           })
           .catch(() => setOpen(false));
@@ -82,7 +142,7 @@ export default function GratefulFor() {
     return () => io.disconnect();
   }, []);
 
-  // the person check, the first time you start writing
+  // the person check, the first time you start typing
   const ready = async () => {
     if (!open || widget.current !== null || !box.current) return;
     widget.current = 'loading';
@@ -106,7 +166,7 @@ export default function GratefulFor() {
       widget.current = null;
     }
   };
-  // Enter before the check has finished: wait for it a moment
+  // pressed before the check has finished: wait for it a moment
   const tokenSoon = () =>
     token.current
       ? Promise.resolve(token.current)
@@ -119,123 +179,155 @@ export default function GratefulFor() {
           };
         });
 
-  const send = async (e) => {
-    e.preventDefault();
-    const word = value.trim().replace(/\s+/g, ' ');
-    if (!word || state === 'sending') return;
-    if (!/^\p{L}+(?: \p{L}+)?$/u.test(word)) {
+  const word = value.trim().replace(/\s+/g, ' ');
+  const canStamp = open && !!word && (state === 'idle' || state === 'error');
+
+  const stamp = async (at) => {
+    if (!canStamp) return;
+    if (!/^\p{L}+(?:[ '’-]\p{L}+)?$/u.test(word)) {
       setState('error');
       setNote('One or two words, letters only.');
       return;
     }
+    const spot = at || freeSpot(stamps);
+    const x = Math.round(within(spot.x, 0.06, 0.94) * 1000) / 1000;
+    const y = Math.round(within(spot.y, 0.1, 0.9) * 1000) / 1000;
+    // it lands straight away; the check happens while the ink dries
+    const mine = { word: word.toLowerCase(), x, y, mine: true };
+    setStamps((ss) => [...ss, mine]);
+    setFresh(keyOf(mine));
+    setValue('');
     setState('sending');
     setNote('');
+    const unstamp = () => setStamps((ss) => ss.filter((s) => s !== mine));
     try {
       await ready();
       const t = await tokenSoon();
       const r = await fetch('/api/gratitude', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ word, token: t }),
+        body: JSON.stringify({ word, token: t, x, y }),
       });
       token.current = '';
       if (window.turnstile && widget.current && widget.current !== 'loading') window.turnstile.reset(widget.current);
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
+        unstamp();
         if (r.status === 429 && d.error === 'full today') {
           setState('done');
-          setNote('The line’s full for today. Come back tomorrow?');
+          setNote('The sheet’s full for today. Come back tomorrow?');
         } else if (r.status === 429) {
           store.set(TODAY_KEY, today());
           setState('done');
-          setNote('One a day. This one’s yours again tomorrow.');
+          setNote('One stamp a day. Yours is already on the sheet.');
         } else {
           setState('error');
           setNote(r.status === 422 ? 'One or two words, letters only.' : 'That didn’t go through. Try again?');
+          setValue(word);
         }
         return;
       }
       store.set(TODAY_KEY, today());
-      store.set(MINE_KEY, d.word);
-      setValue('');
-      if (d.printed) {
-        setState('set');
-        setNote('Set. It’s on the page now.');
-        setWords((ws) => {
-          const at = ws.findIndex((w) => w.word === d.word);
-          if (at < 0) return [{ word: d.word, n: 1, fresh: true }, ...ws];
-          const next = [...ws];
-          next.splice(at, 1);
-          return [{ word: d.word, n: ws[at].n + 1, fresh: true }, ...next];
-        });
-      } else {
-        setState('held');
-        setNote('Set aside for a quick look. It’ll be on the page soon.');
-      }
+      store.set(MINE_KEY, JSON.stringify({ word: d.word, x, y }));
+      setState(d.printed ? 'set' : 'held');
+      setNote(d.printed ? 'Stamped. It’s on the sheet for everyone.' : 'Stamped. Everyone else sees it once it’s had a quick look.');
     } catch {
+      unstamp();
       setState('error');
       setNote('That didn’t go through. Try again?');
+      setValue(word);
     }
   };
 
-  const most = Math.max(1, ...words.map((w) => w.n));
-  const mine = store.get(MINE_KEY);
-  const canWrite = open && (state === 'idle' || state === 'error' || state === 'sending');
+  // your stamp follows the pointer over the sheet, and goes down where you click
+  const onMove = (e) => {
+    const g = ghostRef.current;
+    if (!g || !canStamp || e.pointerType === 'touch') return;
+    const r = sheetRef.current.getBoundingClientRect();
+    g.style.transform = `translate3d(${(e.clientX - r.left).toFixed(0)}px, ${(e.clientY - r.top).toFixed(0)}px, 0) translate(-50%, -50%) rotate(-4deg)`;
+    g.classList.add('is-on');
+  };
+  const onLeave = () => ghostRef.current?.classList.remove('is-on');
+  const onPress = (e) => {
+    if (!canStamp) return;
+    onLeave();
+    const r = sheetRef.current.getBoundingClientRect();
+    stamp({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height });
+  };
+
+  // yours is kept where you put it, for you, even before everyone else can see it
+  const saved = readMine();
+  const shown = stamps.slice(-80).map((s) => (saved && keyOf(s) === keyOf(saved) ? { ...s, mine: true } : s));
+  if (saved && state === 'done' && !shown.some((s) => keyOf(s) === keyOf(saved))) shown.push({ ...saved, mine: true });
+  const n = shown.length;
+
+  let how = 'Anonymous, one a day. It goes wherever you press it.';
+  if (note) how = note;
+  else if (!open) how = 'The sheet’s being set up. Back soon.';
+  else if (state === 'done') how = 'You’ve stamped today. Back tomorrow?';
+  else if (word) how = 'Now click anywhere on the sheet to press it down, or hit Enter.';
 
   return (
     <section ref={rootRef} className="grateful" aria-labelledby="grateful-title">
-      <h3 className="grateful-kicker" id="grateful-title">
-        Grateful for
-      </h3>
-      <ul className="grateful-line" aria-label="What people here are grateful for">
-        {words.map((w) => (
-          <li
-            key={w.word}
-            className={`grateful-word${w.fresh ? ' is-fresh' : ''}${w.word === mine ? ' is-mine' : ''}`}
-            style={{ '--k': (Math.log(w.n) / Math.log(most + 1)).toFixed(3) }}
-            title={w.n > 1 ? `${w.n} people` : undefined}
+      <div className="grateful-head">
+        <h3 className="grateful-title" id="grateful-title">
+          Grateful for something today?
+        </h3>
+        {open && (state === 'idle' || state === 'error') && (
+          <form
+            className="grateful-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              stamp();
+            }}
           >
-            {w.word}
-          </li>
-        ))}
-        {(canWrite || !open) && (
-          <li className="grateful-blank">
-            {open ? (
-              <form onSubmit={send}>
-                <label className="sr-only" htmlFor="grateful-word">
-                  What are you grateful for today? A word or two.
-                </label>
-                <input
-                  id="grateful-word"
-                  className="grateful-input"
-                  type="text"
-                  maxLength={MAX}
-                  size={Math.max(9, value.length + 1)}
-                  autoComplete="off"
-                  enterKeyHint="done"
-                  spellCheck="true"
-                  placeholder={words.length ? 'and yours?' : 'be the first'}
-                  value={value}
-                  onChange={(e) => setValue(e.target.value.slice(0, MAX))}
-                  onFocus={ready}
-                  readOnly={state === 'sending'}
-                  data-cursor="nib"
-                />
-                {value.trim() && (
-                  <button className="grateful-set" type="submit" disabled={state === 'sending'}>
-                    {state === 'sending' ? 'Setting…' : 'Set it ↵'}
-                  </button>
-                )}
-              </form>
-            ) : (
-              <span className="grateful-closed">opening soon</span>
-            )}
-          </li>
+            <label className="sr-only" htmlFor="grateful-word">
+              A word or two you’re grateful for
+            </label>
+            <input
+              id="grateful-word"
+              className="grateful-input"
+              type="text"
+              maxLength={MAX}
+              size={Math.max(14, value.length + 2)}
+              autoComplete="off"
+              enterKeyHint="done"
+              spellCheck="true"
+              placeholder="a word or two"
+              value={value}
+              onChange={(e) => setValue(e.target.value.slice(0, MAX))}
+              onFocus={ready}
+            />
+            <button className="grateful-set" type="submit" disabled={!word}>
+              Stamp it
+            </button>
+          </form>
         )}
-      </ul>
-      <p className="grateful-note" role="status">
-        {note || (state === 'done' ? 'Yours is in. See you tomorrow.' : 'Anonymous · one a day')}
+      </div>
+      <p className="grateful-how" role="status">
+        {how}
       </p>
+
+      <div
+        ref={sheetRef}
+        className={`grateful-sheet${canStamp ? ' is-inked' : ''}`}
+        data-note-clear
+        onPointerMove={onMove}
+        onPointerLeave={onLeave}
+        onClick={onPress}
+      >
+        <ul className="grateful-stamps" aria-label="What people here were grateful for">
+          {shown.map((s, i) => (
+            <Impression key={keyOf(s)} s={s} age={n > 1 ? 1 - i / (n - 1) : 0} fresh={fresh === keyOf(s)} />
+          ))}
+        </ul>
+        {n === 0 && <p className="grateful-empty">Nothing stamped yet. Yours could be the first.</p>}
+        {canStamp && (
+          <span ref={ghostRef} className="gstamp-ghost" aria-hidden="true">
+            <span className="gstamp-face">{word.toLowerCase()}</span>
+          </span>
+        )}
+      </div>
       <div ref={box} className="grateful-check" />
     </section>
   );

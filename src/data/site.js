@@ -5,7 +5,7 @@ export const PLAY_LIVE = false;
 export const PLAY_URL = 'https://play.tgoyal.me';
 
 /**
- * The gratitude line's Turnstile site key. It's public by design (every visitor's
+ * The gratitude sheet's Turnstile site key. It's public by design (every visitor's
  * browser sees it); the secret lives only in the Pages settings.
  * VITE_TURNSTILE_SITEKEY overrides it (Turnstile's test key, for local runs).
  */

@@ -1,5 +1,5 @@
 // /api/gratitude/admin — the words waiting for a look, and approving or
-// rejecting one; the words on the line, and taking one down. Needs
+// rejecting one; the words on the sheet, and taking one down. Needs
 // `Authorization: Bearer <ADMIN_SECRET>` (the page at /letters-admin asks for
 // it; the secret must be at least 24 characters). Put the route behind
 // Cloudflare Access too if you like; this check stays either way.
@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
   if (!allowed(request, env)) return no();
   await ensure(env);
   const body = await request.json().catch(() => ({}));
-  // take a printed word down: every copy of it, off the line
+  // take a printed word down: every stamp of it, off the sheet
   if (body?.action === 'remove' && typeof body.word === 'string') {
     await env.DB.batch([
       env.DB.prepare("UPDATE words SET status = 'rejected' WHERE word = ?1 AND status = 'approved'").bind(body.word),

@@ -1,4 +1,4 @@
-// /api/gratitude — the words on the gratitude line (GET) and a new one (POST).
+// /api/gratitude — the stamps on the gratitude sheet (GET) and a new one (POST).
 //
 // Bindings (Pages → Settings → Bindings / Variables and secrets):
 //   DB                D1 database "gratitude" (schema: db/gratitude.sql; made on first use)
@@ -18,7 +18,7 @@
 // today. Only then is Workers AI asked, once.
 import { json, clean, listFlags, aiCheck, sha256, ensure, addToTally, hostAllowed, addressKey } from '../../../lib/gratitude.js';
 
-const SHOWN = 60;
+const SHOWN = 80;
 const PENDING_MAX = 500;
 
 export async function onRequestGet({ request, env, waitUntil }) {
@@ -30,9 +30,14 @@ export async function onRequestGet({ request, env, waitUntil }) {
   const hit = await cache?.match(key).catch(() => null);
   if (hit) return hit;
   await ensure(env);
-  // the tally keeps one row per word, so this reads ~60 rows however many words there are
-  const { results } = await env.DB.prepare('SELECT word, n FROM tally ORDER BY last DESC LIMIT ?1').bind(SHOWN).all();
-  const res = json({ words: results.map((r) => ({ word: r.word, n: r.n })), open }, 200, {
+  // the newest stamps and where each was pressed (the status index keeps this to ~80 rows read)
+  const { results } = await env.DB.prepare(
+    "SELECT word, x, y FROM words WHERE status = 'approved' ORDER BY created_at DESC LIMIT ?1"
+  )
+    .bind(SHOWN)
+    .all();
+  const stamps = results.reverse().map((r) => ({ word: r.word, x: r.x ?? null, y: r.y ?? null }));
+  const res = json({ stamps, open }, 200, {
     'cache-control': 'public, max-age=30',
   });
   if (cache) waitUntil(cache.put(key, res.clone()).catch(() => {}));
@@ -53,6 +58,10 @@ export async function onRequestPost({ request, env }) {
   }
   const word = clean(body?.word);
   if (!word) return json({ error: 'one or two words, letters only' }, 422);
+  // where on the sheet it was pressed: a fraction of the width and height, kept off the edges
+  const place = (v, lo, hi) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(Math.min(hi, Math.max(lo, v)) * 1000) / 1000 : null);
+  const x = place(body?.x, 0.06, 0.94);
+  const y = place(body?.y, 0.1, 0.9);
   const token = typeof body?.token === 'string' ? body.token : '';
   if (!token || token.length > 2048) return json({ error: 'check failed' }, 403);
 
@@ -94,8 +103,8 @@ export async function onRequestPost({ request, env }) {
   const ai = listFlags(word) ? 'unsafe' : await aiCheck(env, word);
   const ok = ai === 'safe' || (ai === 'unknown' && env.ALLOW_WITHOUT_AI === '1');
   const now = Date.now();
-  await env.DB.prepare('INSERT INTO words (word, status, created_at) VALUES (?1, ?2, ?3)')
-    .bind(word, ok ? 'approved' : 'pending', now)
+  await env.DB.prepare('INSERT INTO words (word, status, created_at, x, y) VALUES (?1, ?2, ?3, ?4, ?5)')
+    .bind(word, ok ? 'approved' : 'pending', now, x, y)
     .run();
   if (ok) await addToTally(env, word, now);
   return json({ received: true, printed: ok, word });

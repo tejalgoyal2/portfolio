@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS words (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   word TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending', -- pending | approved | rejected
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  x REAL, -- where on the sheet it was stamped, 0–1 across
+  y REAL  --                                  0–1 down
 );
 CREATE INDEX IF NOT EXISTS words_by_status ON words (status, created_at);
 
@@ -20,8 +22,7 @@ CREATE TABLE IF NOT EXISTS daily (
 );
 CREATE INDEX IF NOT EXISTS daily_by_day ON daily (day);
 
--- The line itself: one row per printed word and how many people left it, so
--- showing the newest sixty reads sixty rows, however many words there are.
+-- One row per printed word and how many people stamped it (the admin page's list).
 CREATE TABLE IF NOT EXISTS tally (
   word TEXT PRIMARY KEY,
   n INTEGER NOT NULL,

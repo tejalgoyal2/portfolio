@@ -16,7 +16,7 @@ Each item below is caused by the visitor (cursor, click, scroll) or is a slow am
 **Cursor**
 - **Nameplate:** the letters of TEJAL GOYAL ink heavier near the cursor (Fraunces `wght`/`opsz`, spring-smoothed) and settle back when it leaves.
 - **Headlines:** letters near the cursor lift a little, like loose type in the stick, then drop back into place.
-- **Cursor states:** the ring changes per target: a twist arc over the cube, a steering-wheel mark over the car, a pen nib over the gratitude input. Magnetic pull stays.
+- **Cursor states:** a twist arc over the cube. No other marks beside the pen (Tejal found the car's wheel and the gratitude nib distracting). Magnetic pull stays.
 
 **Click**
 - Clicking empty paper prints a small red registration mark where you clicked. It fades over about 2 s, with at most 6 on screen.
@@ -94,13 +94,13 @@ Each item below is caused by the visitor (cursor, click, scroll) or is a slow am
 - **Hover:** it stops, the headlights flash twice, and a Caveat note appears: "Want to drive it? Take it out for a spin →". Click goes to `https://play.tgoyal.me`.
 - play.tgoyal.me is not live yet, so put the link behind one config flag. Until it's live, the note reads "The garage opens soon" and nothing is linked.
 
-## 6. The gratitude line
-- **Where:** a line of type across Let's talk, under the links: "Grateful for coffee · the sea · …" with a blank at the end for yours. Not a question to Tejal and not a letter: people put a word there because they're grateful for it.
-- One or two words (≤ 24 characters), anonymously, once a day. Enter sets it into the line. The same word from different people is set bigger; the newest ~60 distinct words show.
+## 6. The gratitude sheet
+- **Where:** Let's talk, under the links: a cream sheet on the red covered in rubber-stamped words. Not a question to Tejal and not a letter: people put a word there because they're grateful for it.
+- You type a word or two (≤ 24 characters); it becomes a stamp that follows the pointer over the sheet, and you click to press it down there (Enter finds a free spot). Each stamp has its own ink (red, black, blue) and angle; older ones fade. Anonymous, once a day; your own stays where you put it, for you, even while it waits for a check. The newest 80 show.
 - **Backend:** Cloudflare Pages Functions + D1 + Turnstile.
   - Turnstile (checked for this site's hostnames and the `gratitude` action), a site-wide daily cap (300), a full review queue stops new words, and a salted daily hash of the IP (IPv6 by /64; raw IPs never stored).
   - Workers AI `@cf/meta/llama-guard-3-8b` plus a word list checks each word; flagged ones wait at `/letters-admin`, which can also take a printed word down.
-  - A `tally` table keeps one row per word so reading the line stays cheap.
+  - Each stamp keeps where it was pressed (`x`, `y`, 0–1). Reading the sheet uses the status index (~80 rows). A `tally` table backs the admin list.
   - Everything runs on the Workers Free plan, which can't bill: past a free limit a piece just fails until midnight UTC.
 
 ## Process
