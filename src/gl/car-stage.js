@@ -51,9 +51,9 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
   body.add(model);
   model.updateMatrixWorld(true);
   const wheels = [];
-  const found = [];
-  model.traverse((o) => /^pv_wheel\d$/.test(o.name) && found.push(o));
-  for (const w of found) {
+  const wheelNodes = [];
+  model.traverse((o) => /^pv_wheel\d$/.test(o.name) && wheelNodes.push(o));
+  for (const w of wheelNodes) {
     const centre = new Box3().setFromObject(w).getCenter(new Vector3());
     const pivot = new Group();
     pivot.position.copy(centre);
@@ -89,7 +89,10 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
   let W = 1;
   let H = 1;
   let scale = 1;
+  let sinceDraw = 0;
+  let placedAt = NaN; // where the car's hit box, note and beam were last put
   const resize = () => {
+    placedAt = NaN;
     W = road.clientWidth;
     const len = W < 720 ? 150 : 230; // the car's length on screen
     scale = len / size.x;
@@ -185,7 +188,15 @@ export async function startCarStage({ road, canvas, hit, note, beam }) {
       beam?.style.setProperty('--on', k.toFixed(3));
       if (p >= 1) flashT = -1;
     }
-    place();
+    // parked and only idling: the shiver reads the same at 30 fps, for half the draws
+    sinceDraw += dt;
+    const parked = Math.abs(v) < 0.5 && Math.abs(goal - x) < 0.5 && flashT < 0;
+    if (parked && sinceDraw < 1 / 30 - 0.002) return;
+    sinceDraw = 0;
+    if (!(Math.abs(x - placedAt) <= 0.05)) {
+      placedAt = x;
+      place();
+    }
     renderer.render(scene, camera);
   };
   gsap.ticker.add(tick);

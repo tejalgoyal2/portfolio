@@ -44,9 +44,11 @@ export function createNotes(host) {
   let el = null;
   let timer = 0;
 
-  function show(kind, cube) {
-    const n = NOTES[kind];
+  function show(kind, cube, says) {
+    const n = says ? { ...NOTES[kind], text: says } : NOTES[kind];
     if (!n || !host || !cube.seen) return;
+    // a phone has no margin to spare: the passing note would sit on the text
+    if (kind === 'layers' && document.documentElement.clientWidth <= 720) return;
     // one thing said at a time: a milestone clears any bubble
     hush();
     clearTimeout(timer);

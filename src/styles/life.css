@@ -246,7 +246,7 @@
 }
 .cube-say.is-left::after { left: auto; right: 18px; rotate: 40deg; }
 .cube-say-text { margin: 0; font-family: var(--font-pen); font-size: 1.25rem; font-weight: 700; line-height: 1.05; }
-.cube-say-small { margin: 0.25rem 0 0; font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.04em; opacity: 0.75; }
+.cube-say-small { margin: 0.25rem 0 0; white-space: nowrap; font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.04em; opacity: 0.75; }
 .cube-say-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
 .cube-say-btn,
 .cube-say-no {

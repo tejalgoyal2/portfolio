@@ -30,7 +30,7 @@ export default function CountUp({ value }) {
     const counter = { n: 0 };
     const tween = gsap.to(counter, {
       n: target,
-      duration: 1.1,
+      duration: 0.9,
       ease: 'power2.out',
       paused: true,
       onUpdate: () => (el.textContent = fmt(counter.n)),
@@ -42,7 +42,8 @@ export default function CountUp({ value }) {
           io.disconnect();
         }
       },
-      { rootMargin: '0px 0px -18% 0px' }
+      // everything above the fold counts too, so a fast scroll past never leaves a 0 behind
+      { rootMargin: '100000px 0px -12% 0px' }
     );
     io.observe(el);
 

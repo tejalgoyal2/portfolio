@@ -1,6 +1,8 @@
 import { bus } from './bus';
 import { groundAt } from './ground';
 import { found } from './discover';
+import { warmSound } from './sound';
+import { settings } from './settings';
 
 /**
  * Empty paper vs. content. One definition decides where a click prints a
@@ -109,6 +111,13 @@ export function startPaperPress() {
     if (e.target.closest?.(OVER_UI)) return;
     const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
     if (!face && !isEmptyPaper(e.target, e.clientX, e.clientY)) return;
+    if (face) {
+      try {
+        warmSound();
+      } catch {
+        /* no sound, then */
+      }
+    }
     end();
     press = {
       id: e.pointerId,
@@ -162,7 +171,7 @@ export function startPaperPress() {
       emit('life:twist', { x: p.x0, y: p.y0, turns });
     } else {
       emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
-      found('ripple');
+      if (settings.ripples) found('ripple');
     }
     end();
   });

@@ -29,17 +29,26 @@ function burst(t, { at, len, freq, q, gain, out, type = 'bandpass' }) {
   src.start(t + at, Math.random() * 0.2, len + 0.01);
 }
 
+/**
+ * Make the audio ready: called on the press itself (src/life/paper.js), so the
+ * setup, the slowest part, never lands inside an animation frame.
+ */
+export function warmSound() {
+  if (!settings.sound) return;
+  ac ||= new (window.AudioContext || window.webkitAudioContext)();
+  if (ac.state === 'suspended') ac.resume();
+  if (!noise) {
+    noise = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.25), ac.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+}
+
 /** One face turning, `dur` seconds from letting go to snapping home. */
 export function clack(dur = 0.3) {
   if (!settings.sound) return;
   try {
-    ac ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (ac.state === 'suspended') ac.resume();
-    if (!noise) {
-      noise = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.25), ac.sampleRate);
-      const d = noise.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
+    warmSound();
     const t = ac.currentTime + 0.004;
     const out = ac.createGain();
     out.gain.value = 0.42;

@@ -292,7 +292,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
     if (done.some((c) => c.solved)) {
       found('solved');
       presence.celebrate();
-      notes.show('solved', presence.state);
+      notes.show('solved', presence.state, twisted ? 'you solved it!' : 'solved!');
     }
     // the cubies only move while a turn is in flight, or the moment one lands
     if (director.active || !laidOut) {

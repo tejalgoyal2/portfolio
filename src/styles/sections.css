@@ -1172,14 +1172,28 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--ink);
 }
 .briefs {
-  columns: 3;
-  column-gap: clamp(1.6rem, 3vw, 2.8rem);
-  column-rule: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+  /* a grid, not CSS columns: Safari paints moving children of a multi-column
+     box in the wrong column. The rules between columns sit in the gaps. */
+  --brief-gap: clamp(1.6rem, 3vw, 2.8rem);
+  --brief-rule: color-mix(in oklch, var(--ink) 22%, transparent);
+  --brief-cols: 3;
+  display: grid;
+  grid-template-columns: repeat(var(--brief-cols), minmax(0, 1fr));
+  column-gap: var(--brief-gap);
 }
 .brief {
-  break-inside: avoid;
+  position: relative;
   padding: 1rem 0 1.2rem;
-  border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+  border-bottom: 1px solid var(--brief-rule);
+}
+.brief:not(:nth-child(3n + 1))::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: calc(var(--brief-gap) / -2);
+  border-left: 1px solid var(--brief-rule);
+  pointer-events: none;
 }
 .brief-kicker {
   display: flex;
@@ -1205,10 +1219,21 @@ html.fonts-pending .mast-plate { visibility: hidden; }
 .brief-links { display: flex; flex-wrap: wrap; gap: 0.5rem 0.6rem; margin: 0.2rem 0 0; }
 
 @media (max-width: 900px) {
-  .briefs { columns: 2; }
+  .briefs { --brief-cols: 2; }
+  .brief:not(:nth-child(3n + 1))::before { content: none; }
+  .brief:nth-child(2n)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: -1px;
+    left: calc(var(--brief-gap) / -2);
+    border-left: 1px solid var(--brief-rule);
+    pointer-events: none;
+  }
 }
 @media (max-width: 600px) {
-  .briefs { columns: 1; }
+  .briefs { --brief-cols: 1; }
+  .brief:nth-child(2n)::before { content: none; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -1432,6 +1457,10 @@ html.fonts-pending .mast-plate { visibility: hidden; }
     gap: 0.4rem;
   }
   .led-period { padding-top: 0; }
+}
+/* phones: the gutter is too narrow for the margin rule, so the entries step in clear of it */
+@media (max-width: 720px) {
+  .led-entry { padding-left: 0.85rem; }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -1724,7 +1753,7 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   /* the older a stamp, the more its ink has faded */
   opacity: calc(0.96 - var(--age, 0) * 0.3);
 }
-.gstamp--ink { --ink: var(--ink); }
+.gstamp--ink { --ink: var(--color-ink); }
 .gstamp--blue { --ink: oklch(44% 0.13 258); }
 .gstamp-face {
   display: block;

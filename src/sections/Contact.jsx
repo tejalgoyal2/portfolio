@@ -67,7 +67,7 @@ export default function Contact() {
             LET&rsquo;S TALK
           </KineticHeadline>
           <p className="contact-sub" data-ink>
-            Hiring, building something, or just want to argue about F1? All three work.
+            Hiring, building something, or just want to talk F1? All three work.
           </p>
         </header>
 

@@ -258,9 +258,61 @@ test('stamp sheet: when the network has stamped today, it says so', async ({ pag
   await expect(page.locator('.gstamp.is-mine')).toHaveCount(0);
 });
 
+test('stamp sheet: every stamp is inked dark or red enough to read on the paper', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.grateful', -200);
+  await page.waitForTimeout(800);
+  // each face's ink, through a canvas, so oklch and rgb read the same
+  const light = await page.locator('.gstamp-face').evaluateAll((faces) => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    return faces
+      .map((f) => {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = getComputedStyle(f).color;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        return { word: f.textContent, lum: 0.2126 * r + 0.7152 * g + 0.0722 * b };
+      })
+      .filter((x) => x.lum > 170);
+  });
+  expect(light).toEqual([]);
+});
+
+test('the car: pointing at it winks the lights, shows the note and counts as found', async ({ page }) => {
+  const errors = await open(page);
+  await scrollTo(page, '.contact-road', -500);
+  await expect(page.locator('.car-canvas.is-ready')).toHaveCount(1, { timeout: 15000 });
+  await page.waitForTimeout(2500); // it drives in
+  await page.locator('.car-hit').hover({ force: true });
+  await expect(page.locator('.car-note')).toHaveClass(/is-on/);
+  expect(await page.evaluate(() => localStorage.getItem('press-finds') || '')).toContain('car');
+  expect(errors).toEqual([]);
+});
+
+test('in brief: the projects sit in three columns, all in view of the section', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.briefs', -100);
+  await page.waitForTimeout(800);
+  const lefts = await page.locator('.brief').evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().left)))]);
+  expect(lefts.length).toBe(3);
+});
+
+test('phone: things to find only lists what a phone can do', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  await open(page);
+  await page.getByRole('button', { name: 'Page settings' }).click();
+  const items = page.locator('.rh-finds li');
+  await expect(items).not.toContainText(['Swap your pen']);
+  const labels = await items.allTextContents();
+  expect(labels.join('|')).not.toMatch(/Swap your pen|Spin the whole cube|Catch the bug/);
+  await expect(page.locator('.rh-finds legend')).toContainText(`/ ${labels.length}`);
+  await ctx.close();
+});
+
 test('contact: the closing line is mine, and the colophon has no ©', async ({ page }) => {
   await open(page);
-  await expect(page.locator('.contact-sub')).toContainText('argue about F1');
+  await expect(page.locator('.contact-sub')).toContainText('talk F1');
   await expect(page.locator('.contact-colophon')).toContainText('broken by me (and Claude)');
   await expect(page.locator('.contact-colophon')).not.toContainText('©');
 });

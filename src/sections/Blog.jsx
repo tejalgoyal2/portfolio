@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { scroll } from '../life/scroll';
+import { prefs } from '../life/prefs';
 import { BLOG_POSTS } from '../data/blog';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
@@ -23,6 +24,9 @@ const CRAWL = 27; // px/s at rest
 // These are the *punchline* — the word that changes the meaning of the headline.
 // ─────────────────────────────────────────────────────────────────────────────
 const PUNCHLINES = {
+  "Building tgoyal.me With Claude: The Full Guide, Every Prompt Included": "Every",
+  "How to Build a Resume Skill in Claude That Tailors Itself to Every Job": "Itself",
+  "My Resume Builder Thought 120% of a Page Was 'Slightly Over'": "Slightly",
   "WalletRIP Had a Security Problem. I Didn't Fix It. Here's the Full Story.": "Didn't",
   "Dime: An Expense Tracker That Actually Has Opinions About Your Spending": "Opinions",
   "Nib: A Menu Bar Scratchpad, an Apple Rant, and the State of AI and Swift": "Rant",
@@ -45,16 +49,19 @@ function formatDate(d) {
 }
 
 // Splits the title string at the punchline word and wraps it in Redacted.
+// the synced titles have curly quotes; the keys above are typed straight
+const straight = (t) => t.replace(/[‘’]/g, "'");
+
 function RedactedTitle({ title }) {
-  const word = PUNCHLINES[title];
+  const word = PUNCHLINES[straight(title)];
   if (!word) return title;
-  const idx = title.indexOf(word);
+  const idx = straight(title).indexOf(word);
   if (idx === -1) return title;
   return (
     <>
       {title.slice(0, idx)}
       <Redacted trigger="hover" tone="ink">
-        {word}
+        {title.slice(idx, idx + word.length)}
       </Redacted>
       {title.slice(idx + word.length)}
     </>
@@ -76,7 +83,8 @@ export default function Blog() {
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
-  // Duplicate for seamless infinite loop; reduced-motion uses single set (static grid)
+  // Duplicate for seamless infinite loop; reduced-motion uses single set (static grid).
+  // The copies are hidden from keyboards and screen readers, so each post is there once.
   const displayPosts = reduced ? BLOG_POSTS : [...BLOG_POSTS, ...BLOG_POSTS];
 
   useEffect(() => {
@@ -249,7 +257,7 @@ export default function Blog() {
         </KineticHeadline>
         {!reduced && (
           <p className="opdesk-hint" aria-hidden="true">
-            DRAG OR SCROLL &middot; HOVER TO REVEAL
+            {prefs.fine ? <>DRAG OR SCROLL &middot; HOVER TO REVEAL</> : 'DRAG TO BROWSE'}
           </p>
         )}
       </header>
@@ -273,6 +281,8 @@ export default function Blog() {
               target="_blank"
               rel="noopener noreferrer"
               className="opdesk-card"
+              aria-hidden={i >= BLOG_POSTS.length || undefined}
+              tabIndex={i >= BLOG_POSTS.length ? -1 : undefined}
               data-pen="pencil"
               draggable={false}
               onPointerMove={reduced ? undefined : onCardMove}

@@ -61,8 +61,9 @@ export default function App() {
       <PressCursor />
       <PressImpacts />
       <Life />
-      <CubeStage />
+      {/* the running head first, so the first Tab is the page's contents, not the cube */}
       <Contents />
+      <CubeStage />
 
       <main id="top">
         <Hero />

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { NIBS, SYSTEM, nib, setNib, onNib } from '../life/nib';
 import { DRIFT_LEVELS, settings, setSetting, onSettings } from '../life/settings';
 import { prefs } from '../life/prefs';
-import { FINDS, isFound, onFound } from '../life/discover';
+import { findsHere, isFound, onFound } from '../life/discover';
 
 /**
  * Page settings — a small card that drops from the running head with the
@@ -20,6 +20,8 @@ export default function PageSettings() {
   const wrapRef = useRef(null);
   const btnRef = useRef(null);
   const id = useId();
+  // worked out each render, so it follows the window and the motion setting
+  const finds = findsHere();
 
   useEffect(() => {
     const c = onFound(() => setFinds((n) => n + 1));
@@ -71,7 +73,7 @@ export default function PageSettings() {
         </svg>
       </button>
 
-      <div id={id} className="rh-panel" role="group" aria-label="Page settings" hidden={!open}>
+      <div id={id} className="rh-panel" role="group" aria-label="Page settings" hidden={!open} data-lenis-prevent>
         <p className="rh-panel-title">Page settings</p>
 
         {prefs.fine && (
@@ -138,10 +140,10 @@ export default function PageSettings() {
         {/* the little things that do something — ticked off as you come across them */}
         <fieldset className="rh-opt rh-finds">
           <legend>
-            Things to find · {FINDS.filter((f) => isFound(f.key)).length} / {FINDS.length}
+            Things to find · {finds.filter((f) => isFound(f.key)).length} / {finds.length}
           </legend>
           <ul>
-            {FINDS.map((f) => (
+            {finds.map((f) => (
               <li key={f.key} className={isFound(f.key) ? 'is-found' : undefined}>
                 <span className="rh-find-box" aria-hidden="true" />
                 {f.label}
@@ -149,7 +151,7 @@ export default function PageSettings() {
               </li>
             ))}
           </ul>
-          {FINDS.every((f) => isFound(f.key)) && <p className="rh-finds-all">You found everything. Thanks for playing.</p>}
+          {finds.every((f) => isFound(f.key)) && <p className="rh-finds-all">You found everything. Thanks for playing.</p>}
         </fieldset>
       </div>
     </div>
