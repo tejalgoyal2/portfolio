@@ -1,69 +1,88 @@
 # tgoyal.me — Personal Portfolio
 
-Terminal-aesthetic portfolio. Built with React + Tailwind CSS v4 + Vite.
+Terminal-aesthetic portfolio site. Built with React + Tailwind CSS v4 + Vite.
+
+**Live:** [tgoyal.me](https://tgoyal.me)
 
 ## Quick Start
 
 ```bash
 npm install
-npm run dev       # Dev server
-npm run build     # Production build
-npm run preview   # Preview build locally
+npm run dev       # Dev server at localhost:5173
+npm run build     # Production build → /dist
+npm run preview   # Preview production build locally
 ```
 
-## Deploy to Vercel
+## Deployment (Cloudflare Pages)
 
-1. Push to GitHub:
-```bash
-git init
-git add .
-git commit -m "Initial portfolio"
-git remote add origin https://github.com/tejalgoyal2/portfolio.git
-git push -u origin main
-```
+This site is deployed via [Cloudflare Pages](https://pages.cloudflare.com/) with automatic builds on push to `main`.
 
-2. Go to vercel.com → sign in with GitHub → Import repo → Deploy.
+| Setting | Value |
+|---------|-------|
+| Framework preset | None |
+| Build command | `npm run build` |
+| Build output | `dist` |
+| Node version | 20+ |
 
-3. Add custom domain: Vercel dashboard → Settings → Domains → Add `tgoyal.me`.
+### Custom Domain
 
-4. In Cloudflare DNS:
-   - CNAME `@` → `cname.vercel-dns.com`
-   - CNAME `www` → `cname.vercel-dns.com`
-   - Set proxy to "DNS only" (gray cloud) for Vercel SSL.
+DNS is managed through Cloudflare. The domain `tgoyal.me` is registered via Namecheap with nameservers pointed to Cloudflare.
 
 ## Structure
 
 ```
 src/
-├── components/     All UI components
-├── data/           Content (projects, experience, skills)
-├── hooks/          Custom hooks (scroll reveal, typing text)
-├── App.jsx         Main app
-├── main.jsx        Entry point
-└── index.css       Tailwind v4 theme + animations
+├── components/     # UI components (Hero, Terminal, Projects, etc.)
+├── data/           # Content data (projects, experience, skills)
+├── hooks/          # Custom hooks (scroll reveal, typing animation)
+├── App.jsx         # Main app with boot sequence + routing
+├── main.jsx        # Entry point
+└── index.css       # Tailwind v4 theme + custom animations
 ```
 
 ## Customization
 
-- **Colors**: Edit `@theme` in `src/index.css`
-- **Content**: Edit files in `src/data/`
+- **Colors/Theme**: Edit `@theme` in `src/index.css`
+- **Content**: Edit files in `src/data/` (projects, experience, skills)
 - **Resume**: Place PDF at `public/resume.pdf`
 - **OG Image**: Place 1200x630 image at `public/og-image.png`
 
 ## Features
 
-- Terminal boot sequence (skippable)
-- Matrix rain hero background
-- Typing text animation
-- Scroll-triggered reveals (IntersectionObserver)
-- Interactive skills constellation
-- Expandable project cards and experience timeline
-- Terminal overlay with CLI commands
-- Mini Sudoku easter egg
-- Scroll progress bar + active nav tracking
+- Terminal boot sequence (skippable — press any key)
+- Matrix rain background on hero section
+- Typing text role animation
+- Scroll-triggered section reveals (IntersectionObserver)
+- Interactive skills constellation visualization
+- Expandable project cards with tiered layout
+- Experience timeline with expandable details
+- Terminal overlay with CLI commands (press `` ` `` to toggle)
+- 4x4 Sudoku easter egg
+- Scroll progress bar + active nav section tracking
 - Mobile responsive
 - SEO + Open Graph meta tags
-- ~80KB gzipped total, zero external UI deps
+- ~80KB gzipped, zero external UI libraries
+
+## Tech Stack
+
+- **Framework**: React 19
+- **Build**: Vite 7
+- **Styling**: Tailwind CSS v4
+- **Fonts**: IBM Plex Mono, Share Tech Mono
+- **Hosting**: Cloudflare Pages
+- **DNS**: Cloudflare
+
+## Security Headers
+
+Custom security headers are served via `public/_headers`:
+
+```
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
 
 ---
+
 Designed by Tejal Goyal. Built with Claude.
