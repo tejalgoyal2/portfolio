@@ -1,0 +1,56 @@
+export const PROJECTS = [
+  {
+    tier: 1, name: "IAM Threat Mapper", status: "LIVE", color: "#00ff41",
+    desc: "Interactive attack path visualizer and IAM maturity assessment tool. Maps MITRE ATT&CK techniques to identity infrastructure vulnerabilities.",
+    long: "Built a security visualization platform mapping identity attack vectors to the MITRE ATT&CK framework. Features interactive Cytoscape.js graph rendering of attack paths, a full IAM maturity assessment module with scoring, and exportable reports. Helps security teams understand and communicate identity-based risks visually.",
+    tech: ["React", "Tailwind CSS", "Cytoscape.js", "MITRE ATT&CK"],
+    links: { live: "https://tgoyal.me/iam-threat-mapper", github: "https://github.com/tejalgoyal2" },
+  },
+  {
+    tier: 1, name: "WalletRIP", status: "LIVE", color: "#ffb000",
+    desc: "AI-powered financial tracker with natural language expense entry, identity protection architecture, and a spending roast feature.",
+    long: "Full-stack expense tracker with security-first architecture. Uses synthetic identities instead of PII, Row Level Security at the database level, and strict JSON schema validation on AI-generated data to prevent hallucination-based corruption. Natural language parsing turns 'Coffee 5' into structured data. Includes a 'Get Roasted' feature for humorous AI spending critiques.",
+    tech: ["Next.js", "Supabase", "Gemini API", "Tailwind CSS"],
+    links: { live: "https://walletrip.vercel.app", github: "https://github.com/tejalgoyal2/WalletRIP" },
+  },
+  {
+    tier: 1, name: "SmartHire", status: "REPO", color: "#00d4ff",
+    desc: "AI resume screening and ranking system. Matches applicants to job descriptions using NLP similarity scoring in under 15 seconds.",
+    long: "Full-stack web application acting as a two-sided marketplace. Automates resume screening using TF-IDF vectorization combined with cosine similarity. Extracts structured data from PDF/DOCX resumes, identifies matched and missing skills, and presents analysis in a recruiter dashboard.",
+    tech: ["Flask", "MongoDB", "spaCy", "NLTK", "TF-IDF"],
+    links: { github: "https://github.com/tejalgoyal2/SmartHire" },
+  },
+  {
+    tier: 2, name: "AI Smart Glasses", status: "PROTOTYPE", color: "#00ff41",
+    desc: "Assistive wearable for visually impaired — real-time object detection, OCR, and text-to-speech on edge hardware. 12-month funded capstone.",
+    long: "University-funded capstone. Camera + bone-conduction speaker on spectacle frames. CV model detects objects in real-time, OCR reads documents aloud. Model quantization for Raspberry Pi inference. Led team of 5 across CS and Electronics.",
+    tech: ["Raspberry Pi", "Computer Vision", "OCR", "TTS", "Edge Computing"],
+    links: { youtube: "https://youtu.be/N-yQPtAVEQw" },
+  },
+  {
+    tier: 2, name: "Phishing Email Classifier", status: "REPO", color: "#ff3333",
+    desc: "ML pipeline achieving 98.7% accuracy and 0.999 AUC-ROC classifying phishing emails across 82K+ samples.",
+    long: "End-to-end ML project. Custom preprocessing strips URLs, emails, phone numbers. Engineered urgency flags, caps ratio, punctuation features. GridSearchCV with 5-fold CV. Top phishing indicators: 'verify', 'restriction', 'suspended'. 0.974 MCC.",
+    tech: ["Scikit-learn", "NLTK", "Pandas", "TF-IDF", "Logistic Regression"],
+    links: { github: "#" },
+  },
+  {
+    tier: 2, name: "OccluSense", status: "REPO", color: "#00d4ff",
+    desc: "Occluded object detection for autonomous vehicles — YOLOv5 transfer learning on custom traffic dataset.",
+    long: "Improving AV perception for partially obstructed objects. Transfer learning from MS COCO to custom Bangladesh traffic images. Roboflow augmentation. Fine-tuned YOLOv5 outperformed baseline on partially visible targets.",
+    tech: ["YOLOv5", "PyTorch", "OpenCV", "Roboflow"],
+    links: { github: "https://github.com/tejalgoyal2/OccluSense" },
+  },
+  {
+    tier: 2, name: "CODON Bioinformatics", status: "REPO", color: "#ffb000",
+    desc: "Converting Python bioinformatics libraries to CODON for 10-100x native speedups via AI-assisted code conversion.",
+    long: "Course project for Massive Datasets. CODON compiles Python to native machine code. Used LLMs for mass conversion with documented prompting strategies.",
+    tech: ["Python", "CODON", "Generative AI", "Bioinformatics"],
+    links: { github: "https://github.com/tejalgoyal2/CSC502-Massive-Datasets" },
+  },
+  {
+    tier: 3, name: "Meme Finder", status: "COMING SOON", color: "#555555",
+    desc: "Computer vision expression-to-meme matching. Analyze your face, get the perfect meme. Name TBD — launching soon.",
+    long: "Coming soon.", tech: ["Computer Vision", "TBD"], links: {},
+  },
+];
