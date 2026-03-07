@@ -4,7 +4,7 @@ export const PROJECTS = [
     desc: "Interactive attack path visualizer and IAM maturity assessment tool. Maps MITRE ATT&CK techniques to identity infrastructure vulnerabilities.",
     long: "Built a security visualization platform mapping identity attack vectors to the MITRE ATT&CK framework. Features interactive Cytoscape.js graph rendering of attack paths, a full IAM maturity assessment module with scoring, and exportable reports. Helps security teams understand and communicate identity-based risks visually.",
     tech: ["React", "Tailwind CSS", "Cytoscape.js", "MITRE ATT&CK"],
-    links: { live: "https://tgoyal.me/iam-threat-mapper", github: "https://github.com/tejalgoyal2" },
+    links: { live: "https://iam.tgoyal.me", github: "https://github.com/tejalgoyal2/iam-threat-mapper" },
   },
   {
     tier: 1, name: "WalletRIP", status: "LIVE", color: "#ffb000",
