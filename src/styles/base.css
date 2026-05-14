@@ -1,5 +1,7 @@
 /* ──────────────────────────────────────────────────────────────────────────
  * Base — resets, root typography, body defaults
+ * Light-led: cream paper ground, warm ink text. The PaperBackdrop layer
+ * paints the running press colour on top; this just prevents any dark flash.
  * ──────────────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -18,28 +20,16 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  /* Hero starts yellow; sections paint their own bg so html stays neutral.
-     A dark fallback matches the inkier sections better than pure paper. */
-  background: var(--ink);
-  color: var(--text);
-  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-read);
   font-weight: 400;
   line-height: 1.6;
   overflow-x: hidden;
 }
 
-/* Selection inverts per section — bright bg sections get ink selection */
-.hero ::selection,
-.contact ::selection { background: var(--ink); color: var(--yellow); }
-.about ::selection,
-.experience ::selection { background: var(--red); color: var(--paper); }
-
-body {
-  /* hide OS cursor — custom cursor takes over */
-  cursor: none;
-}
-
-/* but show OS cursor on inputs so users can type/select */
+/* OS cursor hiding is scoped to html.cursor-hidden (set by PressCursor only on
+   fine-pointer devices) — see press.css. Inputs always keep a text caret. */
 input, textarea, select {
   cursor: text;
 }
@@ -55,19 +45,33 @@ button {
   background: none;
   border: none;
   padding: 0;
-  cursor: none;
 }
 
 a {
   color: inherit;
   text-decoration: none;
-  cursor: none;
 }
 
+/* Red ink selection on paper; ink-dark spreads flip it to paper-on-red */
 ::selection {
   background: var(--red);
   color: var(--paper);
 }
+[data-spread="ink"] ::selection {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Variable-font axis defaults — Fraunces reads best with a touch of optical size */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-name);
+  font-weight: 900;
+  font-optical-sizing: auto;
+  line-height: 0.95;
+}
+
+p { margin: 0; }
 
 /* When motion is reduced, kill animations */
 @media (prefers-reduced-motion: reduce) {
@@ -80,9 +84,8 @@ a {
 }
 
 /* font role utilities */
-.font-display { font-family: var(--font-display); }
-.font-serif   { font-family: var(--font-serif); }
-.font-onom    { font-family: var(--font-onom); }
-.font-hand    { font-family: var(--font-hand); }
-.font-body    { font-family: var(--font-body); }
-.font-mono    { font-family: var(--font-mono); }
+.font-name   { font-family: var(--font-name); }
+.font-impact { font-family: var(--font-impact); }
+.font-read   { font-family: var(--font-read); }
+.font-data   { font-family: var(--font-data); }
+.font-pen    { font-family: var(--font-pen); }

@@ -1,72 +1,69 @@
 /* ──────────────────────────────────────────────────────────────────────────
- * Design tokens — Spider-Verse theatrical palette
- * OKLCH only. Slight warm tint on paper, slight purple lean on ink.
+ * Design tokens — THE PRESS
+ * A warm-print broadsheet. OKLCH only. Cream paper, warm near-black ink,
+ * one press red. One rare cool counter-ink for misregistration accents.
+ * Designed light-first: ink-dark spreads are ink-on-paper, never a flip.
  * ──────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* core palette */
-  --color-ink:        oklch(11% 0.014 270);
-  --color-ink-deep:   oklch(7%  0.014 270);
-  --color-paper:      oklch(94% 0.012 80);
-  --color-paper-warm: oklch(89% 0.025 78);
+  /* paper — the stock the press runs */
+  --color-paper:       oklch(95.5% 0.014 85);  /* warm newsprint cream — base */
+  --color-paper-stock: oklch(92%   0.020 82);  /* card / slug stock */
+  --color-paper-deep:  oklch(88%   0.026 80);  /* fold shadows, insets */
 
-  /* signature accents */
-  --color-red:        oklch(60% 0.235 25);
-  --color-red-bright: oklch(68% 0.245 28);
-  --color-cyan:       oklch(78% 0.155 200);
-  --color-cyan-bright:oklch(86% 0.16  195);
-  --color-yellow:     oklch(88% 0.165 90);
-  --color-yellow-hot: oklch(92% 0.20  92);
+  /* ink — warm near-black, never pure #000 */
+  --color-ink:         oklch(20%   0.018 60);
+  --color-ink-soft:    oklch(38%   0.012 60);  /* secondary text */
+  --color-ink-ghost:   oklch(58%   0.010 60);  /* captions, datelines */
 
-  /* utility */
-  --color-outline:    oklch(18% 0.005 270);
-  --color-dot:        oklch(55% 0.01  270);
-  --color-text:       oklch(96% 0.005 90);
-  --color-text-dim:   oklch(70% 0.01  270);
-  --color-text-ghost: oklch(50% 0.01  270);
+  /* the press red — stamps, string, links, emphasis */
+  --color-red:         oklch(56%   0.214 27);
+  --color-red-deep:    oklch(46%   0.190 28);
+  --color-red-wet:     oklch(62%   0.230 27);  /* fresh-ink highlight on reveal */
+
+  /* rare cool counter-ink — second plate / misregistration accent only */
+  --color-blue-plate:  oklch(45%   0.10  250);
 
   /* fonts */
-  --font-display:  "Anton", "Bebas Neue", system-ui, sans-serif;
-  --font-serif:    "DM Serif Display", "Playfair Display", Georgia, serif;
-  --font-onom:     "Bungee", "Anton", system-ui, sans-serif;
-  --font-hand:     "Knewave", "Marker Felt", cursive;
-  --font-body:     "Space Grotesk", system-ui, sans-serif;
-  --font-mono:     "JetBrains Mono", "Fira Code", monospace;
+  --font-name:   "Fraunces", "Times New Roman", Georgia, serif;   /* nameplate + editorial heads */
+  --font-impact: "Anton", "Arial Narrow", sans-serif;             /* kinetic mega-type, impacts */
+  --font-read:   "Newsreader", Georgia, "Times New Roman", serif; /* body, decks, clippings */
+  --font-data:   "JetBrains Mono", "SFMono-Regular", monospace;   /* datelines, labels, stamps */
+  --font-pen:    "Caveat", "Marker Felt", cursive;                /* editor's marginalia */
 
   /* easings */
-  --ease-snap:    cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-comic:   cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-set:    cubic-bezier(0.16, 1,    0.3,  1);    /* type settling into the stick */
+  --ease-stamp:  cubic-bezier(0.34, 1.56, 0.64, 1);    /* rubber-stamp impact overshoot */
+  --ease-bleed:  cubic-bezier(0.65, 0,    0.35, 1);    /* ink bleed */
 }
 
 :root {
-  /* same tokens exposed as plain CSS vars for non-tailwind consumers */
-  --ink:          oklch(11% 0.014 270);
-  --ink-deep:     oklch(7%  0.014 270);
-  --paper:        oklch(94% 0.012 80);
-  --paper-warm:   oklch(89% 0.025 78);
+  /* same tokens as plain CSS vars for non-Tailwind consumers (canvas, JS, SVG) */
+  --paper:       oklch(95.5% 0.014 85);
+  --paper-stock: oklch(92%   0.020 82);
+  --paper-deep:  oklch(88%   0.026 80);
 
-  --red:          oklch(60% 0.235 25);
-  --red-bright:   oklch(68% 0.245 28);
-  --cyan:         oklch(78% 0.155 200);
-  --cyan-bright:  oklch(86% 0.16  195);
-  --yellow:       oklch(88% 0.165 90);
-  --yellow-hot:   oklch(92% 0.20  92);
+  --ink:         oklch(20%   0.018 60);
+  --ink-soft:    oklch(38%   0.012 60);
+  --ink-ghost:   oklch(58%   0.010 60);
 
-  --outline:      oklch(18% 0.005 270);
-  --dot:          oklch(55% 0.01  270);
-  --text:         oklch(96% 0.005 90);
-  --text-dim:     oklch(70% 0.01  270);
-  --text-ghost:   oklch(50% 0.01  270);
+  --red:         oklch(56%   0.214 27);
+  --red-deep:    oklch(46%   0.190 28);
+  --red-wet:     oklch(62%   0.230 27);
 
-  --font-display: "Anton", "Bebas Neue", system-ui, sans-serif;
-  --font-serif:   "DM Serif Display", Georgia, serif;
-  --font-onom:    "Bungee", system-ui, sans-serif;
-  --font-hand:    "Knewave", cursive;
-  --font-body:    "Space Grotesk", system-ui, sans-serif;
-  --font-mono:    "JetBrains Mono", monospace;
+  --blue-plate:  oklch(45%   0.10  250);
 
-  --ease-snap:    cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-comic:   cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-name:   "Fraunces", "Times New Roman", Georgia, serif;
+  --font-impact: "Anton", "Arial Narrow", sans-serif;
+  --font-read:   "Newsreader", Georgia, "Times New Roman", serif;
+  --font-data:   "JetBrains Mono", "SFMono-Regular", monospace;
+  --font-pen:    "Caveat", "Marker Felt", cursive;
+
+  --ease-set:    cubic-bezier(0.16, 1,    0.3,  1);
+  --ease-stamp:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bleed:  cubic-bezier(0.65, 0,    0.35, 1);
+
+  /* optical sizing defaults for the variable faces */
+  --fraunces-soft: 0;     /* SOFT axis — push slightly on big display heads */
+  --fraunces-wonk: 0;     /* WONK axis — keep off for legibility */
 }
