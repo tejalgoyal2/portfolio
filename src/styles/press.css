@@ -1,0 +1,269 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * The press engine — shared styles for the src/press/ motion system.
+ * Backdrop · red thread · cursor · impacts · redaction · stamps · kinetic type
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* The page is the positioning context for the absolute red-thread spine. */
+main#top {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Paper backdrop — the running stock ──────────────────────────────────── */
+.paper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  pointer-events: none;
+}
+.paper-backdrop-ink {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  opacity: 0;
+  will-change: opacity;
+}
+.paper-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+
+/* ── Red thread spine ────────────────────────────────────────────────────── */
+.red-thread {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.red-thread svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  opacity: 0.9;
+}
+
+/* ── Registration cursor ─────────────────────────────────────────────────── */
+html.cursor-hidden,
+html.cursor-hidden * {
+  cursor: none;
+}
+html.cursor-hidden input,
+html.cursor-hidden textarea,
+html.cursor-hidden select {
+  cursor: text;
+}
+.press-cursor-dot,
+.press-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+.press-cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: var(--paper);
+  border-radius: 50%;
+}
+.press-cursor-ring {
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  transition: width 0.2s var(--ease-set), height 0.2s var(--ease-set),
+    margin 0.2s var(--ease-set);
+}
+.press-cross {
+  position: absolute;
+  background: var(--paper);
+}
+.press-cross--h {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+}
+.press-cross--v {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+}
+.press-cursor-ring.is-locked {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+}
+.press-cursor-ring.is-down {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+}
+
+/* ── Onomatopoeia impacts ────────────────────────────────────────────────── */
+.press-impacts {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  overflow: hidden;
+}
+.press-impact {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--rot));
+  font-family: var(--font-impact);
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  animation: impact-pop 700ms var(--ease-stamp) forwards;
+  text-shadow: 3px 3px 0 rgba(20, 16, 10, 0.18);
+}
+.press-impact--ink {
+  color: var(--ink);
+}
+.press-impact--red {
+  color: var(--red);
+}
+@keyframes impact-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.4);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--rot)) scale(1.14);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -54%) rotate(var(--rot)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -68%) rotate(var(--rot)) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .press-impact {
+    animation: impact-fade 500ms linear forwards;
+  }
+  @keyframes impact-fade {
+    0% { opacity: 0.9; }
+    100% { opacity: 0; }
+  }
+}
+
+/* ── Declassify / redaction ──────────────────────────────────────────────── */
+.redacted {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.redacted-bar {
+  position: absolute;
+  inset: -0.05em -0.14em;
+  background: var(--ink);
+  clip-path: inset(0 0 0 0);
+  will-change: clip-path;
+}
+.redacted-bar--red {
+  background: var(--red);
+}
+.redacted.is-revealed {
+  cursor: text;
+}
+
+/* ── Stamps ──────────────────────────────────────────────────────────────── */
+.press-stamp {
+  display: inline-block;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.22em 0.5em;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(var(--stamp-rot, -4deg));
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+  white-space: nowrap;
+}
+.press-stamp--red {
+  color: var(--red);
+}
+.press-stamp--ink {
+  color: var(--ink);
+}
+[data-spread="ink"] .press-stamp {
+  mix-blend-mode: screen;
+}
+
+/* ── Kinetic type ────────────────────────────────────────────────────────── */
+.kinetic {
+  position: relative;
+  display: block;
+}
+.kinetic--name {
+  font-family: var(--font-name);
+  font-weight: 900;
+  font-optical-sizing: auto;
+}
+.kinetic--impact {
+  font-family: var(--font-impact);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+}
+.kh-set {
+  display: inline;
+}
+.kh-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.kh-char {
+  display: inline-block;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.kh-space {
+  display: inline-block;
+  width: 0.26em;
+}
+.kh-ghost {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  color: var(--red);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+}
+.kh-spread {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 62%;
+  height: 90%;
+  transform: translate(-50%, 18%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--red-wet), transparent 72%);
+  filter: blur(30px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kh-char { opacity: 1; }
+}
