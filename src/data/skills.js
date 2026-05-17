@@ -1,17 +1,53 @@
 export const SKILL_NODES = [
-  { id: "sec", label: "Security", x: 0.18, y: 0.28, color: "#00ff41", r: 36,
-    items: ["IAM Platforms", "EDR Solutions", "SIEM", "Vulnerability Mgmt", "Web Proxy / Zero Trust", "Knowledge Management"] },
-  { id: "ml", label: "ML / AI", x: 0.5, y: 0.13, color: "#00d4ff", r: 32,
-    items: ["PyTorch", "Scikit-learn", "TF-IDF", "YOLOv5", "spaCy", "NLTK", "Federated Learning"] },
-  { id: "dev", label: "Development", x: 0.82, y: 0.28, color: "#ffb000", r: 32,
-    items: ["React", "Next.js", "Flask", "Tailwind CSS", "Supabase", "MongoDB", "Python", "JS/TS"] },
-  { id: "data", label: "Data Science", x: 0.32, y: 0.7, color: "#ff3333", r: 28,
-    items: ["Pandas", "NumPy", "Matplotlib", "Seaborn", "Jupyter", "Google Colab", "Statistics"] },
-  { id: "tools", label: "DevOps & Tools", x: 0.72, y: 0.7, color: "#9d4edd", r: 26,
-    items: ["Git & GitHub", "Jira", "Roboflow", "Docker", "PowerShell", "Linux"] },
-];
-
-export const SKILL_EDGES = [
-  ["sec", "ml"], ["sec", "dev"], ["ml", "data"],
-  ["ml", "dev"], ["dev", "tools"], ["data", "tools"], ["sec", "tools"],
+  {
+    id: "sec", label: "Security",
+    items: [
+      "CrowdStrike Falcon", "LogScale SIEM", "EDR", "IAM / Okta",
+      "MITRE ATT&CK", "Incident Response", "VirusTotal", "Device Trust",
+      "Conditional Access", "Shadow IT Detection", "Zero Trust", "DNS Analysis",
+    ],
+  },
+  {
+    id: "lang", label: "Languages",
+    items: [
+      "JavaScript", "TypeScript", "Python", "Rust", "Swift",
+      "PowerShell", "SQL", "Bash", "R", "HTML / CSS",
+    ],
+  },
+  {
+    id: "frontend", label: "Frontend",
+    items: [
+      "React 19", "Next.js 16", "Tailwind CSS v4", "Framer Motion",
+      "Three.js / R3F", "GSAP", "Recharts", "Cytoscape.js",
+    ],
+  },
+  {
+    id: "backend", label: "Backend & APIs",
+    items: [
+      "Cloudflare Workers", "Flask", "REST APIs", "Supabase",
+      "PostgreSQL", "MongoDB", "Upstash Redis", "Zod v4", "Gemini API",
+    ],
+  },
+  {
+    id: "ml", label: "ML & Data",
+    items: [
+      "PyTorch", "Scikit-learn", "Pandas", "NumPy", "TF-IDF",
+      "spaCy", "NLTK", "OpenCV", "YOLOv5", "Federated Learning",
+      "LangChain", "ChromaDB", "RAG", "BM25",
+    ],
+  },
+  {
+    id: "embedded", label: "CV & Embedded",
+    items: [
+      "Raspberry Pi", "CUDA", "Tesseract OCR",
+      "Model Quantization", "Text-to-Speech", "SIFT",
+    ],
+  },
+  {
+    id: "tools", label: "DevOps & Tools",
+    items: [
+      "Git", "Vite", "Cloudflare Pages", "Vercel",
+      "Linux", "Docker", "Confluence API", "Ollama", "Google Colab",
+    ],
+  },
 ];
