@@ -3,21 +3,23 @@
  * section feel like a single printed comic book.
  * ──────────────────────────────────────────────────────────────────────── */
 
+/* Paper grain and halftone overlays — kept available but NOT mounted globally
+ * by default. The Buttermax direction calls for clean, restrained backgrounds.
+ * Sections can opt in by adding the class locally.
+ */
 .paper-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 9998;
   filter: url(#paper-noise);
   opacity: 0.04;
   mix-blend-mode: overlay;
 }
 
 .halftone-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 9997;
   background-image: radial-gradient(circle, var(--dot) 0.5px, transparent 0.5px);
   background-size: 8px 8px;
   opacity: 0.05;
