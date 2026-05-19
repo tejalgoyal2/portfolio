@@ -1,0 +1,880 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * Section composition — Buttermax-for-Tejal hero, plus per-section
+ * paradigm sheets. The shared DNA: bold solid bg, massive type,
+ * one focal element. No fuzz, no chromatic-aberration overlay,
+ * no halftone on top. Restraint.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* ============= Hero — yellow, type-dominant, padlock front ============= */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--yellow);
+  color: var(--ink);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero-nav {
+  position: absolute;
+  top: 26px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 5;
+}
+
+.hero-monogram {
+  font-family: var(--font-display);
+  font-size: 26px;
+  letter-spacing: 1.5px;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.hero-nav-links {
+  display: flex;
+  gap: 10px;
+}
+
+.hero-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 10px 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  transition: background 220ms var(--ease-snap), color 220ms var(--ease-snap);
+  display: inline-block;
+}
+
+.hero-pill:hover {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+/* The wordmark */
+.hero-wordmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(120px, 26vw, 460px);
+  line-height: 0.86;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  white-space: nowrap;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Two lines so the words can stack with offset, or one line that crops */
+.hero-word {
+  display: block;
+}
+
+.hero-word--offset {
+  /* nudge GOYAL slightly right so the L hangs past the edge */
+  transform: translateX(8%);
+}
+
+.hero-canvas {
+  /* sized via inline styles in Hero.jsx for responsive control */
+}
+
+.hero-caption {
+  position: absolute;
+  bottom: 92px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+  z-index: 5;
+}
+
+.hero-caption-dot {
+  margin: 0 12px;
+  opacity: 0.55;
+}
+
+.hero-scroll-cue {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.85;
+  z-index: 5;
+  animation: hero-scroll-bob 2.6s ease-in-out infinite;
+}
+
+.hero-scroll-arrow {
+  display: inline-block;
+  animation: hero-arrow-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes hero-scroll-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, 4px); }
+}
+
+@keyframes hero-arrow-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* ============= About — Drumspirit cream + red giant type ============== */
+
+.about {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 12vh 6vw 16vh;
+  overflow: hidden;
+}
+
+.about-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--red);
+  text-align: center;
+  margin: 0 0 1.5vw;
+}
+
+.about-mark {
+  font-family: var(--font-display);
+  font-size: clamp(140px, 30vw, 540px);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+  color: var(--red);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+.about-grid {
+  max-width: 1100px;
+  margin: 8vh auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5vw;
+  align-items: start;
+  position: relative;
+  z-index: 1;
+}
+
+.about-col-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0;
+}
+
+.about-col-quote .about-quote-tag {
+  display: block;
+  font-family: var(--font-hand);
+  font-size: 13px;
+  color: var(--red);
+  margin-top: 16px;
+  transform: rotate(-2deg);
+  letter-spacing: 0.5px;
+}
+
+.about-col-prose {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.65;
+  color: oklch(28% 0.01 270);
+}
+
+.about-col-prose p {
+  margin: 0 0 14px;
+}
+
+.about-col-stats {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-stat {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dashed oklch(30% 0.005 270 / 0.35);
+  padding-bottom: 8px;
+}
+
+.about-stat-label { color: oklch(40% 0.005 270); }
+.about-stat-value { color: var(--ink); }
+
+/* ============= Skills — bright red panel + comic physics ============= */
+
+.skills {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--red);
+  color: var(--paper);
+  padding: 14vh 0 12vh;
+  overflow: hidden;
+}
+
+.skills-header {
+  max-width: 1200px;
+  margin: 0 auto 4vh;
+  padding: 0 6vw;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.skills-title {
+  font-family: var(--font-display);
+  font-size: clamp(100px, 18vw, 320px);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.025em;
+  color: var(--paper);
+  margin: 0;
+}
+
+.skills-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--paper);
+  max-width: 280px;
+  text-align: right;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.skills-stage {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 6vw;
+}
+
+.skills-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 560px;
+  border: 2.5px solid var(--paper);
+  border-radius: 8px;
+  background: oklch(48% 0.21 25);
+  box-shadow:
+    8px 8px 0 var(--ink),
+    16px 16px 0 oklch(15% 0.01 270 / 0.45);
+}
+
+.skills-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.skills-canvas:active { cursor: grabbing; }
+
+.skills-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 32px;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.skills-legend-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-legend-dot::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.skills-hint {
+  text-align: center;
+  font-family: var(--font-hand);
+  font-size: 18px;
+  color: var(--paper);
+  margin: 18px 0 0;
+  transform: rotate(-1deg);
+  opacity: 0.85;
+}
+
+/* ============= Projects — editorial stacked panels ================ */
+
+.projects {
+  position: relative;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 14vh 0 10vh;
+}
+
+.projects-header {
+  max-width: 1200px;
+  margin: 0 auto 6vh;
+  padding: 0 6vw;
+}
+
+.projects-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin: 0 0 14px;
+}
+
+.projects-title {
+  font-family: var(--font-display);
+  font-size: clamp(80px, 14vw, 240px);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto auto;
+  gap: 32px;
+  align-items: center;
+  padding: 32px 6vw;
+  border-top: 1px solid oklch(28% 0.005 270);
+  cursor: pointer;
+  transition: background 280ms var(--ease-snap), color 280ms var(--ease-snap);
+}
+
+.project-row:last-child {
+  border-bottom: 1px solid oklch(28% 0.005 270);
+}
+
+.project-row:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.project-row:hover .project-index,
+.project-row:hover .project-tech,
+.project-row:hover .project-status-label,
+.project-row:hover .project-cta {
+  color: var(--ink);
+}
+
+.project-index {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: oklch(55% 0.005 270);
+  font-feature-settings: 'tnum';
+}
+
+.project-name {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 80px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  color: inherit;
+}
+
+.project-desc {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: oklch(70% 0.005 270);
+  margin: 0;
+  max-width: 540px;
+}
+
+.project-row:hover .project-desc {
+  color: oklch(35% 0.005 270);
+}
+
+.project-tech {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 220px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: oklch(55% 0.005 270);
+}
+
+.project-tech-pill {
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+
+.project-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-align: center;
+  min-width: 56px;
+}
+
+.project-status-label {
+  color: oklch(55% 0.005 270);
+}
+
+.project-status--live .project-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: oklch(78% 0.18 142);
+  box-shadow: 0 0 8px oklch(78% 0.18 142);
+  display: inline-block;
+  margin-right: 6px;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.75); }
+}
+
+.project-cta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: oklch(55% 0.005 270);
+}
+
+/* ============= Experience — cream editorial timeline =============== */
+
+.experience {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 14vh 6vw 14vh;
+}
+
+.experience-header {
+  max-width: 1100px;
+  margin: 0 auto 6vh;
+  text-align: left;
+}
+
+.experience-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--red);
+  margin: 0 0 14px;
+}
+
+.experience-title {
+  font-family: var(--font-display);
+  font-size: clamp(80px, 14vw, 240px);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.025em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.experience-list {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.experience-row {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 60px;
+  align-items: baseline;
+  padding: 36px 0;
+  border-top: 1px solid oklch(30% 0.005 270 / 0.35);
+  position: relative;
+}
+
+.experience-row:last-child {
+  border-bottom: 1px solid oklch(30% 0.005 270 / 0.35);
+}
+
+.experience-period {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: oklch(40% 0.005 270);
+}
+
+.experience-role {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.6vw, 52px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+
+.experience-org {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: oklch(38% 0.01 270);
+  margin: 0 0 14px;
+}
+
+.experience-desc {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: oklch(30% 0.005 270);
+  max-width: 600px;
+  margin: 0 0 14px;
+}
+
+.experience-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: oklch(35% 0.005 270);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.experience-details li {
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.55;
+}
+
+.experience-details li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--red);
+}
+
+.experience-current-tag {
+  display: inline-block;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--red);
+  margin-left: 12px;
+  transform: rotate(-3deg) translateY(-2px);
+}
+
+/* ============= Blog — fluid horizontal strip ====================== */
+
+.blog {
+  position: relative;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 14vh 0 8vh;
+  overflow: hidden;
+}
+
+.blog-header {
+  max-width: 1200px;
+  margin: 0 auto 5vh;
+  padding: 0 6vw;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.blog-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin: 0 0 14px;
+}
+
+.blog-title {
+  font-family: var(--font-display);
+  font-size: clamp(80px, 14vw, 240px);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.blog-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: oklch(60% 0.005 270);
+  text-align: right;
+}
+
+.blog-strip-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.blog-strip {
+  display: flex;
+  gap: 28px;
+  padding: 4vh 6vw;
+  width: max-content;
+  will-change: transform;
+}
+
+.blog-card {
+  flex: 0 0 360px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 26px 28px 22px;
+  transition: transform 320ms var(--ease-snap), box-shadow 320ms var(--ease-snap);
+  position: relative;
+  box-shadow: 4px 4px 0 oklch(15% 0.01 270);
+}
+
+.blog-card:hover {
+  transform: translateY(-6px) rotate(-0.8deg);
+  box-shadow: 10px 12px 0 oklch(15% 0.01 270);
+}
+
+.blog-card-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: oklch(50% 0.005 270);
+  margin: 0 0 14px;
+}
+
+.blog-card-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+  color: var(--ink);
+}
+
+.blog-card-preview {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: oklch(38% 0.005 270);
+  margin: 0 0 18px;
+}
+
+.blog-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.blog-card-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--red);
+  padding: 2px 8px;
+  border: 1px solid var(--red);
+  border-radius: 999px;
+}
+
+.blog-card-cta {
+  font-family: var(--font-hand);
+  font-size: 16px;
+  color: var(--red);
+  letter-spacing: 0.5px;
+}
+
+/* ============= Contact — yellow closing panel ===================== */
+
+.contact {
+  position: relative;
+  background: var(--yellow);
+  color: var(--ink);
+  padding: 16vh 6vw;
+  text-align: center;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+
+.contact-title {
+  font-family: var(--font-display);
+  font-size: clamp(80px, 14vw, 260px);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.025em;
+  margin: 0 0 4vh;
+}
+
+.contact-aside {
+  font-family: var(--font-hand);
+  font-size: clamp(20px, 2.4vw, 32px);
+  color: var(--red);
+  margin: 0 0 6vh;
+  transform: rotate(-2deg);
+}
+
+.contact-buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.contact-btn {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  background: var(--ink);
+  padding: 18px 32px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  transition: transform 220ms var(--ease-snap), background 220ms var(--ease-snap), color 220ms var(--ease-snap);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-btn:hover {
+  transform: translateY(-3px);
+  background: var(--red);
+  color: var(--paper);
+  border-color: var(--red);
+}
+
+.contact-btn--secondary {
+  background: transparent;
+  color: var(--ink);
+}
+
+.contact-btn--secondary:hover {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+.contact-fin {
+  margin-top: 8vh;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  color: var(--ink);
+  opacity: 0.5;
+  transform: rotate(-4deg);
+}
+
+/* ============= Section transitions — sharp cuts (Drumspirit) =============
+ * No fancy crossfades. Section edges are crisp, with optional torn-paper
+ * dividers we draw via SVG clip-path between certain pairs.
+ */
+.section-divider {
+  height: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: block;
+}
+
+/* Responsive — mobile is a secondary citizen here but should not break */
+@media (max-width: 760px) {
+  .hero-wordmark { font-size: clamp(80px, 22vw, 200px); }
+  .hero-canvas { width: 70vw !important; height: 50vh !important; }
+  .about-grid { grid-template-columns: 1fr; gap: 24px; }
+  .skills-canvas-wrap { height: 460px; }
+  .skills-header { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .skills-sub { text-align: left; }
+  .project-row { grid-template-columns: 50px 1fr; gap: 16px; }
+  .project-tech, .project-status, .project-cta { display: none; }
+  .experience-row { grid-template-columns: 1fr; gap: 12px; }
+  .blog-card { flex: 0 0 290px; }
+}
