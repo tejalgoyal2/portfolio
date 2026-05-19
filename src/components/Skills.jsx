@@ -1,129 +1,125 @@
-import { useState, useRef, useEffect } from 'react';
-import { SKILL_NODES, SKILL_EDGES } from '../data/skills';
+import { useRef, useEffect, useState } from 'react';
+import { SKILL_NODES } from '../data/skills';
 import SectionHeader from './SectionHeader';
-import { useScrollReveal } from '../hooks/useScrollReveal';
+import { gsap } from '../hooks/useGSAP';
 
-export default function Skills() {
-  const [active, setActive] = useState(null);
-  const containerRef = useRef(null);
-  const [dim, setDim] = useState({ w: 700, h: 320 });
-  const sectionRef = useScrollReveal();
+const CATEGORY_META = {
+  sec: { color: '#8b8eff', label: 'Security', span: 2 },
+  lang: { color: '#6ee7b7', label: 'Languages', span: 1 },
+  frontend: { color: '#fbbf24', label: 'Frontend', span: 1 },
+  backend: { color: '#f97316', label: 'Backend & APIs', span: 2 },
+  ml: { color: '#67e8f9', label: 'ML & Data', span: 2 },
+  embedded: { color: '#f87171', label: 'CV & Embedded', span: 1 },
+  tools: { color: '#a78bfa', label: 'DevOps & Tools', span: 3 },
+};
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver(entries => {
-      const w = entries[0].contentRect.width;
-      setDim({ w, h: Math.max(240, Math.min(360, w * 0.45)) });
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  const nodes = SKILL_NODES.map(n => ({ ...n, px: n.x * dim.w, py: n.y * dim.h }));
+function SkillCell({ node, hovered, onHover }) {
+  const meta = CATEGORY_META[node.id] || { color: '#8b8eff', label: node.label, span: 1 };
+  const isHovered = hovered === node.id;
 
   return (
-    <section>
-      <SectionHeader id="skills" title="Skills" sub="// hover a node to highlight" />
-      <div ref={(el) => { containerRef.current = el; if (sectionRef.current === null) sectionRef.current = el; }}
-        className="reveal panel overflow-hidden" style={{ padding: 0 }}>
+    <div
+      className="skill-cell rounded-xl p-6 relative overflow-hidden transition-all duration-400 cursor-default"
+      style={{
+        gridColumn: `span ${meta.span}`,
+        background: isHovered
+          ? `radial-gradient(ellipse at 30% 0%, ${meta.color}10 0%, var(--color-surface) 70%)`
+          : 'var(--color-surface)',
+        border: `1px solid ${isHovered ? `${meta.color}30` : 'var(--color-border-subtle)'}`,
+        opacity: 1,
+        transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
+        boxShadow: isHovered ? `0 12px 30px rgba(0,0,0,0.2), 0 0 30px ${meta.color}05` : 'none',
+      }}
+      onMouseEnter={() => onHover(node.id)}
+      onMouseLeave={() => onHover(null)}
+    >
+      <div className="flex items-center gap-2.5 mb-4">
+        <div
+          className="w-2 h-2 rounded-full transition-all duration-300"
+          style={{
+            background: meta.color,
+            boxShadow: isHovered ? `0 0 10px ${meta.color}60` : 'none',
+            transform: isHovered ? 'scale(1.3)' : 'scale(1)',
+          }}
+        />
+        <span
+          className="text-[10px] font-mono tracking-[2px] uppercase transition-colors duration-300"
+          style={{ color: isHovered ? meta.color : 'var(--color-text-dim)' }}
+        >
+          {meta.label}
+        </span>
+        <span className="text-[9px] font-mono ml-auto" style={{ color: 'var(--color-text-ghost)' }}>
+          {node.items.length}
+        </span>
+      </div>
 
-        {/* Constellation SVG */}
-        <svg width={dim.w} height={dim.h} style={{ display: 'block' }}>
-          <defs>
-            <pattern id="skillGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(0,255,65,0.03)" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#skillGrid)" />
+      <div className="flex flex-wrap gap-2">
+        {node.items.map(item => (
+          <span
+            key={item}
+            className="text-[11px] py-1.5 px-3 rounded-full font-mono transition-all duration-300"
+            style={{
+              color: isHovered ? meta.color : 'var(--color-text-secondary)',
+              border: `1px solid ${isHovered ? `${meta.color}25` : 'var(--color-border-subtle)'}`,
+              background: isHovered ? `${meta.color}06` : 'transparent',
+            }}
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          {/* Edges */}
-          {SKILL_EDGES.map(([a, b], i) => {
-            const na = nodes.find(n => n.id === a);
-            const nb = nodes.find(n => n.id === b);
-            const hi = active === a || active === b;
-            return (
-              <line key={i} x1={na.px} y1={na.py} x2={nb.px} y2={nb.py}
-                stroke={hi ? 'rgba(0,255,65,0.32)' : 'rgba(0,255,65,0.06)'}
-                strokeWidth={hi ? 1.5 : 0.6}
-                style={{ transition: 'all 0.3s' }}
-              />
-            );
-          })}
+export default function Skills() {
+  const sectionRef = useRef(null);
+  const gridRef = useRef(null);
+  const [hovered, setHovered] = useState(null);
 
-          {/* Nodes */}
-          {nodes.map(n => {
-            const hi = active === n.id;
-            return (
-              <g key={n.id}
-                onMouseEnter={() => setActive(n.id)}
-                onMouseLeave={() => setActive(null)}
-                style={{ cursor: 'pointer' }}
-              >
-                <circle cx={n.px} cy={n.py} r={hi ? n.r + 5 : n.r}
-                  fill={`${n.color}${hi ? '0d' : '04'}`}
-                  style={{ transition: 'all 0.3s' }}
-                />
-                <circle cx={n.px} cy={n.py} r={hi ? n.r * 0.55 : n.r * 0.4}
-                  fill={`${n.color}0c`} stroke={n.color}
-                  strokeWidth={hi ? 1.5 : 0.7}
-                  style={{ transition: 'all 0.3s' }}
-                />
-                <circle cx={n.px} cy={n.py} r={2.5}
-                  fill={n.color} opacity={hi ? 0.9 : 0.4}
-                />
-                <text x={n.px} y={n.py - n.r * 0.4 - 10}
-                  textAnchor="middle"
-                  fill={hi ? n.color : 'var(--color-muted)'}
-                  fontSize={hi ? 12 : 10.5}
-                  fontFamily="'Share Tech Mono', monospace"
-                  fontWeight={hi ? 700 : 400}
-                  style={{ transition: 'all 0.3s' }}
-                >
-                  {n.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+  useEffect(() => {
+    if (!sectionRef.current || !gridRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(gridRef.current.querySelectorAll('.skill-cell'), {
+        opacity: 0,
+        y: 30,
+        scale: 0.96,
+      }, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.5,
+        stagger: 0.07,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: gridRef.current,
+          start: 'top 85%',
+          once: true,
+        },
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
 
-        {/* All skills always visible — hover highlights */}
-        <div className="p-4" style={{ borderTop: '1px solid var(--color-border)' }}>
-          {SKILL_NODES.map(node => {
-            const isActive = active === node.id;
-            const noSelection = active === null;
-            return (
-              <div
-                key={node.id}
-                className="mb-2.5 transition-opacity duration-300"
-                style={{ opacity: noSelection ? 1 : isActive ? 1 : 0.25 }}
-                onMouseEnter={() => setActive(node.id)}
-                onMouseLeave={() => setActive(null)}
-              >
-                <div
-                  className="text-[10px] font-display mb-1.5 tracking-[1px] transition-colors duration-300"
-                  style={{ color: isActive ? node.color : 'var(--color-dim)' }}
-                >
-                  {node.label}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {node.items.map(item => (
-                    <span
-                      key={item}
-                      className="text-[10.5px] py-0.5 px-2.5 rounded-sm font-mono transition-all duration-300"
-                      style={{
-                        color: isActive ? node.color : 'var(--color-muted)',
-                        background: isActive ? `${node.color}10` : 'rgba(0,212,255,0.02)',
-                        border: `1px solid ${isActive ? `${node.color}25` : 'var(--color-border)'}`,
-                      }}
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+  return (
+    <section ref={sectionRef}>
+      <div className="max-w-[1100px] mx-auto px-6">
+        <SectionHeader id="skills" title="Skills" sub="what I work with" />
+
+        <div
+          ref={gridRef}
+          className="grid gap-4"
+          style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+        >
+          {SKILL_NODES.map((node, i) => (
+            <SkillCell
+              key={node.id}
+              node={node}
+              index={i}
+              hovered={hovered}
+              onHover={setHovered}
+            />
+          ))}
         </div>
       </div>
     </section>
