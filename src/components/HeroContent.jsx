@@ -61,6 +61,7 @@ export default function HeroContent() {
         span.textContent = char === ' ' ? ' ' : char;
         span.style.display = 'inline-block';
         span.style.opacity = '0';
+        if (char === ' ') span.style.minWidth = '0.3em';
         span.setAttribute('aria-hidden', 'true');
         nameEl.appendChild(span);
         chars.push(span);

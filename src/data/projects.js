@@ -2,7 +2,7 @@ export const PROJECTS = [
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
     desc: "AI-powered expense tracker with natural language parsing, spending roasts, and zero client-side DB writes.",
-    long: "Ground-up rewrite of WalletRIP on Cloudflare Workers. Next.js 16 with @opennextjs/cloudflare adapter. Zero client-side database writes — all mutations through API routes with auth, Zod v4 validation, and Upstash Redis rate limiting. 7 API routes including Gemini NLP parse, Quick Add for Siri/Shortcuts, AI insights, and Hinglish roast. Origin header checking, CSV export with formula injection protection, optimistic UI updates with rollback.",
+    long: "Ground-up rewrite of WalletRIP on Cloudflare Workers. Next.js 16 with @opennextjs/cloudflare adapter. Zero client-side database writes. All mutations through API routes with auth, Zod v4 validation, and Upstash Redis rate limiting. 7 API routes including Gemini NLP parse, Quick Add for Siri/Shortcuts, AI insights, and Hinglish roast. Origin header checking, CSV export with formula injection protection, optimistic UI updates with rollback.",
     tech: ["React 19", "TypeScript", "Tailwind CSS", "Cloudflare Workers", "Supabase", "Gemini API"],
     links: { live: "https://dime.tgoyal.me", github: "https://github.com/tejalgoyal2/Dime" },
   },
@@ -29,8 +29,8 @@ export const PROJECTS = [
   },
   {
     tier: 2, name: "WalletRIP", status: "LIVE", color: "#fbbf24",
-    desc: "The original expense tracker — privacy-first with synthetic identities and zero PII. Evolved into Dime.",
-    long: "Privacy-first tracker requiring zero PII. Synthetic identity system with callsigns. PostgreSQL Row Level Security, Supabase SSR auth, invite-code gating. 5 Gemini API integrations for NLP parsing, insights, subscription detection, and spending roasts. Self-directed security audit found 4 vulnerabilities — the findings led to Dime.",
+    desc: "The original expense tracker. Privacy-first with synthetic identities and zero PII. Evolved into Dime.",
+    long: "Privacy-first tracker requiring zero PII. Synthetic identity system with callsigns. PostgreSQL Row Level Security, Supabase SSR auth, invite-code gating. 5 Gemini API integrations for NLP parsing, insights, subscription detection, and spending roasts. Self-directed security audit found 4 vulnerabilities. The findings led to Dime.",
     tech: ["Next.js", "Supabase", "Gemini API", "Tailwind CSS"],
     links: { live: "https://walletrip.vercel.app", github: "https://github.com/tejalgoyal2/WalletRIP" },
   },
@@ -44,7 +44,7 @@ export const PROJECTS = [
   {
     tier: 2, name: "Sudoku", status: "LIVE", color: "#6ee7b7",
     desc: "Ad-free Sudoku PWA with 4 difficulty levels, offline play, and streak tracking. Built out of pure spite.",
-    long: "Algorithmic puzzle generation with every puzzle guaranteed exactly one solution. Pencil marks, undo, mistake counter, timer, streak tracking, best times. Progressive Web App with service worker for offline play and home screen installation. No backend, no accounts — all stats in localStorage.",
+    long: "Algorithmic puzzle generation with every puzzle guaranteed exactly one solution. Pencil marks, undo, mistake counter, timer, streak tracking, best times. Progressive Web App with service worker for offline play and home screen installation. No backend, no accounts. All stats in localStorage.",
     tech: ["React 19", "Vite", "PWA", "Cloudflare Pages"],
     links: { live: "https://sudoku.tgoyal.me" },
   },

@@ -17,6 +17,7 @@ export function useSplitText() {
         const span = document.createElement('span');
         span.textContent = char === ' ' ? ' ' : char;
         span.style.display = 'inline-block';
+        if (char === ' ') span.style.minWidth = '0.3em';
         span.setAttribute('aria-hidden', 'true');
         element.appendChild(span);
         fragments.push(span);
@@ -28,6 +29,7 @@ export function useSplitText() {
           const space = document.createElement('span');
           space.innerHTML = '&nbsp;';
           space.style.display = 'inline-block';
+          space.style.minWidth = '0.3em';
           element.appendChild(space);
           return;
         }

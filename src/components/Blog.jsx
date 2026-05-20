@@ -13,21 +13,36 @@ function formatDate(dateStr) {
 function BlogCard({ post }) {
   const [hov, setHov] = useState(false);
   const [dwell, setDwell] = useState(false);
+  const [mouse, setMouse] = useState({ x: 50, y: 50 });
+  const [tiltReady, setTiltReady] = useState(false);
   const timerRef = useRef(null);
+  const tiltTimer = useRef(null);
 
   const handleEnter = () => {
     setHov(true);
     timerRef.current = setTimeout(() => setDwell(true), DWELL_MS);
+    tiltTimer.current = setTimeout(() => setTiltReady(true), 500);
   };
 
   const handleLeave = () => {
     setHov(false);
     setDwell(false);
+    setTiltReady(false);
+    setMouse({ x: 50, y: 50 });
     clearTimeout(timerRef.current);
+    clearTimeout(tiltTimer.current);
+  };
+
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMouse({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
   };
 
   useEffect(() => {
-    return () => clearTimeout(timerRef.current);
+    return () => { clearTimeout(timerRef.current); clearTimeout(tiltTimer.current); };
   }, []);
 
   return (
@@ -35,25 +50,35 @@ function BlogCard({ post }) {
       href={post.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="shrink-0 w-[340px] rounded-xl no-underline relative overflow-hidden transition-all duration-500"
+      className="shrink-0 w-[340px] rounded-xl no-underline relative overflow-hidden"
       style={{
-        background: hov ? 'var(--color-surface-elevated)' : 'var(--color-surface)',
-        border: `1px solid ${dwell ? 'var(--color-interactive)' : hov ? 'var(--color-border)' : 'var(--color-border-subtle)'}`,
-        transform: dwell ? 'translateY(-10px) scale(1.02)' : hov ? 'translateY(-4px)' : 'translateY(0)',
+        background: hov
+          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, rgba(139,142,255,0.06) 0%, var(--color-surface-elevated) 55%)`
+          : 'var(--color-surface)',
+        border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
+        transform: dwell
+          ? `perspective(600px) translateY(-10px) scale(1.02) rotateX(${tiltReady ? (50 - mouse.y) * 0.12 : 0}deg) rotateY(${tiltReady ? (mouse.x - 50) * 0.12 : 0}deg)`
+          : hov
+            ? `perspective(600px) translateY(-4px) rotateX(${tiltReady ? (50 - mouse.y) * 0.18 : 0}deg) rotateY(${tiltReady ? (mouse.x - 50) * 0.18 : 0}deg)`
+            : 'perspective(600px) translateY(0)',
         boxShadow: dwell
-          ? '0 24px 48px rgba(139,142,255,0.08), 0 0 20px rgba(139,142,255,0.04)'
-          : hov ? '0 12px 24px rgba(0,0,0,0.2)' : 'none',
-        scrollSnapAlign: 'start',
+          ? '0 24px 48px rgba(139,142,255,0.15), 0 0 30px rgba(139,142,255,0.12), inset 0 0 20px rgba(139,142,255,0.03)'
+          : hov
+            ? '0 12px 28px rgba(0,0,0,0.2), 0 0 20px rgba(139,142,255,0.08)'
+            : 'none',
+        transition: 'background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.2s ease-out',
+        transformStyle: 'preserve-3d',
       }}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      onMouseMove={handleMove}
     >
-      {/* Dwell accent line */}
+      {/* Accent line - visible on hover, stronger on dwell */}
       <div
         className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-500"
         style={{
           background: 'linear-gradient(to right, var(--color-interactive), transparent)',
-          opacity: dwell ? 1 : 0,
+          opacity: dwell ? 1 : hov ? 0.5 : 0,
         }}
       />
 
@@ -75,7 +100,7 @@ function BlogCard({ post }) {
 
         <h3
           className="text-[16px] font-display font-bold leading-[1.4] mb-3 transition-colors duration-300"
-          style={{ color: dwell ? 'var(--color-interactive)' : 'var(--color-text)' }}
+          style={{ color: hov ? 'var(--color-interactive)' : 'var(--color-text)' }}
         >
           {post.title}
         </h3>
@@ -87,7 +112,7 @@ function BlogCard({ post }) {
         <span
           className="text-[11px] font-mono transition-all duration-500 inline-block"
           style={{
-            color: dwell ? 'var(--color-interactive)' : 'var(--color-text-ghost)',
+            color: hov ? 'var(--color-interactive)' : 'var(--color-text-ghost)',
             transform: dwell ? 'translateX(6px)' : hov ? 'translateX(3px)' : 'translateX(0)',
           }}
         >
@@ -162,7 +187,7 @@ export default function Blog() {
   }, []);
 
   return (
-    <section ref={sectionRef}>
+    <section ref={sectionRef} className="pb-28">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader id="blog" title="Blog" sub="things I've written about" />
       </div>
@@ -171,7 +196,7 @@ export default function Blog() {
       <div
         ref={scrollRef}
         className="overflow-x-auto blog-scroll-hide"
-        style={{ scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch' }}
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div
           ref={trackRef}
@@ -180,7 +205,8 @@ export default function Blog() {
             width: 'max-content',
             paddingLeft: 'max(2rem, calc((100vw - 1100px) / 2 + 1.5rem))',
             paddingRight: '3rem',
-            paddingBottom: '1rem',
+            paddingTop: '1.5rem',
+            paddingBottom: '1.5rem',
           }}
         >
           {BLOG_POSTS.map((post) => (
