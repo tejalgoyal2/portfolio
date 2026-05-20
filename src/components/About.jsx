@@ -1,79 +1,162 @@
+import { useRef, useEffect } from 'react';
 import SectionHeader from './SectionHeader';
-import { useScrollReveal } from '../hooks/useScrollReveal';
+import { gsap, ScrollTrigger } from '../hooks/useGSAP';
 
-function Panel({ title, children }) {
-  const ref = useScrollReveal();
+function Panel({ title, children, index }) {
   return (
-    <div ref={ref} className="reveal panel p-4">
-      <h3 className="text-muted text-xs font-display mb-2.5 tracking-[1px]">{title}</h3>
+    <div
+      className="about-panel rounded-lg p-5 transition-all duration-300"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1px solid var(--color-border-subtle)',
+      }}
+    >
+      <h3
+        className="text-[10px] font-mono mb-3 tracking-[1.5px] uppercase"
+        style={{ color: 'var(--color-interactive)', opacity: 0.6 }}
+      >
+        {title}
+      </h3>
       {children}
     </div>
   );
 }
 
 export default function About() {
-  const narrativeRef = useScrollReveal();
+  const sectionRef = useRef(null);
+  const narrativeRef = useRef(null);
+  const gridRef = useRef(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      // Narrative fade in
+      if (narrativeRef.current) {
+        gsap.fromTo(narrativeRef.current, {
+          opacity: 0,
+          y: 30,
+        }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: narrativeRef.current,
+            start: 'top 85%',
+            once: true,
+          },
+        });
+      }
+
+      // Grid panels stagger
+      if (gridRef.current) {
+        gsap.fromTo(gridRef.current.querySelectorAll('.about-panel'), {
+          opacity: 0,
+          y: 30,
+        }, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: gridRef.current,
+            start: 'top 85%',
+            once: true,
+          },
+        });
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section>
-      <SectionHeader id="about" title="About" sub="// cat README.md" />
+    <section ref={sectionRef}>
+      <div className="max-w-[1100px] mx-auto px-6">
+        <SectionHeader id="about" title="About" sub="the person behind the code" />
 
-      {/* Narrative */}
-      <div ref={narrativeRef} className="reveal panel p-6 mb-4">
-        <p className="text-text text-[13.5px] leading-[2] m-0">
-          I'm a cybersecurity analyst and data science grad student at the University of Victoria,
-          originally from India. My work sits at the intersection of security, machine learning, and
-          making complex systems visible. I've built ML models that catch phishing emails at 98.7%
-          accuracy, deployed enterprise MFA solutions, and led a team that engineered assistive AI
-          glasses for the visually impaired. I learn by doing, build to understand, and believe the
-          best security comes from making the invisible visible.
-        </p>
-      </div>
-
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))' }}>
-        <Panel title="EDUCATION">
-          <div className="mb-2.5">
-            <div className="text-text text-xs font-bold">MEng, Applied Data Science</div>
-            <div className="text-dim text-[10.5px]">University of Victoria | 2025 - Present</div>
-            <div className="text-dim text-[10.5px] mt-0.5">
-              Optimization for ML, Data Mining, Secure Communication, Massive Datasets
-            </div>
-          </div>
-          <div>
-            <div className="text-text text-xs font-bold">BEng, Electronics & Computer Engineering</div>
-            <div className="text-dim text-[10.5px]">Thapar Institute | 2020 - 2024</div>
-            <div className="text-dim text-[10.5px] mt-0.5">
-              Cyber Security, AI/NLP/CV, Deep Learning, Cloud Computing, DSA
-            </div>
-          </div>
-        </Panel>
-
-        <Panel title="ACHIEVEMENTS">
-          <div className="flex flex-col gap-1.5 text-[11.5px] leading-[1.6] text-text">
-            <div>1st Place — HackTU 2.0 Hackathon (2021)</div>
-            <div>$4,200 CAD Academic Performance Scholarship</div>
-            <div>Google Cloud Ready Facilitator (2022)</div>
-            <div>1st Award — Readathon, Nava Nalanda Library</div>
-            <div>Winner — Thaparlympics Badminton</div>
-          </div>
-        </Panel>
-
-        <Panel title="COMMUNITY">
-          <div className="flex flex-col gap-1.5 text-[11.5px] leading-[1.6] text-text">
-            <div>Founder — Bubbles NGO (1,000+ trees, COVID bridge courses, anti-stubble-burning camps)</div>
-            <div>NSS Coordinator — Blood drives, plantation drives, campus initiatives</div>
-            <div>PFA Core Member — Campus animal welfare & emergency response</div>
-            <div>Better Life Foundation — 100+ school enrollments</div>
-          </div>
-        </Panel>
-
-        <Panel title="BEYOND THE TERMINAL">
-          <p className="text-text text-xs leading-[1.9] m-0">
-            Currently training for the TC10K marathon. Competitive Call of Duty Mobile player.
-            Stress-bakes when deadlines approach. Fascinated by quantum computing and mathematics.
-            Believes the best way to learn security is to break things — responsibly.
+        {/* Narrative */}
+        <div
+          ref={narrativeRef}
+          className="rounded-xl p-8 mb-6"
+          style={{
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border-subtle)',
+          }}
+        >
+          <p className="text-[14.5px] leading-[2] m-0" style={{ color: 'var(--color-text-secondary)' }}>
+            I&rsquo;m a grad student at UVic who can&rsquo;t decide between breaking things and building
+            them, so I do both. My cybersecurity co-op at BCI had me hunting shadow AI across 1,200
+            endpoints, investigating real malware, and redesigning IAM frameworks. Now I&rsquo;m back
+            at BCI on the Enterprise Solutions team, building and supporting the applications that one
+            of Canada&rsquo;s largest institutional investors relies on. My research at IIT Ropar scaled
+            federated learning to a million simulated clients. Between those, I&rsquo;ve shipped AI
+            expense trackers, security visualizers, a Rust coding agent, and a Sudoku app born from
+            pure spite toward mobile ads. I learn by shipping, break things to understand them, and
+            write about all of it on my blog.
           </p>
-        </Panel>
+        </div>
+
+        <div
+          ref={gridRef}
+          className="grid gap-4"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+        >
+          <Panel title="Education">
+            <div className="mb-4">
+              <div className="text-[13px] font-display font-bold" style={{ color: 'var(--color-text)' }}>
+                MEng, Applied Data Science
+              </div>
+              <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
+                University of Victoria &middot; 2025 &ndash; 2026 &middot; GPA 8.82/9.0
+              </div>
+              <div className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                Algorithms, Systems for Massive Datasets, Data Mining, Optimization for ML, Secure Communication
+              </div>
+            </div>
+            <div>
+              <div className="text-[13px] font-display font-bold" style={{ color: 'var(--color-text)' }}>
+                BEng, Electronics &amp; Computer Engineering
+              </div>
+              <div className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
+                Thapar Institute &middot; 2020 &ndash; 2024 &middot; GPA 8.9/10.0
+              </div>
+              <div className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                Cyber Security, AI/NLP/CV, Deep Learning, Cloud Computing, DSA, Quantum Computing
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title="Achievements">
+            <div className="flex flex-col gap-2 text-[12px] leading-[1.7]" style={{ color: 'var(--color-text-secondary)' }}>
+              <div>Published paper: Game-theoretic federated learning (IIT Ropar)</div>
+              <div>$4,200 CAD Academic Excellence Scholarship &middot; Top 5% all years</div>
+              <div>Guest Speaker, UVic MEng Co-op Orientation (Mar 2026)</div>
+              <div>TC10K Road Race Finisher (Apr 2026, Victoria)</div>
+              <div>Thaparlympics Badminton Winner &middot; State-level in 10th grade</div>
+            </div>
+          </Panel>
+
+          <Panel title="Community">
+            <div className="flex flex-col gap-2 text-[12px] leading-[1.7]" style={{ color: 'var(--color-text-secondary)' }}>
+              <div>Co-Founded Bubbles NGO: 1,000+ trees, COVID bridge courses, community meals</div>
+              <div>Better Life Foundation: Circle Head for 4 years, 100+ school enrollments</div>
+              <div>NSS Coordinator: Blood drives, 200+ tree plantation on campus</div>
+              <div>PFA Core Member: Campus animal welfare &amp; emergency vet response</div>
+              <div>Volunteered at Victoria Native Friendship Centre &amp; Threshold Housing Society</div>
+            </div>
+          </Panel>
+
+          <Panel title="Beyond the Code">
+            <p className="text-[12px] leading-[1.9] m-0" style={{ color: 'var(--color-text-secondary)' }}>
+              Trilingual: English, Hindi, Punjabi. Recently finished the TC10K.
+              Competitive badminton player, readathon merit holder, stress-baker.
+              Believes the best way to learn security is to break things, responsibly.
+            </p>
+          </Panel>
+        </div>
       </div>
     </section>
   );
