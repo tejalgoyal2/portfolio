@@ -55,7 +55,7 @@ export default function Contact() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="pb-20">
+    <section ref={sectionRef} className="pb-28">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader id="contact" title="Get in Touch" sub="let's build something" />
 
@@ -64,8 +64,8 @@ export default function Contact() {
             className="text-[15px] leading-[1.8] mb-8 max-w-[500px]"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            Open to software engineering, data engineering, and research roles.
-            Or just say hi.
+            I&rsquo;m easiest to bribe with interesting problems.
+            If you&rsquo;ve got one, or just want to argue about F1 strategy, you know where to find me.
           </p>
 
           <div

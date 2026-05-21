@@ -52,6 +52,11 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    cursor: none;
+  }
+
+  a, button, input, [role="button"] {
+    cursor: none;
   }
 
   ::selection {
@@ -121,19 +126,25 @@
 
 /* Light mode */
 [data-theme="light"] {
-  --color-bg: #f5f5f7;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #f0f0f3;
-  --color-border: #e0e0e5;
-  --color-border-subtle: #ebebef;
+  --color-bg: #faf8f5;
+  --color-surface: #fefdfb;
+  --color-surface-elevated: #f5f2ee;
+  --color-border: #e0dcd6;
+  --color-border-subtle: #ebe7e1;
 
   --color-text: #1a1a2e;
-  --color-text-secondary: #6b6d7b;
-  --color-text-dim: #a0a2ae;
-  --color-text-ghost: #d0d2da;
+  --color-text-secondary: #55564f;
+  --color-text-dim: #918e86;
+  --color-text-ghost: #c8c4bc;
 
   --color-interactive: #5b5eff;
   --color-interactive-hover: #4040e6;
+
+  /* Legacy compat overrides for light */
+  --color-green: #059669;
+  --color-amber: #d97706;
+  --color-red: #dc2626;
+  --color-cyan: #0891b2;
 }
 
 [data-theme="light"] ::selection {
@@ -143,6 +154,47 @@
 
 [data-theme="light"] ::-webkit-scrollbar-track { background: var(--color-bg); }
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--color-border); }
+
+/* Light mode: hero section */
+[data-theme="light"] .hero-link {
+  border-color: var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+}
+[data-theme="light"] .hero-link:hover {
+  border-color: var(--color-interactive) !important;
+  color: var(--color-text) !important;
+  background: rgba(91,94,255,0.04) !important;
+}
+
+/* Light mode: particle slider bg */
+[data-theme="light"] .particle-slider {
+  background: var(--color-border);
+}
+
+/* Light mode: keep hero dark for particles + drama */
+[data-theme="light"] .hero-dark-override {
+  --color-bg: #08090d;
+  --color-text: #e4e4e9;
+  --color-text-secondary: #8f919e;
+  --color-text-dim: #4a4c5a;
+  --color-text-ghost: #2a2c3a;
+  --color-interactive: #8b8eff;
+  --color-border: #1f2233;
+  --color-border-subtle: #151725;
+  --color-surface: #111318;
+}
+
+/* Light mode: soften shadows */
+[data-theme="light"] .featured-card,
+[data-theme="light"] .project-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] .featured-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
+}
+[data-theme="light"] .project-card:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+}
 
 /* Contact link hover */
 .contact-link:hover {
@@ -171,6 +223,75 @@
 .blog-strip-card:hover .blog-read-arrow {
   color: var(--color-interactive) !important;
   transform: translateX(4px);
+}
+
+/* Particle density slider */
+.particle-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-border);
+  border-radius: 1px;
+  outline: none;
+}
+.particle-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-interactive);
+  box-shadow: 0 0 6px rgba(139,142,255,0.4);
+  cursor: none;
+}
+.particle-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-interactive);
+  box-shadow: 0 0 6px rgba(139,142,255,0.4);
+  border: none;
+  cursor: none;
+}
+
+/* Tech pill micro-interaction */
+.tech-pill {
+  transition: all 0.25s ease;
+}
+.tech-pill:hover {
+  border-color: var(--color-interactive) !important;
+  color: var(--color-interactive) !important;
+  background: rgba(139,142,255,0.06);
+}
+
+/* Live button pulse */
+.btn-live {
+  position: relative;
+  overflow: visible;
+}
+.btn-live::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--color-interactive);
+  opacity: 0;
+  animation: btn-pulse 3s ease-in-out infinite;
+  z-index: -1;
+  filter: blur(8px);
+}
+@keyframes btn-pulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.12; }
+}
+
+.btn-live:hover::after {
+  opacity: 0.2;
+  animation: none;
+}
+
+/* Source link hover */
+.link-source:hover {
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
 }
 
 /* Blog scroll — hide scrollbar */

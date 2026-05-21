@@ -102,7 +102,7 @@ export default function Skills() {
   }, []);
 
   return (
-    <section ref={sectionRef}>
+    <section ref={sectionRef} className="pb-28">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader id="skills" title="Skills" sub="what I work with" />
 

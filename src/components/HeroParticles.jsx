@@ -3,12 +3,10 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
-function ParticleField({ scrollProgress }) {
+function ParticleField({ scrollProgress, count = 2500 }) {
   const pointsRef = useRef();
   const mouseRef = useRef({ x: 0, y: 0 });
   const { viewport } = useThree();
-
-  const count = 2500;
 
   const [positions, basePositions, colors] = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -50,7 +48,7 @@ function ParticleField({ scrollProgress }) {
     }
 
     return [pos, base, col];
-  }, []);
+  }, [count]);
 
   useFrame(({ clock, pointer }) => {
     if (!pointsRef.current) return;
@@ -112,7 +110,7 @@ function ParticleField({ scrollProgress }) {
   );
 }
 
-export default function HeroParticles({ scrollProgress }) {
+export default function HeroParticles({ scrollProgress, count = 2500 }) {
   return (
     <div className="absolute inset-0" aria-hidden="true" role="presentation">
       <Canvas
@@ -121,7 +119,7 @@ export default function HeroParticles({ scrollProgress }) {
         gl={{ antialias: false, alpha: true }}
         style={{ background: 'transparent' }}
       >
-        <ParticleField scrollProgress={scrollProgress} />
+        <ParticleField scrollProgress={scrollProgress} count={count} />
       </Canvas>
     </div>
   );

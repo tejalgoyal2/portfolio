@@ -73,7 +73,7 @@ export default function About() {
   }, []);
 
   return (
-    <section ref={sectionRef}>
+    <section ref={sectionRef} className="pb-28">
       <div className="max-w-[1100px] mx-auto px-6">
         <SectionHeader id="about" title="About" sub="the person behind the code" />
 
@@ -87,15 +87,13 @@ export default function About() {
           }}
         >
           <p className="text-[14.5px] leading-[2] m-0" style={{ color: 'var(--color-text-secondary)' }}>
-            I&rsquo;m a grad student at UVic who can&rsquo;t decide between breaking things and building
-            them, so I do both. My cybersecurity co-op at BCI had me hunting shadow AI across 1,200
-            endpoints, investigating real malware, and redesigning IAM frameworks. Now I&rsquo;m back
-            at BCI on the Enterprise Solutions team, building and supporting the applications that one
-            of Canada&rsquo;s largest institutional investors relies on. My research at IIT Ropar scaled
-            federated learning to a million simulated clients. Between those, I&rsquo;ve shipped AI
-            expense trackers, security visualizers, a Rust coding agent, and a Sudoku app born from
-            pure spite toward mobile ads. I learn by shipping, break things to understand them, and
-            write about all of it on my blog.
+            Grad student at UVic. Currently building the apps a $250B+ investor depends on
+            daily at BCI. Previous life: four months hunting shadow AI and actual malware
+            across 1,200 endpoints on their security team. I&rsquo;ve shipped an expense
+            tracker that roasts your spending in Hinglish, a coding agent in Rust because
+            I apparently hate easy mode, and a Sudoku app that exists purely because a
+            mobile ad interrupted my winning streak. I learn by shipping v1.0 and writing
+            about what went wrong.
           </p>
         </div>
 
@@ -131,7 +129,6 @@ export default function About() {
 
           <Panel title="Achievements">
             <div className="flex flex-col gap-2 text-[12px] leading-[1.7]" style={{ color: 'var(--color-text-secondary)' }}>
-              <div>Published paper: Game-theoretic federated learning (IIT Ropar)</div>
               <div>$4,200 CAD Academic Excellence Scholarship &middot; Top 5% all years</div>
               <div>Guest Speaker, UVic MEng Co-op Orientation (Mar 2026)</div>
               <div>TC10K Road Race Finisher (Apr 2026, Victoria)</div>
@@ -143,17 +140,15 @@ export default function About() {
             <div className="flex flex-col gap-2 text-[12px] leading-[1.7]" style={{ color: 'var(--color-text-secondary)' }}>
               <div>Co-Founded Bubbles NGO: 1,000+ trees, COVID bridge courses, community meals</div>
               <div>Better Life Foundation: Circle Head for 4 years, 100+ school enrollments</div>
-              <div>NSS Coordinator: Blood drives, 200+ tree plantation on campus</div>
-              <div>PFA Core Member: Campus animal welfare &amp; emergency vet response</div>
               <div>Volunteered at Victoria Native Friendship Centre &amp; Threshold Housing Society</div>
             </div>
           </Panel>
 
           <Panel title="Beyond the Code">
             <p className="text-[12px] leading-[1.9] m-0" style={{ color: 'var(--color-text-secondary)' }}>
-              Trilingual: English, Hindi, Punjabi. Recently finished the TC10K.
-              Competitive badminton player, readathon merit holder, stress-baker.
-              Believes the best way to learn security is to break things, responsibly.
+              Trilingual: English, Hindi, Punjabi. Recently survived the TC10K.
+              Competitive badminton player, readathon merit holder, serial stress-baker.
+              Watches F1 for the strategy, The Boys for the chaos.
             </p>
           </Panel>
         </div>
