@@ -23,6 +23,9 @@ export default function Navbar({ onTerminalToggle, terminalOpen, theme, onThemeT
           current = section.id.replace('s-', '');
         }
       }
+      // Force contact active when near page bottom (contact section is short)
+      const nearBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 100;
+      if (nearBottom) current = 'contact';
       setActive(current);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -51,8 +54,8 @@ export default function Navbar({ onTerminalToggle, terminalOpen, theme, onThemeT
           backdropFilter: scrolled ? 'blur(20px) saturate(1.3)' : 'blur(12px)',
           WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(1.3)' : 'blur(12px)',
           background: scrolled
-            ? 'rgba(8,9,13,0.85)'
-            : 'rgba(8,9,13,0.4)',
+            ? 'color-mix(in srgb, var(--color-bg) 85%, transparent)'
+            : 'color-mix(in srgb, var(--color-bg) 40%, transparent)',
           borderBottom: scrolled
             ? '1px solid var(--color-border-subtle)'
             : '1px solid transparent',

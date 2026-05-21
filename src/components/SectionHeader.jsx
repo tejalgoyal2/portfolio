@@ -6,6 +6,8 @@ export default function SectionHeader({ id, title, sub }) {
   const titleRef = useRef(null);
   const lineRef = useRef(null);
   const subRef = useRef(null);
+  const charsRef = useRef([]);
+  const rippleReady = useRef(false);
 
   useEffect(() => {
     const el = titleRef.current;
@@ -15,20 +17,30 @@ export default function SectionHeader({ id, title, sub }) {
     el.textContent = '';
     el.setAttribute('aria-label', text);
 
+    // Split into individual characters for ripple effect
+    const chars = [];
     const words = text.split(' ');
-    const spans = words.map((word, i) => {
-      const span = document.createElement('span');
-      span.textContent = word;
-      span.style.display = 'inline-block';
-      span.style.opacity = '0';
-      span.setAttribute('aria-hidden', 'true');
-      el.appendChild(span);
-      if (i < words.length - 1) {
-        const space = document.createTextNode(' ');
+    words.forEach((word, wi) => {
+      for (let ci = 0; ci < word.length; ci++) {
+        const span = document.createElement('span');
+        span.textContent = word[ci];
+        span.style.display = 'inline-block';
+        span.style.opacity = '0';
+        span.style.transformOrigin = 'bottom center';
+        span.setAttribute('aria-hidden', 'true');
+        el.appendChild(span);
+        chars.push(span);
+      }
+      if (wi < words.length - 1) {
+        const space = document.createElement('span');
+        space.innerHTML = '&nbsp;';
+        space.style.display = 'inline-block';
+        space.style.minWidth = '0.3em';
         el.appendChild(space);
       }
-      return span;
     });
+
+    charsRef.current = chars;
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
@@ -39,7 +51,8 @@ export default function SectionHeader({ id, title, sub }) {
         },
       });
 
-      tl.fromTo(spans, {
+      // Character-level entrance stagger
+      tl.fromTo(chars, {
         opacity: 0,
         y: 30,
         rotateX: -40,
@@ -48,7 +61,7 @@ export default function SectionHeader({ id, title, sub }) {
         y: 0,
         rotateX: 0,
         duration: 0.7,
-        stagger: 0.1,
+        stagger: 0.025,
         ease: 'power3.out',
       });
 
@@ -73,9 +86,42 @@ export default function SectionHeader({ id, title, sub }) {
           ease: 'power2.out',
         }, '-=0.4');
       }
+
+      // Enable ripple after entrance completes
+      tl.eventCallback('onComplete', () => { rippleReady.current = true; });
     }, containerRef);
 
-    return () => ctx.revert();
+    // Hover ripple: wave of characters jumping up + color flash
+    const handleEnter = () => {
+      if (!rippleReady.current) return;
+
+      gsap.timeline()
+        .to(chars, {
+          y: -14,
+          scale: 1.15,
+          color: 'var(--color-interactive)',
+          duration: 0.25,
+          stagger: { each: 0.025 },
+          ease: 'power2.out',
+          overwrite: 'auto',
+        })
+        .to(chars, {
+          y: 0,
+          scale: 1,
+          color: 'var(--color-text)',
+          duration: 0.6,
+          stagger: { each: 0.025 },
+          ease: 'elastic.out(1.2, 0.4)',
+        }, '-=0.2');
+    };
+
+    el.style.cursor = 'none';
+    el.addEventListener('mouseenter', handleEnter);
+
+    return () => {
+      ctx.revert();
+      el.removeEventListener('mouseenter', handleEnter);
+    };
   }, []);
 
   return (
