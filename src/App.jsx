@@ -156,14 +156,14 @@ export default function App() {
       <About />
       <Contact />
 
-      {/* Terminal — side quest, backtick to toggle */}
+      {/* Terminal -side quest, backtick to toggle */}
       <Terminal
         show={termOpen}
         onClose={() => setTermOpen(false)}
         onSudoku={() => setSudokuOpen(true)}
       />
 
-      {/* Sudoku — accessible via terminal command only */}
+      {/* Sudoku -accessible via terminal command only */}
       {sudokuOpen && <Sudoku onClose={() => setSudokuOpen(false)} />}
 
       <footer className="text-center py-6 px-5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>

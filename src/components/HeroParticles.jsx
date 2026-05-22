@@ -20,7 +20,7 @@ function ParticleField({ scrollProgress, count = 2500 }) {
       const y = (Math.random() - 0.5) * 10;
       const z = (Math.random() - 0.5) * 8;
 
-      // Start at final positions — no blast, just appear
+      // Start at final positions -no blast, just appear
       pos[i3] = x;
       pos[i3 + 1] = y;
       pos[i3 + 2] = z;
@@ -56,7 +56,7 @@ function ParticleField({ scrollProgress, count = 2500 }) {
     const time = clock.getElapsedTime();
     const scroll = scrollProgress.current;
 
-    // Smooth mouse tracking — gentle follow, no jerk
+    // Smooth mouse tracking -gentle follow, no jerk
     mouseRef.current.x += (pointer.x * viewport.width * 0.5 - mouseRef.current.x) * 0.04;
     mouseRef.current.y += (pointer.y * viewport.height * 0.5 - mouseRef.current.y) * 0.04;
 
@@ -72,7 +72,7 @@ function ParticleField({ scrollProgress, count = 2500 }) {
       const drift = Math.sin(time * 0.3 + i * 0.01) * 0.15;
       const driftY = Math.cos(time * 0.2 + i * 0.013) * 0.1;
 
-      // Mouse influence — wide radius, noticeable push
+      // Mouse influence -wide radius, noticeable push
       const dx = bx - mouseRef.current.x;
       const dy = by - mouseRef.current.y;
       const dist = Math.sqrt(dx * dx + dy * dy);

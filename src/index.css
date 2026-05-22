@@ -294,7 +294,7 @@
   border-color: var(--color-border) !important;
 }
 
-/* Blog scroll — hide scrollbar */
+/* Blog scroll - hide scrollbar */
 .blog-scroll-hide::-webkit-scrollbar {
   display: none;
 }
