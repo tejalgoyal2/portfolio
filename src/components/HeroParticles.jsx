@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
@@ -6,7 +6,18 @@ import * as THREE from 'three';
 function ParticleField({ scrollProgress, count = 2500 }) {
   const pointsRef = useRef();
   const mouseRef = useRef({ x: 0, y: 0 });
-  const { viewport } = useThree();
+  const { viewport, gl, scene, camera } = useThree();
+
+  // Force initial render on mount - fixes particles not showing immediately
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (pointsRef.current) {
+        pointsRef.current.geometry.attributes.position.needsUpdate = true;
+        gl.render(scene, camera);
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [gl, scene, camera]);
 
   const [positions, basePositions, colors] = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -116,7 +127,8 @@ export default function HeroParticles({ scrollProgress, count = 2500 }) {
       <Canvas
         camera={{ position: [0, 0, 5], fov: 60 }}
         dpr={[1, 2]}
-        gl={{ antialias: false, alpha: true }}
+        frameloop="always"
+        gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
         style={{ background: 'transparent' }}
       >
         <ParticleField scrollProgress={scrollProgress} count={count} />
