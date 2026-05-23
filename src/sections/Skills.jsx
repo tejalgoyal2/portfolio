@@ -1,275 +1,280 @@
 import { useEffect, useRef } from 'react';
 import Matter from 'matter-js';
 import { SKILL_NODES } from '../data/skills';
-import { dispatchOnom } from '../comic/OnomatopoeiaBurst';
+import KineticHeadline from '../press/KineticHeadline';
+import { fireImpact } from '../press/PressImpacts';
 
-const {
-  Engine, World, Bodies, Body, Mouse, MouseConstraint,
-  Events, Composite, Common,
-} = Matter;
+const { Engine, Runner, World, Bodies, Mouse, MouseConstraint, Events, Composite } = Matter;
 
 /**
- * Skills — red panel + Matter.js physics terrarium. Each skill is a pill
- * with the category color; collisions above a velocity threshold spawn
- * an onomatopoeia burst at the contact point.
- *
- * Visual brief: bright red background panel framed by paper border,
- * "SKILLS" massive wordmark, hint of hand-letter ("toss them around!").
- * The physics is contained in a 560px-tall comic panel.
+ * The Back Shop — a printer's California job case. Each skill is a movable-type
+ * slug that lives in its category compartment; grab one and flick it and it
+ * clacks. Physics (matter.js) runs only while the case is on screen; the slugs
+ * are drawn with a custom Canvas2D pass so the type stays crisp and legible —
+ * legibility first, joy second. Reduced-motion gets a tidy static type tray.
  */
-
-const CATEGORY_COLORS = {
-  sec:      '#f6e25c', // pop yellow
-  lang:     '#f1ead8', // paper
-  frontend: '#5cd9f5', // scanline cyan
-  backend:  '#ffb454', // warm orange
-  ml:       '#b08cff', // soft lavender accent
-  embedded: '#ff90a3', // pink salmon
-  tools:    '#9be6b8', // mint
-};
-
-const CATEGORY_LABELS = {
-  sec: 'Security',
-  lang: 'Languages',
-  frontend: 'Frontend',
-  backend: 'Backend',
-  ml: 'ML & Data',
-  embedded: 'CV & Embedded',
-  tools: 'DevOps & Tools',
-};
-
-const PILL_HEIGHT = 36;
-const PILL_PAD_X = 18;
-const PILL_FONT = '600 13px "JetBrains Mono", monospace';
-const COLLISION_VEL_THRESHOLD = 5.5;
-const ONOM_WORDS = ['POW!', 'BAM!', 'CRACK!', 'SNAP!', 'WHAM!', 'CLINK!'];
-
-let measureCtx;
-function measureText(text) {
-  if (!measureCtx) {
-    measureCtx = document.createElement('canvas').getContext('2d');
-  }
-  measureCtx.font = PILL_FONT;
-  return measureCtx.measureText(text).width;
-}
+const LABEL_H = 42; // reserved strip so piled slugs never bury the label
+const SLUG_FONT = '600 18px "Newsreader", Georgia, serif';
+const PAD_X = 14;
+const SLUG_H = 38;
+const THROW_V = 6; // release speed (px/step) above which a flick "lands"
 
 export default function Skills() {
-  const containerRef = useRef(null);
+  const rootRef = useRef(null);
+  const caseRef = useRef(null);
   const canvasRef = useRef(null);
-
-  // Build all pill defs once
-  const pillDefs = useRef(
-    SKILL_NODES.flatMap((cat) =>
-      cat.items.map((skill) => ({
-        label: skill,
-        categoryId: cat.id,
-        color: CATEGORY_COLORS[cat.id] || '#f1ead8',
-        width: measureText(skill) + PILL_PAD_X * 2,
-      }))
-    )
-  ).current;
+  const compRefs = useRef([]);
 
   useEffect(() => {
-    const container = containerRef.current;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return; // JSX renders the static tray; no engine
+
+    const caseEl = caseRef.current;
     const canvas = canvasRef.current;
-    if (!container || !canvas) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const ctx = canvas.getContext('2d');
-
-    const sizeCanvas = () => {
-      const r = container.getBoundingClientRect();
-      const w = r.width;
-      const h = r.height;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { w, h };
+    const css = getComputedStyle(document.documentElement);
+    const COL = {
+      stock: css.getPropertyValue('--paper-stock').trim() || '#ece3d2',
+      ink: css.getPropertyValue('--ink').trim() || '#241f18',
+      ghost: css.getPropertyValue('--ink-ghost').trim() || '#8a8279',
     };
 
-    let { w, h } = sizeCanvas();
+    const engine = Engine.create();
+    engine.gravity.y = 1;
+    const world = engine.world;
+    const runner = Runner.create();
 
-    const engine = Engine.create({ gravity: { x: 0, y: 1.2 } });
-    const wallT = 60;
-    const walls = [
-      Bodies.rectangle(w / 2, h + wallT / 2, w + 200, wallT, { isStatic: true, friction: 0.5 }),
-      Bodies.rectangle(-wallT / 2, h / 2, wallT, h * 2, { isStatic: true, friction: 0.3 }),
-      Bodies.rectangle(w + wallT / 2, h / 2, wallT, h * 2, { isStatic: true, friction: 0.3 }),
-    ];
-    Composite.add(engine.world, walls);
+    let W = 0;
+    let H = 0;
+    let DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let walls = [];
+    let slugs = []; // { body, label, w }
+    let ready = false;
+    let inView = false;
+    let running = false;
+    let raf = null;
+    let audioCtx;
 
-    const mouse = Mouse.create(canvas);
-    mouse.pixelRatio = dpr;
-    const mouseConstraint = MouseConstraint.create(engine, {
-      mouse,
-      constraint: { stiffness: 0.18, damping: 0.1, render: { visible: false } },
-    });
-    Composite.add(engine.world, mouseConstraint);
+    const measure = ctx; // reuse the live context for text metrics
 
-    // Drop pills with stagger when section enters viewport
-    let dropped = false;
-    const dropPills = () => {
-      if (dropped) return;
-      dropped = true;
-      const shuffled = [...pillDefs].sort(() => Math.random() - 0.5);
-      shuffled.forEach((def, i) => {
-        setTimeout(() => {
-          const body = Bodies.rectangle(
-            def.width / 2 + Math.random() * (w - def.width),
-            -40 - Math.random() * 250,
-            def.width,
-            PILL_HEIGHT,
-            {
-              restitution: 0.4,
-              friction: 0.45,
-              frictionAir: 0.012,
-              density: 0.001,
-              chamfer: { radius: PILL_HEIGHT / 2 },
-              plugin: def,
-            }
-          );
-          Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.06);
-          Composite.add(engine.world, body);
-        }, i * 38);
+    const sizeCanvas = () => {
+      const r = caseEl.getBoundingClientRect();
+      W = r.width;
+      H = r.height;
+      DPR = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    };
+
+    const compBoxes = () => {
+      const caseR = caseEl.getBoundingClientRect();
+      return compRefs.current.filter(Boolean).map((el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          el,
+          x: r.left - caseR.left,
+          y: r.top - caseR.top + LABEL_H,
+          w: r.width,
+          h: r.height - LABEL_H,
+        };
       });
     };
 
-    // Use IntersectionObserver to lazy-drop
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            dropPills();
-            io.disconnect();
-          }
+    const buildWalls = (boxes) => {
+      if (walls.length) Composite.remove(world, walls);
+      walls = [];
+      const T = 120; // thick walls so hard flicks never tunnel out
+      const opt = { isStatic: true, restitution: 0.3 };
+      boxes.forEach((b) => {
+        walls.push(Bodies.rectangle(b.x + b.w / 2, b.y + b.h + T / 2, b.w, T, opt)); // floor
+        walls.push(Bodies.rectangle(b.x + b.w / 2, b.y - T / 2, b.w, T, opt)); // ceiling under label
+        walls.push(Bodies.rectangle(b.x - T / 2, b.y + b.h / 2, T, b.h + T * 2, opt)); // left
+        walls.push(Bodies.rectangle(b.x + b.w + T / 2, b.y + b.h / 2, T, b.h + T * 2, opt)); // right
+      });
+      World.add(world, walls);
+    };
+
+    const spawnSlugs = (boxes) => {
+      measure.font = SLUG_FONT;
+      SKILL_NODES.forEach((cat, i) => {
+        const b = boxes[i];
+        if (!b) return;
+        cat.items.forEach((item) => {
+          const w = Math.ceil(measure.measureText(item).width) + PAD_X * 2;
+          const half = w / 2;
+          const minX = b.x + half + 3;
+          const maxX = Math.max(minX, b.x + b.w - half - 3);
+          const px = minX + Math.random() * (maxX - minX);
+          const py = b.y + 6 + Math.random() * Math.max(10, b.h * 0.5);
+          const body = Bodies.rectangle(px, py, w, SLUG_H, {
+            restitution: 0.3,
+            friction: 0.4,
+            frictionAir: 0.015,
+            chamfer: { radius: 6 },
+            angle: (Math.random() - 0.5) * 0.3,
+          });
+          slugs.push({ body, label: item, w });
+          World.add(world, body);
         });
-      },
-      { threshold: 0.18 }
-    );
-    io.observe(container);
+      });
+    };
 
-    // Collision → onomatopoeia (throttled by impact velocity)
-    Events.on(engine, 'collisionStart', (event) => {
-      for (const pair of event.pairs) {
-        const { bodyA, bodyB, collision } = pair;
-        if (bodyA.isStatic && bodyB.isStatic) continue;
-        // Either body's speed
-        const speed = Math.max(
-          Math.hypot(bodyA.velocity.x, bodyA.velocity.y),
-          Math.hypot(bodyB.velocity.x, bodyB.velocity.y)
-        );
-        if (speed < COLLISION_VEL_THRESHOLD) continue;
-        // Compute on-screen coords for the onom burst
-        const rect = canvas.getBoundingClientRect();
-        const sx = collision.supports?.[0]?.x ?? bodyA.position.x;
-        const sy = collision.supports?.[0]?.y ?? bodyA.position.y;
-        const px = rect.left + sx;
-        const py = rect.top + sy;
-        dispatchOnom({
-          word: ONOM_WORDS[Math.floor(Math.random() * ONOM_WORDS.length)],
-          x: px,
-          y: py,
-          rotation: (Math.random() - 0.5) * 18,
-          fontSize: 32 + Math.min(20, speed * 1.6),
-        });
-      }
-    });
-
-    // Render loop
-    let raf;
-    let lastTime = performance.now();
-    const render = (now) => {
-      const dt = Math.min(now - lastTime, 33.33);
-      lastTime = now;
-      Engine.update(engine, dt);
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Draw bodies
-      const bodies = Composite.allBodies(engine.world);
-      for (const body of bodies) {
-        if (body.isStatic) continue;
-        const def = body.plugin;
-        if (!def) continue;
-        const bw = def.width;
-        const bh = PILL_HEIGHT;
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      ctx.font = SLUG_FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const s of slugs) {
+        const { body, w } = s;
         ctx.save();
         ctx.translate(body.position.x, body.position.y);
         ctx.rotate(body.angle);
-
-        // Pill body
         ctx.beginPath();
-        ctx.roundRect(-bw / 2, -bh / 2, bw, bh, PILL_HEIGHT / 2);
-        ctx.fillStyle = def.color;
+        ctx.roundRect(-w / 2, -SLUG_H / 2, w, SLUG_H, 6);
+        ctx.fillStyle = COL.stock;
         ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#1a1726';
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = COL.ghost;
         ctx.stroke();
-
-        // Text
-        ctx.font = PILL_FONT;
-        ctx.fillStyle = '#1a1726';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(def.label, 0, 1);
-
+        ctx.fillStyle = COL.ink;
+        ctx.fillText(s.label, 0, 1);
         ctx.restore();
       }
-
-      raf = requestAnimationFrame(render);
     };
-    raf = requestAnimationFrame(render);
 
-    // Resize handler
+    const loop = () => {
+      if (!running) return;
+      draw();
+      raf = requestAnimationFrame(loop);
+    };
+
+    const maybeRun = () => {
+      if (ready && inView && !running) {
+        running = true;
+        Runner.run(runner, engine);
+        loop();
+      } else if (!inView && running) {
+        running = false;
+        Runner.stop(runner);
+        if (raf) cancelAnimationFrame(raf);
+        raf = null;
+      }
+    };
+
+    // mouse grab / flick
+    const mouse = Mouse.create(canvas);
+    mouse.pixelRatio = 1; // bodies live in CSS px; ctx handles DPR for drawing
+    const mc = MouseConstraint.create(engine, {
+      mouse,
+      constraint: { stiffness: 0.18, render: { visible: false } },
+    });
+    World.add(world, mc);
+
+    const playClack = (vel) => {
+      try {
+        audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150 + Math.random() * 70, t);
+        osc.frequency.exponentialRampToValueAtTime(68, t + 0.06);
+        gain.gain.setValueAtTime(Math.min(0.12, 0.03 + vel * 0.004), t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+      } catch { /* audio optional */ }
+    };
+
+    Events.on(mc, 'enddrag', ({ body }) => {
+      if (!body) return;
+      const v = Math.hypot(body.velocity.x, body.velocity.y);
+      if (v < THROW_V) return;
+      const r = caseEl.getBoundingClientRect();
+      fireImpact(Math.random() < 0.22 ? 'KLAK' : 'CLACK', r.left + body.position.x, r.top + body.position.y, Math.random() < 0.3 ? 'red' : 'ink');
+      playClack(v);
+    });
+
+    const init = () => {
+      if (ready) return;
+      sizeCanvas();
+      const boxes = compBoxes();
+      buildWalls(boxes);
+      spawnSlugs(boxes);
+      caseEl.classList.add('is-live');
+      ready = true;
+      maybeRun();
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting;
+        maybeRun();
+      },
+      { threshold: 0.04 }
+    );
+    io.observe(rootRef.current);
+
+    let resizeTO;
     const onResize = () => {
-      const next = sizeCanvas();
-      w = next.w;
-      h = next.h;
-      Body.setPosition(walls[0], { x: w / 2, y: h + wallT / 2 });
-      Body.setPosition(walls[2], { x: w + wallT / 2, y: h / 2 });
+      clearTimeout(resizeTO);
+      resizeTO = setTimeout(() => {
+        if (!ready) return;
+        sizeCanvas();
+        buildWalls(compBoxes());
+        if (running) draw();
+      }, 180);
     };
     window.addEventListener('resize', onResize);
 
+    document.fonts.ready.then(() => requestAnimationFrame(init));
+
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
       io.disconnect();
-      Events.off(engine);
-      Composite.clear(engine.world);
+      window.removeEventListener('resize', onResize);
+      clearTimeout(resizeTO);
+      if (raf) cancelAnimationFrame(raf);
+      Runner.stop(runner);
+      World.clear(world, false);
       Engine.clear(engine);
+      audioCtx?.close?.();
     };
-  }, [pillDefs]);
+  }, []);
 
   return (
-    <section className="skills" id="skills">
-      <div className="skills-header">
-        <h2 className="skills-title">SKILLS</h2>
-        <p className="skills-sub">
-          What I work with.<br />
-          Toss them around — they hit each other.
-        </p>
-      </div>
+    <section ref={rootRef} className="skills" aria-label="The back shop — skills">
+      <div className="press-container">
+        <header className="skills-head">
+          <span className="kicker">The Back Shop</span>
+          <KineticHeadline as="h2" font="impact" className="skills-headline">
+            Pick a slug. Give it a flick.
+          </KineticHeadline>
+          <p className="skills-instruct">Grab a slug, throw it. (Sound on.)</p>
+        </header>
 
-      <div className="skills-stage">
-        <div ref={containerRef} className="skills-canvas-wrap">
-          <canvas ref={canvasRef} className="skills-canvas" />
-        </div>
-
-        <div className="skills-legend">
-          {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
-            <span
-              key={id}
-              className="skills-legend-dot"
-              style={{ color: CATEGORY_COLORS[id] }}
+        <div ref={caseRef} className="type-case">
+          {SKILL_NODES.map((cat, i) => (
+            <div
+              key={cat.id}
+              ref={(el) => (compRefs.current[i] = el)}
+              className="compartment"
+              style={{ gridArea: cat.id }}
             >
-              {label}
-            </span>
+              <span className="compartment-label">{cat.label}</span>
+              <div className="compartment-slugs">
+                {cat.items.map((item) => (
+                  <span key={item} className="slug-static">{item}</span>
+                ))}
+              </div>
+            </div>
           ))}
+          <canvas ref={canvasRef} className="type-case-canvas" />
         </div>
-
-        <p className="skills-hint">grab, drag, throw — the pills react.</p>
       </div>
     </section>
   );

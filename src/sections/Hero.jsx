@@ -1,86 +1,131 @@
 import { useEffect, useRef } from 'react';
-import HeroCanvas from '../scene/HeroCanvas';
+import { gsap } from 'gsap';
+import KineticHeadline from '../press/KineticHeadline';
 
 /**
- * Buttermax-for-Tejal hero.
+ * The Front Page — masthead. A real broadsheet nameplate band (kicker + live
+ * status strip flanking the title TEJAL GOYAL), an edition line, then the lead
+ * story set in movable type. The focal object IS the type — no 3D.
  *
- * Composition:
- *  - Yellow full-bleed background
- *  - Top-left monogram TG, top-right pill nav (WORK · ABOUT · CONTACT)
- *  - Massive Anton wordmark "TEJAL GOYAL" filling ~95% of width.
- *    The 'L' at the end intentionally crops past the right edge.
- *  - Brass padlock in the foreground sitting between the words, overlapping
- *    a few letters for depth.
- *  - Mono caption beneath the wordmark
- *  - "SCROLL ↓" cue centered at the bottom
- *
- * Everything except the canvas is plain HTML — no chromatic offsets,
- * no halftone, no glitch. Restraint is the point.
+ * Choreography: the nameplate sets on mount (behind the loader sheet, so it's
+ * seated when the sheet feeds up). Everything else — lead headline, status
+ * ticker, byline/deck/cue — waits for `press:loaded` so the page sets itself
+ * the instant the press finishes printing.
  */
-export default function Hero() {
-  const wordmarkRef = useRef(null);
+const STATUS = 'TODAY — shipping MCP servers @ BCI · partly cloudy, compiling';
 
-  // Tiny entrance — animate a CSS custom property so it composes with the
-  // centering transform rather than clobbering it.
+export default function Hero() {
+  const rootRef = useRef(null);
+  const statusRef = useRef(null);
+
   useEffect(() => {
-    const el = wordmarkRef.current;
-    if (!el) return;
-    el.style.setProperty('--entrance-y', '24px');
-    el.style.opacity = '0';
-    requestAnimationFrame(() => {
-      el.style.transition =
-        'transform 900ms cubic-bezier(0.23, 1, 0.32, 1), opacity 900ms ease-out';
-      el.style.setProperty('--entrance-y', '0px');
-      el.style.opacity = '1';
-    });
+    const root = rootRef.current;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let detach;
+    let typer;
+
+    const typeStatus = () => {
+      const el = statusRef.current;
+      if (!el) return;
+      if (reduced) {
+        el.textContent = STATUS;
+        return;
+      }
+      let i = 0;
+      const step = () => {
+        el.textContent = STATUS.slice(0, i);
+        if (i++ <= STATUS.length) typer = setTimeout(step, 22);
+      };
+      step();
+    };
+
+    const ctx = gsap.context(() => {
+      // nameplate sets on mount — seated by the time the loader lifts
+      if (reduced) {
+        gsap.set('.mast-plate', { clipPath: 'inset(0)', opacity: 1 });
+      } else {
+        gsap.fromTo(
+          '.mast-plate',
+          { clipPath: 'inset(0 100% 0 0)', opacity: 1 },
+          { clipPath: 'inset(0 0% 0 0)', duration: 0.85, ease: 'power3.out', delay: 0.1 }
+        );
+      }
+
+      // intro choreography — paused until the press finishes printing
+      const intro = gsap.timeline({ paused: true });
+      if (!reduced) {
+        intro
+          .fromTo('.mast-meta', { opacity: 0 }, { opacity: 1, duration: 0.4 })
+          .fromTo(
+            '.mast-byline, .mast-deck, .mast-cue',
+            { opacity: 0, y: 14 },
+            { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out' },
+            0.1
+          );
+      } else {
+        intro.set('.mast-meta, .mast-byline, .mast-deck, .mast-cue', { opacity: 1, y: 0 });
+      }
+
+      const play = () => {
+        typeStatus();
+        intro.play(0);
+      };
+      if (sessionStorage.getItem('press-loaded')) play();
+      else {
+        window.addEventListener('press:loaded', play, { once: true });
+        detach = () => window.removeEventListener('press:loaded', play);
+      }
+    }, root);
+
+    return () => {
+      detach?.();
+      clearTimeout(typer);
+      ctx.revert();
+    };
   }, []);
 
   return (
-    <section className="hero">
-      {/* Top nav */}
-      <header className="hero-nav">
-        <a href="#top" className="hero-monogram" aria-label="Tejal Goyal — home">TG</a>
-        <nav className="hero-nav-links">
-          <a href="#work" className="hero-pill">Work</a>
-          <a href="#about" className="hero-pill">About</a>
-          <a href="#contact" className="hero-pill">Contact</a>
-        </nav>
-      </header>
+    <section ref={rootRef} className="hero" aria-label="Front page">
+      <div className="press-container">
+        {/* nameplate band */}
+        <div className="mast-band">
+          <div className="mast-rule mast-rule--thick" aria-hidden="true" />
+          <div className="mast-kickrow">
+            <span className="mast-kicker">THE PERSONAL PRESS</span>
+            <span className="mast-status mast-meta">
+              <span className="mast-status-label">WIRE</span>
+              <span ref={statusRef} className="mast-status-text" aria-label={STATUS} />
+            </span>
+          </div>
+          <div className="mast-rule" aria-hidden="true" />
 
-      {/* Massive wordmark */}
-      <h1 ref={wordmarkRef} className="hero-wordmark" aria-label="Tejal Goyal">
-        <span className="hero-word">TEJAL</span>
-        <span className="hero-word hero-word--offset">GOYAL</span>
-      </h1>
+          <h1 className="mast-plate" aria-label="Tejal Goyal">TEJAL GOYAL</h1>
 
-      {/* 3D padlock — right-anchored focal object, lives BEHIND the type
-       *  (z-index 2 vs the wordmark's 3). Slight overlap of GOYAL's tail
-       *  letters happens by design — the padlock "locks" onto the name.
-       */}
-      <HeroCanvas
-        className="hero-canvas"
-        style={{
-          position: 'absolute',
-          top: '52%',
-          right: '2vw',
-          transform: 'translateY(-50%)',
-          width: 'min(520px, 42vw)',
-          height: 'min(520px, 62vh)',
-          pointerEvents: 'none',
-          zIndex: 2,
-        }}
-      />
+          <div className="mast-rule" aria-hidden="true" />
+          <div className="mast-edition mast-meta">
+            <span>VOL.&nbsp;I · NO.&nbsp;1</span>
+            <span>VICTORIA, BC · EST.&nbsp;2017</span>
+            <span>PRICE: YOUR ATTENTION</span>
+          </div>
+          <div className="mast-rule mast-rule--thick" aria-hidden="true" />
+        </div>
 
-      {/* Caption */}
-      <p className="hero-caption">
-        SOFTWARE ENGINEER <span className="hero-caption-dot">·</span> CYBERSECURITY
-        <span className="hero-caption-dot">·</span> BUILDER OF THINGS
-      </p>
+        {/* lead story */}
+        <div className="mast-lead">
+          <KineticHeadline as="h2" font="impact" misregister intro className="mast-headline">
+            BREAKING THINGS TO BUILD BETTER ONES
+          </KineticHeadline>
 
-      {/* Scroll cue */}
-      <div className="hero-scroll-cue" aria-hidden="true">
-        <span>SCROLL</span>
-        <span className="hero-scroll-arrow">↓</span>
+          <p className="mast-byline">by Tejal Goyal — software · security · ml</p>
+          <p className="mast-deck">
+            Software engineer who came up through machine-learning research and a
+            cybersecurity desk. Currently building MCP servers and AI agents at BCI.
+          </p>
+        </div>
+
+        <div className="mast-cue" aria-hidden="true">
+          ↓ CONTINUED ON EVERY PAGE BELOW
+        </div>
       </div>
     </section>
   );
