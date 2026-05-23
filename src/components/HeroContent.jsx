@@ -219,7 +219,7 @@ export default function HeroContent() {
           .hero-link:hover {
             border-color: var(--color-interactive) !important;
             color: var(--color-text) !important;
-            background: rgba(139, 142, 255, 0.05);
+            background: color-mix(in srgb, var(--color-interactive) 5%, transparent);
           }
           .pronunciation-hint::after {
             content: "that's how you say it";

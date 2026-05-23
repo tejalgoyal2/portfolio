@@ -151,7 +151,7 @@ export default function Navbar({ onTerminalToggle, terminalOpen, theme, onThemeT
               onClick={onTerminalToggle}
               className="ml-1 w-8 h-8 rounded-full text-[11px] cursor-pointer transition-all duration-300 flex items-center justify-center nav-icon"
               style={{
-                background: terminalOpen ? 'rgba(139,142,255,0.1)' : 'transparent',
+                background: terminalOpen ? 'color-mix(in srgb, var(--color-interactive) 10%, transparent)' : 'transparent',
                 border: `1px solid ${terminalOpen ? 'var(--color-interactive)' : 'var(--color-border)'}`,
                 color: terminalOpen ? 'var(--color-interactive)' : 'var(--color-text-dim)',
                 fontFamily: 'var(--font-mono)',

@@ -28,7 +28,7 @@ function SkillCell({ node, hovered, onHover }) {
         border: `1px solid ${isHovered ? `${meta.color}30` : 'var(--color-border-subtle)'}`,
         opacity: 1,
         transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
-        boxShadow: isHovered ? `0 12px 30px rgba(0,0,0,0.2), 0 0 30px ${meta.color}05` : 'none',
+        boxShadow: isHovered ? `0 12px 30px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 30px ${meta.color}05` : 'none',
       }}
       onMouseEnter={() => onHover(node.id)}
       onMouseLeave={() => onHover(null)}

@@ -2,30 +2,47 @@ import { useEffect, useRef } from 'react';
 
 const HOVER_SELECTORS = 'a, button, [role="button"], input, .featured-card, .project-card, .about-panel, .contact-link, .skill-cell, .blog-strip-card';
 
+function parseHexToRGB(hex) {
+  hex = hex.trim();
+  if (!hex.startsWith('#')) return '139,142,255';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
 export default function CursorLight() {
   const glowRef = useRef(null);
   const dotRef = useRef(null);
-  const ringRef = useRef(null);
   const stateRef = useRef({ hovering: false, clicking: false });
 
   useEffect(() => {
     const glow = glowRef.current;
     const dot = dotRef.current;
-    const ring = ringRef.current;
-    if (!glow || !dot || !ring) return;
+    if (!glow || !dot) return;
+
+    // Read the theme's interactive color and track changes
+    let interactiveRGB = parseHexToRGB(
+      getComputedStyle(document.documentElement).getPropertyValue('--color-interactive')
+    );
+
+    const observer = new MutationObserver(() => {
+      interactiveRGB = parseHexToRGB(
+        getComputedStyle(document.documentElement).getPropertyValue('--color-interactive')
+      );
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     let mx = -600, my = -600;
     let gx = -600, gy = -600;
     let dx = -600, dy = -600;
-    let rx = -600, ry = -600;
     let snapX = 0, snapY = 0;
     let snapActive = false;
-    let ringScale = 1;
-    let targetRingScale = 1;
-    let ringOpacity = 0.3;
-    let targetRingOpacity = 0.3;
-    let glowIntensity = 0.07;
-    let targetGlowIntensity = 0.07;
+    // Theme-aware glow: lighter in light mode so it doesn't overpower
+    const getBaseGlow = () => document.documentElement.getAttribute('data-theme') === 'light' ? 0.03 : 0.07;
+    const getHoverGlow = () => document.documentElement.getAttribute('data-theme') === 'light' ? 0.06 : 0.12;
+    let glowIntensity = getBaseGlow();
+    let targetGlowIntensity = getBaseGlow();
     let dotSize = 6;
     let targetDotSize = 6;
     let raf;
@@ -39,9 +56,7 @@ export default function CursorLight() {
 
       if (interactive) {
         stateRef.current.hovering = true;
-        targetRingScale = 2.2;
-        targetRingOpacity = 0.15;
-        targetGlowIntensity = 0.12;
+        targetGlowIntensity = getHoverGlow();
         targetDotSize = 10;
 
         // Magnetic snap only for small elements (links, buttons, inputs)
@@ -56,9 +71,7 @@ export default function CursorLight() {
         }
       } else {
         stateRef.current.hovering = false;
-        targetRingScale = 1;
-        targetRingOpacity = 0.3;
-        targetGlowIntensity = 0.07;
+        targetGlowIntensity = getBaseGlow();
         targetDotSize = 6;
         snapActive = false;
       }
@@ -66,13 +79,11 @@ export default function CursorLight() {
 
     const onDown = () => {
       stateRef.current.clicking = true;
-      targetRingScale = stateRef.current.hovering ? 1.8 : 0.7;
       targetDotSize = stateRef.current.hovering ? 8 : 4;
     };
 
     const onUp = () => {
       stateRef.current.clicking = false;
-      targetRingScale = stateRef.current.hovering ? 2.2 : 1;
       targetDotSize = stateRef.current.hovering ? 10 : 6;
     };
 
@@ -81,7 +92,7 @@ export default function CursorLight() {
       gy += (my - gy) * 0.05;
       glowIntensity += (targetGlowIntensity - glowIntensity) * 0.08;
       glow.style.transform = `translate3d(${gx - 250}px, ${gy - 250}px, 0)`;
-      glow.style.background = `radial-gradient(circle, rgba(139,142,255,${glowIntensity}) 0%, rgba(139,142,255,${glowIntensity * 0.3}) 40%, transparent 70%)`;
+      glow.style.background = `radial-gradient(circle, rgba(${interactiveRGB},${glowIntensity}) 0%, rgba(${interactiveRGB},${glowIntensity * 0.3}) 40%, transparent 70%)`;
 
       let targetX = mx;
       let targetY = my;
@@ -99,13 +110,6 @@ export default function CursorLight() {
       dot.style.width = `${dotSize}px`;
       dot.style.height = `${dotSize}px`;
 
-      rx += (targetX - rx) * 0.15;
-      ry += (targetY - ry) * 0.15;
-      ringScale += (targetRingScale - ringScale) * 0.12;
-      ringOpacity += (targetRingOpacity - ringOpacity) * 0.1;
-      ring.style.transform = `translate3d(${rx - 20}px, ${ry - 20}px, 0) scale(${ringScale})`;
-      ring.style.opacity = ringOpacity;
-
       raf = requestAnimationFrame(tick);
     };
 
@@ -119,6 +123,7 @@ export default function CursorLight() {
       window.removeEventListener('mousedown', onDown);
       window.removeEventListener('mouseup', onUp);
       cancelAnimationFrame(raf);
+      observer.disconnect();
     };
   }, []);
 
@@ -131,7 +136,7 @@ export default function CursorLight() {
           width: '500px',
           height: '500px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,142,255,0.07) 0%, rgba(139,142,255,0.02) 40%, transparent 70%)',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-interactive) 7%, transparent) 0%, color-mix(in srgb, var(--color-interactive) 2%, transparent) 40%, transparent 70%)',
           zIndex: 1,
           willChange: 'transform',
         }}
@@ -147,20 +152,6 @@ export default function CursorLight() {
           background: 'var(--color-interactive)',
           zIndex: 9995,
           willChange: 'transform',
-        }}
-      />
-
-      <div
-        ref={ringRef}
-        className="fixed top-0 left-0 pointer-events-none"
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '50%',
-          border: '1.5px solid rgba(139,142,255,0.3)',
-          zIndex: 9994,
-          willChange: 'transform',
-          opacity: 0.3,
         }}
       />
     </>

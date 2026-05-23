@@ -95,7 +95,7 @@ function TimelineEntry({ entry, index, total, isActive }) {
           </h4>
           {entry.active && (
             <span className="text-[8px] font-mono inline-flex items-center gap-1 uppercase tracking-wider" style={{ color: 'var(--color-interactive)' }}>
-              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-interactive)', boxShadow: '0 0 4px rgba(139,142,255,0.6)' }} />
+              <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-interactive)', boxShadow: '0 0 4px color-mix(in srgb, var(--color-interactive) 60%, transparent)' }} />
               current
             </span>
           )}
@@ -161,7 +161,7 @@ export default function Experience() {
             if (self.progress >= threshold * 0.85) {
               dot.style.background = 'var(--color-interactive)';
               dot.style.borderColor = 'var(--color-interactive)';
-              dot.style.boxShadow = '0 0 12px rgba(139,142,255,0.4)';
+              dot.style.boxShadow = '0 0 12px color-mix(in srgb, var(--color-interactive) 40%, transparent)';
             } else {
               dot.style.background = 'var(--color-bg)';
               dot.style.borderColor = 'var(--color-border)';

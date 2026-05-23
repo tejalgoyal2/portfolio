@@ -53,7 +53,7 @@ function BlogCard({ post }) {
       className="shrink-0 w-[340px] rounded-xl no-underline relative overflow-hidden"
       style={{
         background: hov
-          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, rgba(139,142,255,0.06) 0%, var(--color-surface-elevated) 55%)`
+          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--color-interactive) 6%, transparent) 0%, var(--color-surface-elevated) 55%)`
           : 'var(--color-surface)',
         border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
         transform: dwell
@@ -62,9 +62,9 @@ function BlogCard({ post }) {
             ? `perspective(600px) translateY(-4px) rotateX(${tiltReady ? (50 - mouse.y) * 0.18 : 0}deg) rotateY(${tiltReady ? (mouse.x - 50) * 0.18 : 0}deg)`
             : 'perspective(600px) translateY(0)',
         boxShadow: dwell
-          ? '0 24px 48px rgba(139,142,255,0.15), 0 0 30px rgba(139,142,255,0.12), inset 0 0 20px rgba(139,142,255,0.03)'
+          ? `0 24px 48px color-mix(in srgb, var(--color-interactive) 15%, transparent), 0 0 30px color-mix(in srgb, var(--color-interactive) 12%, transparent)`
           : hov
-            ? '0 12px 28px rgba(0,0,0,0.2), 0 0 20px rgba(139,142,255,0.08)'
+            ? `0 12px 28px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 20px color-mix(in srgb, var(--color-interactive) 8%, transparent)`
             : 'none',
         transition: 'background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.2s ease-out',
         transformStyle: 'preserve-3d',
