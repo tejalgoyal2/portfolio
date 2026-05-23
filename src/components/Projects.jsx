@@ -12,12 +12,12 @@ function Badge({ status }) {
       <span
         className="text-[9px] font-bold tracking-[1.5px] py-1 px-2.5 rounded-full font-mono inline-flex items-center gap-1.5 uppercase shrink-0"
         style={{
-          color: '#6ee7b7',
-          background: 'rgba(110,231,183,0.08)',
-          border: '1px solid rgba(110,231,183,0.2)',
+          color: 'var(--color-green)',
+          background: 'color-mix(in srgb, var(--color-green) 8%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--color-green) 20%, transparent)',
         }}
       >
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#6ee7b7', boxShadow: '0 0 6px #6ee7b7' }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-green)', boxShadow: '0 0 6px var(--color-green)' }} />
         LIVE
       </span>
     );
@@ -27,7 +27,7 @@ function Badge({ status }) {
       className="text-[9px] font-bold tracking-[1.5px] py-1 px-2.5 rounded-full font-mono uppercase shrink-0"
       style={{
         color: 'var(--color-text-dim)',
-        background: 'rgba(255,255,255,0.03)',
+        background: 'color-mix(in srgb, var(--color-text) 3%, transparent)',
         border: '1px solid var(--color-border-subtle)',
       }}
     >
@@ -83,12 +83,12 @@ function FeaturedProject({ project, index }) {
       className="featured-card rounded-2xl relative"
       style={{
         background: hov
-          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, rgba(139,142,255,0.06) 0%, var(--color-surface) 55%)`
+          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--color-interactive) 6%, transparent) 0%, var(--color-surface) 55%)`
           : 'var(--color-surface)',
         border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
         boxShadow: hov
-          ? '0 24px 48px rgba(0,0,0,0.25), 0 0 20px rgba(139,142,255,0.06)'
-          : '0 4px 16px rgba(0,0,0,0.1)',
+          ? `0 24px 48px color-mix(in srgb, var(--color-text) 18%, transparent), 0 0 20px color-mix(in srgb, var(--color-interactive) 6%, transparent)`
+          : `0 2px 12px color-mix(in srgb, var(--color-text) 6%, transparent)`,
         transform: hov
           ? `perspective(800px) translateY(-4px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`
           : 'perspective(800px) translateY(0) rotateX(0) rotateY(0)',
@@ -182,29 +182,37 @@ function FeaturedProject({ project, index }) {
   );
 }
 
-function CylinderCard({ project }) {
+function ConcaveCard({ project, offset, total }) {
   const [hov, setHov] = useState(false);
+
+  // Concave display: center cards face forward, edges angle inward
+  const center = (total - 1) / 2;
+  const dist = offset - center;
+  const angle = dist * -5;
+  const depth = -(Math.abs(dist) * Math.abs(dist)) * 8;
 
   return (
     <div
-      className="cylinder-card project-card rounded-xl"
+      className="concave-card project-card rounded-xl"
       style={{
-        width: '280px',
+        width: 'clamp(150px, 12.5vw, 195px)',
+        minWidth: '140px',
+        flex: '0 1 auto',
         background: hov ? 'var(--color-surface-elevated)' : 'var(--color-surface)',
         border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
         boxShadow: hov
-          ? '0 16px 40px rgba(0,0,0,0.3), 0 0 20px rgba(139,142,255,0.1)'
-          : '0 4px 16px rgba(0,0,0,0.12)',
-        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.25s',
-        transform: hov ? 'scale(1.05)' : 'scale(1)',
+          ? `0 12px 32px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 16px color-mix(in srgb, var(--color-interactive) 8%, transparent)`
+          : `0 2px 8px color-mix(in srgb, var(--color-text) 6%, transparent)`,
+        transform: `perspective(800px) rotateY(${angle}deg) translateZ(${depth}px) ${hov ? 'scale(1.06)' : 'scale(1)'}`,
+        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.35s ease-out',
       }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
     >
-      <div className="p-5">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2 gap-2">
           <h4
-            className="text-[14px] font-display font-bold m-0 transition-colors duration-300"
+            className="text-[13px] font-display font-bold m-0 transition-colors duration-300 truncate"
             style={{ color: hov ? 'var(--color-interactive)' : 'var(--color-text)' }}
           >
             {project.name}
@@ -212,15 +220,15 @@ function CylinderCard({ project }) {
           <Badge status={project.status} />
         </div>
 
-        <p className="text-[12px] leading-[1.7] mb-4 m-0" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-[11px] leading-[1.7] mb-3 m-0" style={{ color: 'var(--color-text-secondary)' }}>
           {project.desc}
         </p>
 
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {project.tech.slice(0, 4).map(t => (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {project.tech.slice(0, 3).map(t => (
             <span
               key={t}
-              className="tech-pill text-[9px] py-0.5 px-2 rounded-full font-mono"
+              className="tech-pill text-[8px] py-0.5 px-1.5 rounded-full font-mono"
               style={{ color: 'var(--color-text-dim)', border: '1px solid var(--color-border)' }}
             >
               {t}
@@ -256,116 +264,42 @@ function CylinderCard({ project }) {
   );
 }
 
-function CylinderCarousel({ items }) {
-  const sceneRef = useRef(null);
-  const ringRef = useRef(null);
-  const angleRef = useRef(0);
-  const mouseXRef = useRef(0.5);
-  const pausedRef = useRef(false);
-
-  const count = items.length;
-  const angleStep = 360 / count;
-  const radius = 340;
-
-  // Auto-rotate + mouse influence
-  useEffect(() => {
-    const ring = ringRef.current;
-    if (!ring) return;
-
-    let raf;
-    const tick = () => {
-      if (!pausedRef.current) {
-        angleRef.current -= 0.12;
-      }
-      const mouseOffset = (mouseXRef.current - 0.5) * 25;
-      ring.style.transform = `rotateX(-6deg) rotateY(${angleRef.current + mouseOffset}deg)`;
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+function ConcaveDisplay({ items }) {
+  const displayRef = useRef(null);
 
   // Entrance animation
   useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-
+    if (!displayRef.current) return;
     const ctx = gsap.context(() => {
-      const cards = scene.querySelectorAll('.cylinder-card');
+      const cards = displayRef.current.querySelectorAll('.concave-card');
       gsap.fromTo(cards,
-        { opacity: 0, scale: 0.6 },
+        { opacity: 0, y: 30 },
         {
           opacity: 1,
-          scale: 1,
-          duration: 0.7,
-          stagger: 0.08,
-          ease: 'back.out(1.4)',
+          y: 0,
+          duration: 0.6,
+          stagger: { each: 0.06, from: 'center' },
+          ease: 'power3.out',
           scrollTrigger: {
-            trigger: scene,
-            start: 'top 82%',
+            trigger: displayRef.current,
+            start: 'top 85%',
             once: true,
           },
         }
       );
     });
-
     return () => ctx.revert();
   }, []);
 
-  const handleSceneMove = (e) => {
-    if (!sceneRef.current) return;
-    const rect = sceneRef.current.getBoundingClientRect();
-    mouseXRef.current = (e.clientX - rect.left) / rect.width;
-  };
-
   return (
     <div
-      ref={sceneRef}
-      className="relative"
-      style={{ perspective: '1200px', height: '380px' }}
-      onMouseMove={handleSceneMove}
-      onMouseEnter={() => { pausedRef.current = true; }}
-      onMouseLeave={() => { pausedRef.current = false; mouseXRef.current = 0.5; }}
+      ref={displayRef}
+      className="flex justify-center items-start gap-3 px-8 overflow-x-auto concave-scroll-hide"
+      style={{ perspective: '1200px', perspectiveOrigin: '50% 40%', paddingBottom: '1rem' }}
     >
-      <div
-        ref={ringRef}
-        className="absolute"
-        style={{
-          left: '50%',
-          top: '50%',
-          transformStyle: 'preserve-3d',
-          transform: 'rotateX(-6deg) rotateY(0deg)',
-          width: 0,
-          height: 0,
-        }}
-      >
-        {items.map((item, i) => (
-          <div
-            key={item.name}
-            className="absolute"
-            style={{
-              transform: `rotateY(${i * angleStep}deg) translateZ(${radius}px)`,
-              width: '280px',
-              marginLeft: '-140px',
-              marginTop: '-165px',
-              backfaceVisibility: 'hidden',
-            }}
-          >
-            <CylinderCard project={item} />
-          </div>
-        ))}
-      </div>
-
-      {/* Edge fades for depth */}
-      <div
-        className="absolute inset-y-0 left-0 w-28 pointer-events-none z-[1]"
-        style={{ background: 'linear-gradient(to right, var(--color-bg), transparent)' }}
-      />
-      <div
-        className="absolute inset-y-0 right-0 w-28 pointer-events-none z-[1]"
-        style={{ background: 'linear-gradient(to left, var(--color-bg), transparent)' }}
-      />
+      {items.map((item, i) => (
+        <ConcaveCard key={item.name} project={item} offset={i} total={items.length} />
+      ))}
     </div>
   );
 }
@@ -377,7 +311,6 @@ export default function Projects() {
     if (!sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      // Featured cards entrance
       gsap.utils.toArray('.featured-card').forEach((card) => {
         gsap.fromTo(card,
           { opacity: 0, y: 50 },
@@ -411,17 +344,13 @@ export default function Projects() {
           ))}
         </div>
 
-        {/* More projects - 3D cylinder carousel */}
-        <h3 className="font-display text-[13px] tracking-[1px] mb-2 uppercase" style={{ color: 'var(--color-text-dim)' }}>
+        <h3 className="font-display text-[13px] tracking-[1px] mb-8 uppercase" style={{ color: 'var(--color-text-dim)' }}>
           More Projects
         </h3>
-        <p className="text-[11px] font-mono mb-8" style={{ color: 'var(--color-text-ghost)' }}>
-          hover to pause, move mouse to explore
-        </p>
       </div>
 
-      {/* Carousel breaks out of container for full-width visual */}
-      <CylinderCarousel items={OTHERS} />
+      {/* Concave display - curved monitor layout */}
+      <ConcaveDisplay items={OTHERS} />
     </section>
   );
 }

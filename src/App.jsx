@@ -43,30 +43,23 @@ function ScrollEffects() {
 
     init();
 
-    // Background color morph per section
-    const sectionAccents = [
-      { id: 'projects', color: '91,94,255' },
-      { id: 'experience', color: '120,100,255' },
-      { id: 'skills', color: '80,160,255' },
-      { id: 'blog', color: '140,100,255' },
-      { id: 'about', color: '130,90,255' },
-      { id: 'contact', color: '160,100,255' },
-    ];
+    // Background color morph per section (universal via color-mix)
+    const sectionIds = ['projects', 'experience', 'skills', 'blog', 'about', 'contact'];
 
-    const triggers = sectionAccents.map(({ id, color }) =>
+    const triggers = sectionIds.map(id =>
       ScrollTrigger.create({
         trigger: `#s-${id}`,
         start: 'top 60%',
         onEnter: () => {
           if (overlayRef.current) {
             overlayRef.current.style.background =
-              `radial-gradient(ellipse at 50% 30%, rgba(${color},0.07) 0%, transparent 70%)`;
+              'radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--color-interactive) 7%, transparent) 0%, transparent 70%)';
           }
         },
         onEnterBack: () => {
           if (overlayRef.current) {
             overlayRef.current.style.background =
-              `radial-gradient(ellipse at 50% 30%, rgba(${color},0.07) 0%, transparent 70%)`;
+              'radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--color-interactive) 7%, transparent) 0%, transparent 70%)';
           }
         },
       })
@@ -135,18 +128,6 @@ export default function App() {
       />
 
       <Hero />
-
-      {/* Bridge gradient: seamless in dark mode, smooth blend in light */}
-      <div
-        className="pointer-events-none relative"
-        style={{
-          height: '180px',
-          marginTop: '-100px',
-          marginBottom: '-80px',
-          background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--color-bg) 40%, transparent) 35%, var(--color-bg) 100%)',
-          zIndex: 2,
-        }}
-      />
 
       <Projects />
 

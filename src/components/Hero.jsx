@@ -66,12 +66,12 @@ export default function Hero() {
       <HeroParticles scrollProgress={scrollProgress} count={particleCount} />
       <HeroContent />
       <ParticleSlider count={particleCount} onChange={setParticleCount} />
-      {/* Smooth fade into next section */}
+      {/* Bottom fade - uses hero's scoped --color-bg (always dark) */}
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none z-[2]"
         style={{
-          height: '35vh',
-          background: 'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--color-bg) 30%, transparent) 30%, color-mix(in srgb, var(--color-bg) 70%, transparent) 60%, var(--color-bg) 100%)',
+          height: '25vh',
+          background: 'linear-gradient(to bottom, transparent, var(--color-bg))',
         }}
       />
     </section>
