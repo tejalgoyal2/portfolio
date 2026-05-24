@@ -31,15 +31,17 @@ export default function About() {
     if (!sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      // Narrative fade in
+      // Narrative blur-to-sharp reveal
       if (narrativeRef.current) {
         gsap.fromTo(narrativeRef.current, {
           opacity: 0,
           y: 30,
+          filter: 'blur(8px)',
         }, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
+          filter: 'blur(0px)',
+          duration: 1.0,
           ease: 'power3.out',
           scrollTrigger: {
             trigger: narrativeRef.current,
