@@ -182,37 +182,61 @@ function FeaturedProject({ project, index }) {
   );
 }
 
-function ConcaveCard({ project, offset, total }) {
+function GridCard({ project, baseRotateY, baseTranslateZ }) {
   const [hov, setHov] = useState(false);
+  const [mouse, setMouse] = useState({ x: 50, y: 50 });
+  const [tiltReady, setTiltReady] = useState(false);
+  const tiltTimer = useRef(null);
 
-  // Concave display: center cards face forward, edges angle inward
-  const center = (total - 1) / 2;
-  const dist = offset - center;
-  const angle = dist * -5;
-  const depth = -(Math.abs(dist) * Math.abs(dist)) * 8;
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMouse({
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    });
+  };
+
+  useEffect(() => () => clearTimeout(tiltTimer.current), []);
+
+  const tiltX = tiltReady ? (50 - mouse.y) * 0.12 : 0;
+  const tiltY = tiltReady ? (mouse.x - 50) * 0.12 : 0;
 
   return (
     <div
       className="concave-card project-card rounded-xl"
       style={{
-        width: 'clamp(150px, 12.5vw, 195px)',
-        minWidth: '140px',
-        flex: '0 1 auto',
-        background: hov ? 'var(--color-surface-elevated)' : 'var(--color-surface)',
+        flex: '1 1 0',
+        maxWidth: '260px',
+        minWidth: '200px',
+        background: hov
+          ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--color-interactive) 5%, transparent) 0%, var(--color-surface-elevated) 60%)`
+          : 'var(--color-surface)',
         border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
         boxShadow: hov
-          ? `0 12px 32px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 16px color-mix(in srgb, var(--color-interactive) 8%, transparent)`
-          : `0 2px 8px color-mix(in srgb, var(--color-text) 6%, transparent)`,
-        transform: `perspective(800px) rotateY(${angle}deg) translateZ(${depth}px) ${hov ? 'scale(1.06)' : 'scale(1)'}`,
-        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.35s ease-out',
+          ? '0 16px 40px color-mix(in srgb, var(--color-text) 12%, transparent), 0 0 20px color-mix(in srgb, var(--color-interactive) 6%, transparent)'
+          : '0 2px 8px color-mix(in srgb, var(--color-text) 4%, transparent)',
+        transform: hov
+          ? `perspective(800px) rotateY(${baseRotateY + tiltY * 0.4}deg) rotateX(${tiltX}deg) translateZ(${baseTranslateZ + 6}px) scale(1.03)`
+          : `perspective(800px) rotateY(${baseRotateY}deg) translateZ(${baseTranslateZ}px)`,
+        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.3s ease-out',
+        transformStyle: 'preserve-3d',
       }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+      onMouseEnter={() => {
+        setHov(true);
+        tiltTimer.current = setTimeout(() => setTiltReady(true), 150);
+      }}
+      onMouseLeave={() => {
+        setHov(false);
+        setTiltReady(false);
+        clearTimeout(tiltTimer.current);
+        setMouse({ x: 50, y: 50 });
+      }}
+      onMouseMove={handleMove}
     >
-      <div className="p-4">
+      <div className="p-5">
         <div className="flex items-center justify-between mb-2 gap-2">
           <h4
-            className="text-[13px] font-display font-bold m-0 transition-colors duration-300 truncate"
+            className="text-[14px] font-display font-bold m-0 transition-colors duration-300 truncate"
             style={{ color: hov ? 'var(--color-interactive)' : 'var(--color-text)' }}
           >
             {project.name}
@@ -220,15 +244,15 @@ function ConcaveCard({ project, offset, total }) {
           <Badge status={project.status} />
         </div>
 
-        <p className="text-[11px] leading-[1.7] mb-3 m-0" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-[12px] leading-[1.7] mb-3 m-0" style={{ color: 'var(--color-text-secondary)' }}>
           {project.desc}
         </p>
 
-        <div className="flex flex-wrap gap-1 mb-3">
-          {project.tech.slice(0, 3).map(t => (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {project.tech.slice(0, 4).map(t => (
             <span
               key={t}
-              className="tech-pill text-[8px] py-0.5 px-1.5 rounded-full font-mono"
+              className="tech-pill text-[9px] py-0.5 px-2 rounded-full font-mono"
               style={{ color: 'var(--color-text-dim)', border: '1px solid var(--color-border)' }}
             >
               {t}
@@ -264,24 +288,33 @@ function ConcaveCard({ project, offset, total }) {
   );
 }
 
-function ConcaveDisplay({ items }) {
-  const displayRef = useRef(null);
+const GRID_COLS = 4;
+
+function ConcaveGrid({ items }) {
+  const gridRef = useRef(null);
+
+  // Split into rows of GRID_COLS
+  const rows = [];
+  for (let i = 0; i < items.length; i += GRID_COLS) {
+    rows.push(items.slice(i, i + GRID_COLS));
+  }
 
   // Entrance animation
   useEffect(() => {
-    if (!displayRef.current) return;
+    if (!gridRef.current) return;
     const ctx = gsap.context(() => {
-      const cards = displayRef.current.querySelectorAll('.concave-card');
+      const cards = gridRef.current.querySelectorAll('.concave-card');
       gsap.fromTo(cards,
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 30, rotateX: -8 },
         {
           opacity: 1,
           y: 0,
+          rotateX: 0,
           duration: 0.6,
           stagger: { each: 0.06, from: 'center' },
           ease: 'power3.out',
           scrollTrigger: {
-            trigger: displayRef.current,
+            trigger: gridRef.current,
             start: 'top 85%',
             once: true,
           },
@@ -293,12 +326,27 @@ function ConcaveDisplay({ items }) {
 
   return (
     <div
-      ref={displayRef}
-      className="flex justify-center items-start gap-3 px-8 overflow-x-auto concave-scroll-hide"
-      style={{ perspective: '1200px', perspectiveOrigin: '50% 40%', paddingBottom: '1rem' }}
+      ref={gridRef}
+      className="max-w-[1100px] mx-auto px-6"
+      style={{ perspective: '1200px', perspectiveOrigin: '50% 50%' }}
     >
-      {items.map((item, i) => (
-        <ConcaveCard key={item.name} project={item} offset={i} total={items.length} />
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex justify-center gap-4 mb-4">
+          {row.map((item, ci) => {
+            const center = (row.length - 1) / 2;
+            const dist = ci - center;
+            const rotateY = dist * -1.8;
+            const translateZ = -(Math.abs(dist) * Math.abs(dist)) * 1.5;
+            return (
+              <GridCard
+                key={item.name}
+                project={item}
+                baseRotateY={rotateY}
+                baseTranslateZ={translateZ}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );
@@ -349,8 +397,8 @@ export default function Projects() {
         </h3>
       </div>
 
-      {/* Concave display - curved monitor layout */}
-      <ConcaveDisplay items={OTHERS} />
+      {/* Concave grid - curved monitor wall */}
+      <ConcaveGrid items={OTHERS} />
     </section>
   );
 }

@@ -270,11 +270,7 @@
 }
 
 /* Hide scrollbar for horizontal strips */
-.blog-scroll-hide::-webkit-scrollbar,
-.concave-scroll-hide::-webkit-scrollbar {
+.blog-scroll-hide::-webkit-scrollbar {
   display: none;
-}
-.concave-scroll-hide {
-  scrollbar-width: none;
 }
 
