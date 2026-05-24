@@ -40,6 +40,7 @@ function ParticleSlider({ count, onChange }) {
 
 export default function Hero() {
   const sectionRef = useRef(null);
+  const innerRef = useRef(null);
   const scrollProgress = useRef(0);
   const [particleCount, setParticleCount] = useState(2500);
 
@@ -51,6 +52,13 @@ export default function Hero() {
       scrub: true,
       onUpdate: (self) => {
         scrollProgress.current = self.progress;
+        // Parallax scale-down: hero recedes as content slides over
+        if (innerRef.current) {
+          const scale = 1 - self.progress * 0.06;
+          const opacity = 1 - self.progress * 0.6;
+          innerRef.current.style.transform = `scale(${scale})`;
+          innerRef.current.style.opacity = opacity;
+        }
       },
     });
 
@@ -60,20 +68,20 @@ export default function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="hero-dark-override relative min-h-screen w-full overflow-hidden"
-      style={{ background: 'var(--color-bg)' }}
+      className="hero-dark-override relative w-full overflow-hidden"
+      style={{
+        background: 'var(--color-bg)',
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1,
+      }}
     >
-      <HeroParticles scrollProgress={scrollProgress} count={particleCount} />
-      <HeroContent />
-      <ParticleSlider count={particleCount} onChange={setParticleCount} />
-      {/* Bottom fade - uses hero's scoped --color-bg (always dark) */}
-      <div
-        className="absolute bottom-0 left-0 right-0 pointer-events-none z-[2]"
-        style={{
-          height: '25vh',
-          background: 'linear-gradient(to bottom, transparent, var(--color-bg))',
-        }}
-      />
+      <div ref={innerRef} className="w-full h-full" style={{ willChange: 'transform, opacity' }}>
+        <HeroParticles scrollProgress={scrollProgress} count={particleCount} />
+        <HeroContent />
+        <ParticleSlider count={particleCount} onChange={setParticleCount} />
+      </div>
     </section>
   );
 }

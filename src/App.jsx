@@ -119,7 +119,6 @@ export default function App() {
   return (
     <div className="min-h-screen" style={{ fontFamily: 'var(--font-body)' }}>
       <CursorLight />
-      <ScrollEffects />
       <Navbar
         onTerminalToggle={() => setTermOpen(p => !p)}
         terminalOpen={termOpen}
@@ -129,29 +128,40 @@ export default function App() {
 
       <Hero />
 
-      <Projects />
+      {/* Content slides over sticky hero with rounded top edge */}
+      <main
+        className="relative rounded-t-[28px]"
+        style={{
+          zIndex: 2,
+          background: 'var(--color-bg)',
+          boxShadow: '0 -20px 60px color-mix(in srgb, var(--color-text) 8%, transparent)',
+        }}
+      >
+        <ScrollEffects />
+        <Projects />
 
-      <Experience />
-      <Skills />
-      <Blog />
-      <About />
-      <Contact />
+        <Experience />
+        <Skills />
+        <Blog />
+        <About />
+        <Contact />
 
-      {/* Terminal -side quest, backtick to toggle */}
+        <footer className="text-center py-6 px-5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+          <span className="text-[11px] tracking-[1.5px] uppercase" style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
+            Tejal Goyal // tgoyal.me // 2026
+          </span>
+        </footer>
+      </main>
+
+      {/* Terminal - side quest, backtick to toggle */}
       <Terminal
         show={termOpen}
         onClose={() => setTermOpen(false)}
         onSudoku={() => setSudokuOpen(true)}
       />
 
-      {/* Sudoku -accessible via terminal command only */}
+      {/* Sudoku - accessible via terminal command only */}
       {sudokuOpen && <Sudoku onClose={() => setSudokuOpen(false)} />}
-
-      <footer className="text-center py-6 px-5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
-        <span className="text-[11px] tracking-[1.5px] uppercase" style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>
-          Tejal Goyal // tgoyal.me // 2026
-        </span>
-      </footer>
     </div>
   );
 }
