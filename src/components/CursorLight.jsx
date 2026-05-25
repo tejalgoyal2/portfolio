@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 
 const HOVER_SELECTORS = 'a, button, [role="button"], input, .featured-card, .project-card, .about-panel, .contact-link, .skill-cell, .blog-strip-card';
+const BUTTON_SELECTORS = 'button, [role="button"], .btn-live, .link-source, .nav-link-resume, .hero-link';
+const LINK_SELECTORS = 'a:not(.btn-live):not(.link-source):not(.nav-link-resume):not(.hero-link):not(.contact-link)';
+const CARD_SELECTORS = '.featured-card, .project-card, .about-panel, .contact-link, .skill-cell, .blog-strip-card';
 
 function parseHexToRGB(hex) {
   hex = hex.trim();
@@ -14,14 +17,15 @@ function parseHexToRGB(hex) {
 export default function CursorLight() {
   const glowRef = useRef(null);
   const dotRef = useRef(null);
-  const stateRef = useRef({ hovering: false, clicking: false });
+  const labelRef = useRef(null);
 
   useEffect(() => {
     const glow = glowRef.current;
     const dot = dotRef.current;
-    if (!glow || !dot) return;
+    const label = labelRef.current;
+    if (!glow || !dot || !label) return;
 
-    // Read the theme's interactive color and track changes
+    // Read theme interactive color
     let interactiveRGB = parseHexToRGB(
       getComputedStyle(document.documentElement).getPropertyValue('--color-interactive')
     );
@@ -36,15 +40,27 @@ export default function CursorLight() {
     let mx = -600, my = -600;
     let gx = -600, gy = -600;
     let dx = -600, dy = -600;
+    let prevDx = -600, prevDy = -600;
     let snapX = 0, snapY = 0;
     let snapActive = false;
-    // Theme-aware glow: lighter in light mode so it doesn't overpower
+
     const getBaseGlow = () => document.documentElement.getAttribute('data-theme') === 'light' ? 0.03 : 0.07;
     const getHoverGlow = () => document.documentElement.getAttribute('data-theme') === 'light' ? 0.06 : 0.12;
     let glowIntensity = getBaseGlow();
     let targetGlowIntensity = getBaseGlow();
-    let dotSize = 6;
-    let targetDotSize = 6;
+
+    // Cursor state
+    let hovering = false;
+    let clicking = false;
+    let cursorMode = 'default'; // default | button | link | card
+    let targetScale = 1;
+    let currentScale = 1;
+    let targetBorderRadius = 50; // percentage
+    let currentBorderRadius = 50;
+    let targetOpacity = 1;
+    let currentOpacity = 1;
+    let showLabel = false;
+    let labelText = '';
     let raf;
 
     const onMove = (e) => {
@@ -52,15 +68,46 @@ export default function CursorLight() {
       my = e.clientY;
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const interactive = el && el.closest(HOVER_SELECTORS);
+      if (!el) return;
+
+      const interactive = el.closest(HOVER_SELECTORS);
+      const isButton = el.closest(BUTTON_SELECTORS);
+      const isLink = el.closest(LINK_SELECTORS);
+      const isCard = el.closest(CARD_SELECTORS);
 
       if (interactive) {
-        stateRef.current.hovering = true;
+        hovering = true;
         targetGlowIntensity = getHoverGlow();
-        targetDotSize = 10;
 
-        // Magnetic snap only for small elements (links, buttons, inputs)
-        // Skip large cards to avoid jittery long-distance cursor pulls
+        if (isButton) {
+          cursorMode = 'button';
+          targetScale = 5;
+          targetBorderRadius = 30;
+          targetOpacity = 0.15;
+          showLabel = true;
+          labelText = 'click';
+        } else if (isCard) {
+          cursorMode = 'card';
+          targetScale = 0.6;
+          targetOpacity = 1;
+          targetBorderRadius = 50;
+          showLabel = false;
+        } else if (isLink) {
+          cursorMode = 'link';
+          targetScale = 4;
+          targetBorderRadius = 50;
+          targetOpacity = 0.12;
+          showLabel = true;
+          labelText = 'view';
+        } else {
+          cursorMode = 'default';
+          targetScale = 1.6;
+          targetBorderRadius = 50;
+          targetOpacity = 1;
+          showLabel = false;
+        }
+
+        // Magnetic snap for small elements
         const rect = interactive.getBoundingClientRect();
         if (rect.width < 200 && rect.height < 80) {
           snapX = rect.left + rect.width / 2;
@@ -70,30 +117,36 @@ export default function CursorLight() {
           snapActive = false;
         }
       } else {
-        stateRef.current.hovering = false;
+        hovering = false;
+        cursorMode = 'default';
+        targetScale = 1;
+        targetBorderRadius = 50;
+        targetOpacity = 1;
         targetGlowIntensity = getBaseGlow();
-        targetDotSize = 6;
         snapActive = false;
+        showLabel = false;
       }
     };
 
     const onDown = () => {
-      stateRef.current.clicking = true;
-      targetDotSize = stateRef.current.hovering ? 8 : 4;
+      clicking = true;
     };
 
     const onUp = () => {
-      stateRef.current.clicking = false;
-      targetDotSize = stateRef.current.hovering ? 10 : 6;
+      clicking = false;
     };
 
+    const BASE_SIZE = 8;
+
     const tick = () => {
+      // Glow
       gx += (mx - gx) * 0.05;
       gy += (my - gy) * 0.05;
       glowIntensity += (targetGlowIntensity - glowIntensity) * 0.08;
       glow.style.transform = `translate3d(${gx - 250}px, ${gy - 250}px, 0)`;
       glow.style.background = `radial-gradient(circle, rgba(${interactiveRGB},${glowIntensity}) 0%, rgba(${interactiveRGB},${glowIntensity * 0.3}) 40%, transparent 70%)`;
 
+      // Dot target position
       let targetX = mx;
       let targetY = my;
       if (snapActive) {
@@ -104,11 +157,54 @@ export default function CursorLight() {
       dx += (targetX - dx) * 0.4;
       dy += (targetY - dy) * 0.4;
 
-      dotSize += (targetDotSize - dotSize) * 0.15;
-      const halfDot = dotSize / 2;
-      dot.style.transform = `translate3d(${dx - halfDot}px, ${dy - halfDot}px, 0)`;
-      dot.style.width = `${dotSize}px`;
-      dot.style.height = `${dotSize}px`;
+      // Velocity for stretch
+      const vx = dx - prevDx;
+      const vy = dy - prevDy;
+      const speed = Math.sqrt(vx * vx + vy * vy);
+      const angle = Math.atan2(vy, vx) * (180 / Math.PI);
+      const stretch = Math.min(speed * 0.08, 0.5);
+      prevDx = dx;
+      prevDy = dy;
+
+      // Animate scale and shape
+      currentScale += (targetScale - currentScale) * 0.15;
+      currentBorderRadius += (targetBorderRadius - currentBorderRadius) * 0.15;
+      currentOpacity += (targetOpacity - currentOpacity) * 0.12;
+
+      // Click squish
+      let clickScaleX = 1;
+      let clickScaleY = 1;
+      if (clicking) {
+        clickScaleX = 1.4;
+        clickScaleY = 0.6;
+      }
+
+      const halfSize = (BASE_SIZE * currentScale) / 2;
+      const stretchX = cursorMode === 'default' ? 1 + stretch : 1;
+      const stretchY = cursorMode === 'default' ? 1 - stretch * 0.5 : 1;
+      const rotAngle = cursorMode === 'default' && speed > 1 ? angle : 0;
+
+      dot.style.transform = `translate3d(${dx - halfSize}px, ${dy - halfSize}px, 0) rotate(${rotAngle}deg) scale(${currentScale * stretchX * clickScaleX}, ${currentScale * stretchY * clickScaleY})`;
+      dot.style.borderRadius = `${currentBorderRadius}%`;
+      dot.style.opacity = currentOpacity;
+
+      // Mix-blend-mode for link/button states
+      if (cursorMode === 'button' || cursorMode === 'link') {
+        dot.style.mixBlendMode = 'difference';
+        dot.style.background = '#fff';
+      } else {
+        dot.style.mixBlendMode = 'normal';
+        dot.style.background = `rgba(${interactiveRGB},1)`;
+      }
+
+      // Label
+      if (showLabel && currentScale > 2) {
+        label.style.opacity = '1';
+        label.textContent = labelText;
+      } else {
+        label.style.opacity = '0';
+      }
+      label.style.transform = `translate3d(${dx - 16}px, ${dy - 5}px, 0)`;
 
       raf = requestAnimationFrame(tick);
     };
@@ -146,12 +242,28 @@ export default function CursorLight() {
         ref={dotRef}
         className="fixed top-0 left-0 pointer-events-none"
         style={{
-          width: '6px',
-          height: '6px',
+          width: '8px',
+          height: '8px',
           borderRadius: '50%',
           background: 'var(--color-interactive)',
-          zIndex: 9995,
+          zIndex: 10002,
           willChange: 'transform',
+          transition: 'border-radius 0.2s, background 0.15s',
+        }}
+      />
+
+      <span
+        ref={labelRef}
+        className="fixed top-0 left-0 pointer-events-none font-mono"
+        style={{
+          fontSize: '8px',
+          letterSpacing: '1.5px',
+          textTransform: 'uppercase',
+          color: 'var(--color-interactive)',
+          zIndex: 10003,
+          opacity: 0,
+          willChange: 'transform',
+          transition: 'opacity 0.2s',
         }}
       />
     </>
