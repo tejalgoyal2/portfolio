@@ -198,8 +198,8 @@ function GridCard({ project, baseRotateY, baseTranslateZ }) {
 
   useEffect(() => () => clearTimeout(tiltTimer.current), []);
 
-  const tiltX = tiltReady ? (50 - mouse.y) * 0.12 : 0;
-  const tiltY = tiltReady ? (mouse.x - 50) * 0.12 : 0;
+  const tiltX = tiltReady ? (50 - mouse.y) * 0.18 : 0;
+  const tiltY = tiltReady ? (mouse.x - 50) * 0.18 : 0;
 
   return (
     <div
@@ -213,12 +213,12 @@ function GridCard({ project, baseRotateY, baseTranslateZ }) {
           : 'var(--color-surface)',
         border: `1px solid ${hov ? 'var(--color-interactive)' : 'var(--color-border-subtle)'}`,
         boxShadow: hov
-          ? '0 16px 40px color-mix(in srgb, var(--color-text) 12%, transparent), 0 0 20px color-mix(in srgb, var(--color-interactive) 6%, transparent)'
+          ? '0 20px 50px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 30px color-mix(in srgb, var(--color-interactive) 10%, transparent)'
           : '0 2px 8px color-mix(in srgb, var(--color-text) 4%, transparent)',
         transform: hov
-          ? `perspective(800px) rotateY(${baseRotateY + tiltY * 0.4}deg) rotateX(${tiltX}deg) translateZ(${baseTranslateZ + 6}px) scale(1.03)`
-          : `perspective(800px) rotateY(${baseRotateY}deg) translateZ(${baseTranslateZ}px)`,
-        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.3s ease-out',
+          ? `perspective(700px) rotateY(${baseRotateY + tiltY * 0.6}deg) rotateX(${tiltX}deg) translateZ(${baseTranslateZ + 14}px) scale(1.06)`
+          : `perspective(700px) rotateY(${baseRotateY}deg) translateZ(${baseTranslateZ}px)`,
+        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.4s, transform 0.25s ease-out',
         transformStyle: 'preserve-3d',
       }}
       onMouseEnter={() => {
@@ -328,15 +328,15 @@ function ConcaveGrid({ items }) {
     <div
       ref={gridRef}
       className="max-w-[1100px] mx-auto px-6"
-      style={{ perspective: '1200px', perspectiveOrigin: '50% 50%' }}
+      style={{ perspective: '800px', perspectiveOrigin: '50% 50%' }}
     >
       {rows.map((row, ri) => (
         <div key={ri} className="flex justify-center gap-4 mb-4">
           {row.map((item, ci) => {
             const center = (row.length - 1) / 2;
             const dist = ci - center;
-            const rotateY = dist * -1.8;
-            const translateZ = -(Math.abs(dist) * Math.abs(dist)) * 1.5;
+            const rotateY = dist * -2.8;
+            const translateZ = -(Math.abs(dist) * Math.abs(dist)) * 3;
             return (
               <GridCard
                 key={item.name}

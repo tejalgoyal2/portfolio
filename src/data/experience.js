@@ -2,15 +2,18 @@ export const EXPERIENCE = [
   {
     role: "Software Engineering Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "May 2026 – Present", active: true,
-    desc: "Returning to BCI for a second co-op, this time on the Enterprise Solutions team.",
+    desc: "Building MCP servers, modernized financial apps, and cloud infrastructure on the Enterprise Solutions team.",
     details: [
-      "Building, enhancing, and supporting applications within BCI's Technology department",
+      "Developing Python MCP servers connecting AI agents to enterprise financial databases and application APIs",
+      "Contributing to a React/Azure financial system rebuilt from legacy .NET/WPF using AI-assisted development",
+      "Working across Azure resource groups, Data Factory pipelines, and Privileged Identity Management",
+      "Building PowerApps applications and supporting Power Platform governance across the org",
     ],
   },
   {
     role: "Cybersecurity & Risk Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "Jan – Apr 2026",
-    desc: "Identity, detection, and incident response across a $250B+ investment manager's security stack.",
+    desc: "Identity, detection, and incident response across an institutional investment manager's security stack.",
     details: [
       "Spearheaded breakglass documentation for 163+ SSO apps, reducing undocumented gaps from 86% to 22%",
       "Built PowerShell automation against Confluence REST API, cutting compliance reporting from 3 hours to 10 minutes",

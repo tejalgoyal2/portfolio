@@ -89,13 +89,13 @@ export default function About() {
           }}
         >
           <p className="text-[14.5px] leading-[2] m-0" style={{ color: 'var(--color-text-secondary)' }}>
-            Grad student at UVic. Currently building the apps a $250B+ investor depends on
-            daily at BCI. Previous life: four months hunting shadow AI and actual malware
-            across 1,200 endpoints on their security team. I&rsquo;ve shipped an expense
-            tracker that roasts your spending in Hinglish, a coding agent in Rust because
-            I apparently hate easy mode, and a Sudoku app that exists purely because a
-            mobile ad interrupted my winning streak. I learn by shipping v1.0 and writing
-            about what went wrong.
+            Grad student at UVic. Currently building MCP servers and enterprise apps
+            at BCI, after four months hunting shadow AI and actual malware across 1,200
+            endpoints on their security team. I&rsquo;ve shipped an expense tracker that
+            roasts your spending in Hinglish, a coding agent in Rust because I apparently
+            hate easy mode, and a Sudoku app that exists purely because a mobile ad
+            interrupted my winning streak. I learn by shipping v1.0 and writing about
+            what went wrong.
           </p>
         </div>
 

@@ -130,11 +130,12 @@ export default function App() {
 
       {/* Content slides over sticky hero with rounded top edge */}
       <main
-        className="relative rounded-t-[28px]"
+        className="relative rounded-t-[20px]"
         style={{
           zIndex: 2,
           background: 'var(--color-bg)',
-          boxShadow: '0 -20px 60px color-mix(in srgb, var(--color-text) 8%, transparent)',
+          boxShadow: '0 -30px 80px color-mix(in srgb, var(--color-text) 12%, transparent), 0 -2px 20px color-mix(in srgb, var(--color-interactive) 6%, transparent)',
+          borderTop: '1px solid color-mix(in srgb, var(--color-interactive) 15%, transparent)',
         }}
       >
         <ScrollEffects />
