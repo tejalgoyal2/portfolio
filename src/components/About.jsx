@@ -89,13 +89,16 @@ export default function About() {
           }}
         >
           <p className="text-[14.5px] leading-[2] m-0" style={{ color: 'var(--color-text-secondary)' }}>
-            Grad student at UVic. Currently building MCP servers and enterprise apps
-            at BCI, after four months hunting shadow AI and actual malware across 1,200
-            endpoints on their security team. I&rsquo;ve shipped an expense tracker that
-            roasts your spending in Hinglish, a coding agent in Rust because I apparently
-            hate easy mode, and a Sudoku app that exists purely because a mobile ad
-            interrupted my winning streak. I learn by shipping v1.0 and writing about
-            what went wrong.
+            I build things, break them, and then blog about what went wrong so nobody
+            else has to suffer. Currently finishing my MEng at UVic while doing a co-op
+            at BCI where I get to make software for people who manage a lot of money.
+            Before that I was on their security team, which is how I learned that corporate
+            password hygiene is a myth. My side projects include an expense tracker that
+            roasts you in Hinglish, a coding agent I wrote in Rust because apparently I
+            enjoy pain, and a Sudoku app born from pure spite after a mobile ad ruined my
+            winning streak. I stress-bake when deploys go wrong, argue about F1 strategy
+            with anyone who will listen, and I am still processing how badly they fumbled
+            the finale of The Boys.
           </p>
         </div>
 
@@ -148,9 +151,10 @@ export default function About() {
 
           <Panel title="Beyond the Code">
             <p className="text-[12px] leading-[1.9] m-0" style={{ color: 'var(--color-text-secondary)' }}>
-              Trilingual: English, Hindi, Punjabi. Recently survived the TC10K.
-              Competitive badminton player, readathon merit holder, serial stress-baker.
-              Watches F1 for the strategy, The Boys for the chaos.
+              Trilingual (English, Hindi, Punjabi). Survived the TC10K without
+              walking. Competitive badminton player who peaked in 10th grade and refuses
+              to accept it. Stress-bakes when CI pipelines turn red. Will argue about
+              F1 strategy until everyone leaves the room.
             </p>
           </Panel>
         </div>
