@@ -4,6 +4,7 @@ import SvgFilters from './fx/SvgFilters';
 import PaperOverlay from './fx/PaperOverlay';
 import OnomatopoeiaTrail from './fx/OnomatopoeiaTrail';
 import MagneticCursor from './cursor/MagneticCursor';
+import ProtagonistCanvas from './scene/ProtagonistCanvas';
 
 /**
  * Phase 1 — Foundation app shell.
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <>
       <SvgFilters />
+      <ProtagonistCanvas />
       <PaperOverlay />
       <MagneticCursor />
       <OnomatopoeiaTrail />
