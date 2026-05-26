@@ -8,12 +8,13 @@ function ParticleSlider({ count, onChange }) {
 
   return (
     <div
-      className="absolute bottom-24 right-6 z-[3] flex items-center gap-3 rounded-full px-4 py-2 transition-all duration-400"
+      className="absolute bottom-24 right-6 z-[3] flex items-center gap-3 rounded-full px-4 py-2"
       style={{
-        opacity: hov ? 1 : 0.5,
-        background: hov ? 'color-mix(in srgb, var(--color-surface) 85%, transparent)' : 'color-mix(in srgb, var(--color-surface) 50%, transparent)',
+        opacity: hov ? 1 : 0.65,
+        background: hov ? 'color-mix(in srgb, var(--color-surface) 85%, transparent)' : 'color-mix(in srgb, var(--color-surface) 60%, transparent)',
         border: `1px solid ${hov ? 'var(--color-border)' : 'var(--color-border-subtle)'}`,
         backdropFilter: 'blur(8px)',
+        transition: 'opacity 300ms ease-out, background 300ms ease-out, border-color 300ms ease-out',
       }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -42,7 +43,7 @@ export default function Hero() {
   const sectionRef = useRef(null);
   const innerRef = useRef(null);
   const scrollProgress = useRef(0);
-  const [particleCount, setParticleCount] = useState(2500);
+  const [particleCount, setParticleCount] = useState(1800);
 
   useEffect(() => {
     const trigger = ScrollTrigger.create({

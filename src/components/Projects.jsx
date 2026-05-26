@@ -45,22 +45,8 @@ function FeaturedProject({ project, index }) {
   const [tiltReady, setTiltReady] = useState(false);
   const tiltTimer = useRef(null);
   const expandTimer = useRef(null);
-  const scrolling = useRef(false);
-  const scrollTimer = useRef(null);
-
-  // Detect active scrolling to prevent accidental hover-expand
   useEffect(() => {
-    const onScroll = () => {
-      scrolling.current = true;
-      clearTimeout(scrollTimer.current);
-      scrollTimer.current = setTimeout(() => { scrolling.current = false; }, 150);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      clearTimeout(scrollTimer.current);
-      clearTimeout(expandTimer.current);
-    };
+    return () => clearTimeout(expandTimer.current);
   }, []);
 
   const handleMove = (e) => {
@@ -71,17 +57,16 @@ function FeaturedProject({ project, index }) {
     });
   };
 
-  // Animate long description expand/collapse
   useEffect(() => {
     if (!detailRef.current) return;
+    gsap.killTweensOf(detailRef.current);
     if (expanded) {
-      gsap.fromTo(detailRef.current,
-        { height: 0, opacity: 0 },
-        { height: 'auto', opacity: 1, duration: 0.45, ease: 'power2.out' }
-      );
+      gsap.to(detailRef.current, {
+        maxHeight: 500, opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto',
+      });
     } else {
       gsap.to(detailRef.current, {
-        height: 0, opacity: 0, duration: 0.3, ease: 'power2.in',
+        maxHeight: 0, opacity: 0, duration: 0.25, ease: 'power2.out', overwrite: 'auto',
       });
     }
   }, [expanded]);
@@ -98,11 +83,8 @@ function FeaturedProject({ project, index }) {
   const handleEnter = () => {
     setHov(true);
     tiltTimer.current = setTimeout(() => setTiltReady(true), 200);
-    // Delay expand so scrolling past doesn't trigger it
     clearTimeout(expandTimer.current);
-    expandTimer.current = setTimeout(() => {
-      if (!scrolling.current) setExpanded(true);
-    }, 300);
+    expandTimer.current = setTimeout(() => setExpanded(true), 500);
   };
 
   const handleLeave = () => {
@@ -142,10 +124,11 @@ function FeaturedProject({ project, index }) {
         </div>
 
         <h3
-          className="font-display font-bold tracking-[-0.03em] m-0 mb-4 leading-[1.1] transition-colors duration-400"
+          className="font-display font-bold tracking-[-0.03em] m-0 mb-4 leading-[1.1]"
           style={{
             fontSize: 'clamp(28px, 4vw, 44px)',
             color: hov ? 'var(--color-interactive)' : 'var(--color-text)',
+            transition: 'color 300ms ease-out',
           }}
         >
           {project.name}
@@ -162,7 +145,7 @@ function FeaturedProject({ project, index }) {
         <div
           ref={detailRef}
           className="overflow-hidden"
-          style={{ height: 0, opacity: 0 }}
+          style={{ maxHeight: 0, opacity: 0 }}
         >
           <p
             className="text-[13px] leading-[1.8] mb-6 max-w-[600px]"
@@ -190,7 +173,7 @@ function FeaturedProject({ project, index }) {
               href={project.links.live}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-live text-[11px] font-mono font-medium no-underline py-2.5 px-6 rounded-full transition-all duration-300"
+              className="btn-live text-[11px] font-mono font-medium no-underline py-2.5 px-6 rounded-full"
               style={{
                 color: '#08090d',
                 background: 'var(--color-interactive)',
@@ -204,7 +187,7 @@ function FeaturedProject({ project, index }) {
               href={project.links.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-source text-[11px] font-mono no-underline py-2.5 px-6 rounded-full transition-all duration-300"
+              className="link-source text-[11px] font-mono no-underline py-2.5 px-6 rounded-full"
               style={{
                 color: 'var(--color-text-secondary)',
                 border: '1px solid var(--color-border)',
@@ -423,7 +406,7 @@ export default function Projects() {
         <SectionHeader id="projects" title="Projects" sub="things I've built and broken" />
 
         {/* Featured projects - stacked */}
-        <div className="flex flex-col gap-8 mb-20">
+        <div className="flex flex-col gap-12 mb-20">
           {FEATURED.map((p, i) => (
             <FeaturedProject key={p.name} project={p} index={i} />
           ))}

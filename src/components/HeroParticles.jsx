@@ -80,14 +80,13 @@ function ParticleField({ scrollProgress, count = 2500 }) {
       base[i3 + 2] = z;
 
       if (isLight) {
-        // Dark purple/indigo dots on light bg
-        if (Math.random() < 0.15) {
-          // Accent purple dots
-          col[i3] = 0.28; col[i3 + 1] = 0.22; col[i3 + 2] = 0.55;
+        if (Math.random() < 0.2) {
+          // Accent indigo dots — clearly visible
+          col[i3] = 0.3; col[i3 + 1] = 0.2; col[i3 + 2] = 0.6;
         } else {
-          // Charcoal-purple base
-          const v = 0.08 + Math.random() * 0.15;
-          col[i3] = v + 0.04; col[i3 + 1] = v; col[i3 + 2] = v + 0.12;
+          // Purple-tinted dark particles
+          const v = 0.15 + Math.random() * 0.2;
+          col[i3] = v + 0.08; col[i3 + 1] = v - 0.02; col[i3 + 2] = v + 0.18;
         }
       } else {
         // Light particles on dark bg
@@ -161,7 +160,7 @@ function ParticleField({ scrollProgress, count = 2500 }) {
       <PointMaterial
         vertexColors
         transparent
-        size={currentTheme === 'light' ? 0.04 : 0.025}
+        size={currentTheme === 'light' ? 0.05 : 0.025}
         sizeAttenuation
         depthWrite={false}
         blending={currentTheme === 'light' ? THREE.NormalBlending : THREE.AdditiveBlending}

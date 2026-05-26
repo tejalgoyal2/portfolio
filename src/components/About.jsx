@@ -5,10 +5,11 @@ import { gsap, ScrollTrigger } from '../hooks/useGSAP';
 function Panel({ title, children, index }) {
   return (
     <div
-      className="about-panel rounded-lg p-5 transition-all duration-300"
+      className="about-panel rounded-lg p-5"
       style={{
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border-subtle)',
+        transition: 'border-color 300ms ease-out, background 300ms ease-out',
       }}
     >
       <h3
@@ -105,7 +106,7 @@ export default function About() {
         <div
           ref={gridRef}
           className="grid gap-4"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+          style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}
         >
           <Panel title="Education">
             <div className="mb-4">

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useTypingText } from '../hooks/useTypingText';
 import { gsap } from '../hooks/useGSAP';
 import { useMagneticEffect } from '../hooks/useMagneticEffect';
@@ -150,14 +150,22 @@ export default function HeroContent() {
           TEJAL GOYAL
         </h1>
 
-        {/* Pronunciation */}
+        {/* Pronunciation — click to hear */}
         <div ref={pronounceRef} className="mt-2">
-          <span
-            className="pronunciation-hint font-mono text-[12px] tracking-[0.5px] cursor-default relative inline-block"
-            style={{ color: 'var(--color-text-dim)' }}
+          <button
+            className="pronunciation-hint font-mono text-[12px] tracking-[0.5px] relative inline-flex items-center gap-1.5 bg-transparent border-none p-0"
+            style={{ color: 'var(--color-text-secondary)' }}
+            onClick={() => {
+              const audio = new Audio('/audio/tejal.mp3');
+              audio.play().catch(() => {});
+              const el = pronounceRef.current?.querySelector('.pronunciation-hint');
+              if (el) gsap.fromTo(el, { scale: 1.1 }, { scale: 1, duration: 0.3, ease: 'power2.out' });
+            }}
+            aria-label="Hear pronunciation of Tejal"
           >
             /&thinsp;tay-jull&thinsp;/
-          </span>
+            <span className="pronunciation-speaker text-[10px]" style={{ opacity: 0.5 }}>&#9835;</span>
+          </button>
         </div>
 
         {/* Tagline */}
@@ -222,16 +230,16 @@ export default function HeroContent() {
             background: color-mix(in srgb, var(--color-interactive) 5%, transparent);
           }
           .pronunciation-hint::after {
-            content: "that's how you say it";
+            content: "that's how you say my name — click to hear it";
             position: absolute;
             left: 0;
             top: calc(100% + 6px);
             font-size: 10px;
-            color: var(--color-text-ghost);
+            color: var(--color-text-secondary);
             white-space: nowrap;
             opacity: 0;
             transform: translateY(-4px);
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
             pointer-events: none;
           }
           .pronunciation-hint:hover::after {
@@ -239,7 +247,13 @@ export default function HeroContent() {
             transform: translateY(0);
           }
           .pronunciation-hint:hover {
-            color: var(--color-text-secondary) !important;
+            color: var(--color-interactive) !important;
+          }
+          .pronunciation-hint:hover .pronunciation-speaker {
+            opacity: 0.9 !important;
+          }
+          .pronunciation-hint:active {
+            transform: scale(0.97);
           }
         `}</style>
       </div>

@@ -128,20 +128,27 @@ export default function Blog() {
   const scrollRef = useRef(null);
   const trackRef = useRef(null);
 
-  // Auto-scroll
+  // Duplicate posts for seamless infinite marquee
+  const displayPosts = [...BLOG_POSTS, ...BLOG_POSTS];
+
+  // Auto-scroll with seamless loop
   useEffect(() => {
     const container = scrollRef.current;
-    if (!container) return;
+    const track = trackRef.current;
+    if (!container || !track) return;
 
     let paused = false;
     let raf;
+    // Calculate the width of one set of posts (half the track)
+    const getHalfWidth = () => track.scrollWidth / 2;
 
     const tick = () => {
       if (!paused) {
-        container.scrollLeft += 0.4;
-        const max = container.scrollWidth - container.offsetWidth;
-        if (container.scrollLeft >= max - 5) {
-          container.scrollLeft = 0;
+        container.scrollLeft += 0.5;
+        // When we've scrolled past the first set, snap back seamlessly
+        const half = getHalfWidth();
+        if (container.scrollLeft >= half) {
+          container.scrollLeft -= half;
         }
       }
       raf = requestAnimationFrame(tick);
@@ -161,20 +168,17 @@ export default function Blog() {
     };
   }, []);
 
-  // Entrance animation
+  // Entrance animation — animate all cards together
   useEffect(() => {
     if (!trackRef.current) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(trackRef.current.children, {
+      gsap.fromTo(trackRef.current, {
         opacity: 0,
-        y: 30,
-        scale: 0.96,
+        y: 20,
       }, {
         opacity: 1,
         y: 0,
-        scale: 1,
-        duration: 0.6,
-        stagger: 0.06,
+        duration: 0.7,
         ease: 'power3.out',
         scrollTrigger: {
           trigger: scrollRef.current,
@@ -193,26 +197,45 @@ export default function Blog() {
       </div>
 
       {/* Auto-scrolling strip */}
-      <div
-        ref={scrollRef}
-        className="overflow-x-auto blog-scroll-hide"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
+      <div className="relative">
         <div
-          ref={trackRef}
-          className="flex gap-5"
+          ref={scrollRef}
+          className="overflow-x-auto blog-scroll-hide"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div
+            ref={trackRef}
+            className="flex gap-5"
+            style={{
+              width: 'max-content',
+              paddingLeft: 'max(2rem, calc((100vw - 1100px) / 2 + 1.5rem))',
+              paddingRight: '2rem',
+              paddingTop: '3.5rem',
+              paddingBottom: '3.5rem',
+            }}
+          >
+            {displayPosts.map((post, i) => (
+              <BlogCard key={`${post.title}-${i}`} post={post} />
+            ))}
+          </div>
+        </div>
+
+        {/* Right fade + scroll indicator */}
+        <div
+          className="absolute top-0 right-0 bottom-0 w-[80px] pointer-events-none flex items-center justify-end pr-4"
           style={{
-            width: 'max-content',
-            paddingLeft: 'max(2rem, calc((100vw - 1100px) / 2 + 1.5rem))',
-            paddingRight: '3rem',
-            paddingTop: '1.5rem',
-            paddingBottom: '1.5rem',
+            background: 'linear-gradient(to right, transparent, var(--color-bg) 70%)',
           }}
         >
-          {BLOG_POSTS.map((post) => (
-            <BlogCard key={post.title} post={post} />
-          ))}
-          <div className="shrink-0 w-4" />
+          <span
+            className="font-mono text-[11px]"
+            style={{
+              color: 'var(--color-text-dim)',
+              opacity: 0.7,
+            }}
+          >
+            &rarr;
+          </span>
         </div>
       </div>
     </section>

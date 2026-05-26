@@ -94,6 +94,31 @@
   to { transform: translateX(0); }
 }
 
+/* Skill card shimmer scan-line */
+@keyframes skill-shimmer {
+  0%, 100% { background-position: 200% 0; }
+  50% { background-position: -200% 0; }
+}
+
+.skill-shimmer-el {
+  background: linear-gradient(105deg, transparent 40%, var(--shimmer-color) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: skill-shimmer var(--shimmer-duration) ease-in-out var(--shimmer-delay) infinite;
+}
+
+/* Skill dot breathing glow */
+@keyframes skill-dot-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+.skill-dot-anim {
+  animation: skill-dot-breathe 3s ease-in-out var(--dot-delay) infinite;
+}
+.skill-dot-paused {
+  animation: none;
+}
+
 /* Scroll hint for featured gallery */
 @keyframes scroll-hint {
   0% { transform: translateY(-100%); opacity: 0; }
@@ -124,10 +149,10 @@
 /* Light mode - muted lavender */
 [data-theme="light"] {
   --color-bg: #f0ecf6;
-  --color-surface: #f5f2fb;
-  --color-surface-elevated: #e8e3f0;
-  --color-border: #cfc6dc;
-  --color-border-subtle: #ddd5e8;
+  --color-surface: #e9e4f2;
+  --color-surface-elevated: #dfd9ed;
+  --color-border: #c5bad4;
+  --color-border-subtle: #d4cbdf;
 
   --color-text: #1a1525;
   --color-text-secondary: #4f4468;

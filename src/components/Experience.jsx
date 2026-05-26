@@ -31,18 +31,16 @@ function TimelineEntry({ entry, index, total, isActive }) {
     return () => clearTimeout(timerRef.current);
   }, []);
 
-  // Animate expand/collapse - kill competing tweens first to prevent jitter
   useEffect(() => {
     if (!detailsRef.current) return;
     gsap.killTweensOf(detailsRef.current);
     if (expanded) {
-      gsap.fromTo(detailsRef.current,
-        { height: 0, opacity: 0 },
-        { height: 'auto', opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' }
-      );
+      gsap.to(detailsRef.current, {
+        maxHeight: 500, opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto',
+      });
     } else {
       gsap.to(detailsRef.current, {
-        height: 0, opacity: 0, duration: 0.25, ease: 'power2.in', overwrite: 'auto',
+        maxHeight: 0, opacity: 0, duration: 0.25, ease: 'power2.out', overwrite: 'auto',
       });
     }
   }, [expanded]);
@@ -58,7 +56,7 @@ function TimelineEntry({ entry, index, total, isActive }) {
       {/* Dot */}
       <div className="flex flex-col items-center shrink-0" style={{ width: '40px' }}>
         <div
-          className="exp-dot w-3 h-3 rounded-full relative z-[2] transition-all duration-400 mt-1.5"
+          className="exp-dot w-3 h-3 rounded-full relative z-[2] mt-1.5"
           style={{
             background: 'var(--color-bg)',
             border: '2px solid var(--color-border)',
@@ -79,8 +77,9 @@ function TimelineEntry({ entry, index, total, isActive }) {
 
       {/* Content card */}
       <div
-        className="flex-1 ml-4 rounded-lg transition-all duration-300"
+        className="flex-1 ml-4 rounded-lg"
         style={{
+          transition: 'background 300ms ease-out, border-color 300ms ease-out',
           background: expanded ? 'var(--color-surface)' : 'transparent',
           border: expanded ? '1px solid var(--color-border-subtle)' : '1px solid transparent',
           padding: expanded ? '1.25rem' : '0 1.25rem',
@@ -114,7 +113,7 @@ function TimelineEntry({ entry, index, total, isActive }) {
         <div
           ref={detailsRef}
           className="overflow-hidden"
-          style={{ height: 0, opacity: 0 }}
+          style={{ maxHeight: 0, opacity: 0 }}
         >
           <p className="text-[13px] leading-[1.8] mt-3 mb-4" style={{ color: 'var(--color-text-secondary)' }}>
             {entry.desc}
@@ -212,10 +211,11 @@ export default function Experience() {
           {/* Animated fill line */}
           <div
             ref={fillRef}
-            className="absolute top-0 bottom-0 w-[2px]"
+            className="absolute top-0 bottom-0 w-[3px]"
             style={{
-              left: '19px',
+              left: '18.5px',
               background: 'linear-gradient(to bottom, var(--color-interactive), var(--color-interactive) 85%, transparent)',
+              boxShadow: '0 0 8px color-mix(in srgb, var(--color-interactive) 30%, transparent)',
               transformOrigin: 'top',
               transform: 'scaleY(0)',
             }}

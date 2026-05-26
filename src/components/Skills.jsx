@@ -13,38 +13,43 @@ const CATEGORY_META = {
   tools: { color: '#a78bfa', label: 'DevOps & Tools', span: 3 },
 };
 
-function SkillCell({ node, hovered, onHover }) {
+function SkillCell({ node, hovered, onHover, index }) {
   const meta = CATEGORY_META[node.id] || { color: '#8b8eff', label: node.label, span: 1 };
   const isHovered = hovered === node.id;
 
   return (
     <div
-      className="skill-cell rounded-xl p-6 relative overflow-hidden transition-all duration-400 cursor-default"
+      className="skill-cell rounded-xl p-6 relative overflow-hidden cursor-default"
       style={{
         gridColumn: `span ${meta.span}`,
         background: isHovered
           ? `radial-gradient(ellipse at 30% 0%, ${meta.color}10 0%, var(--color-surface) 70%)`
           : 'var(--color-surface)',
         border: `1px solid ${isHovered ? `${meta.color}30` : 'var(--color-border-subtle)'}`,
-        opacity: 1,
         transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
         boxShadow: isHovered ? `0 12px 30px color-mix(in srgb, var(--color-text) 15%, transparent), 0 0 30px ${meta.color}05` : 'none',
+        transition: 'transform 300ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 300ms ease-out, border-color 300ms ease-out, background 300ms ease-out',
       }}
       onMouseEnter={() => onHover(node.id)}
       onMouseLeave={() => onHover(null)}
     >
       <div className="flex items-center gap-2.5 mb-4">
         <div
-          className="w-2 h-2 rounded-full transition-all duration-300"
+          className={`w-2 h-2 rounded-full skill-dot-anim${isHovered ? ' skill-dot-paused' : ''}`}
           style={{
             background: meta.color,
-            boxShadow: isHovered ? `0 0 10px ${meta.color}60` : 'none',
-            transform: isHovered ? 'scale(1.3)' : 'scale(1)',
+            boxShadow: isHovered ? `0 0 10px ${meta.color}60` : `0 0 6px ${meta.color}30`,
+            transform: isHovered ? 'scale(1.3)' : undefined,
+            '--dot-delay': `${index * 0.4}s`,
+            transition: 'transform 300ms ease-out, box-shadow 300ms ease-out',
           }}
         />
         <span
-          className="text-[10px] font-mono tracking-[2px] uppercase transition-colors duration-300"
-          style={{ color: isHovered ? meta.color : 'var(--color-text-dim)' }}
+          className="text-[10px] font-mono tracking-[2px] uppercase"
+          style={{
+            color: isHovered ? meta.color : 'var(--color-text-dim)',
+            transition: 'color 300ms ease-out',
+          }}
         >
           {meta.label}
         </span>
@@ -57,11 +62,12 @@ function SkillCell({ node, hovered, onHover }) {
         {node.items.map(item => (
           <span
             key={item}
-            className="text-[11px] py-1.5 px-3 rounded-full font-mono transition-all duration-300"
+            className="skill-pill text-[11px] py-1.5 px-3 rounded-full font-mono"
             style={{
               color: isHovered ? meta.color : 'var(--color-text-secondary)',
               border: `1px solid ${isHovered ? `${meta.color}25` : 'var(--color-border-subtle)'}`,
               background: isHovered ? `${meta.color}06` : 'transparent',
+              transition: 'color 300ms ease-out, border-color 300ms ease-out, background 300ms ease-out',
             }}
           >
             {item}
