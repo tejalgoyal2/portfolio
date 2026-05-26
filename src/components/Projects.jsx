@@ -44,6 +44,24 @@ function FeaturedProject({ project, index }) {
   const [mouse, setMouse] = useState({ x: 50, y: 50 });
   const [tiltReady, setTiltReady] = useState(false);
   const tiltTimer = useRef(null);
+  const expandTimer = useRef(null);
+  const scrolling = useRef(false);
+  const scrollTimer = useRef(null);
+
+  // Detect active scrolling to prevent accidental hover-expand
+  useEffect(() => {
+    const onScroll = () => {
+      scrolling.current = true;
+      clearTimeout(scrollTimer.current);
+      scrollTimer.current = setTimeout(() => { scrolling.current = false; }, 150);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(scrollTimer.current);
+      clearTimeout(expandTimer.current);
+    };
+  }, []);
 
   const handleMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -77,6 +95,25 @@ function FeaturedProject({ project, index }) {
   const tiltX = tiltReady ? (50 - mouse.y) * 0.22 * edge : 0;
   const tiltY = tiltReady ? (mouse.x - 50) * 0.22 * edge : 0;
 
+  const handleEnter = () => {
+    setHov(true);
+    tiltTimer.current = setTimeout(() => setTiltReady(true), 200);
+    // Delay expand so scrolling past doesn't trigger it
+    clearTimeout(expandTimer.current);
+    expandTimer.current = setTimeout(() => {
+      if (!scrolling.current) setExpanded(true);
+    }, 300);
+  };
+
+  const handleLeave = () => {
+    setHov(false);
+    setExpanded(false);
+    setTiltReady(false);
+    clearTimeout(tiltTimer.current);
+    clearTimeout(expandTimer.current);
+    setMouse({ x: 50, y: 50 });
+  };
+
   return (
     <div
       ref={cardRef}
@@ -95,8 +132,8 @@ function FeaturedProject({ project, index }) {
         transformStyle: 'preserve-3d',
         transition: 'background 0.4s, border-color 0.4s, box-shadow 0.4s, transform 0.15s ease-out',
       }}
-      onMouseEnter={() => { setHov(true); setExpanded(true); tiltTimer.current = setTimeout(() => setTiltReady(true), 200); }}
-      onMouseLeave={() => { setHov(false); setExpanded(false); setTiltReady(false); clearTimeout(tiltTimer.current); setMouse({ x: 50, y: 50 }); }}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
       onMouseMove={handleMove}
     >
       <div className="p-10 md:p-12">

@@ -47,7 +47,7 @@ const FS = {
 const FILES = {
   '~/interests.txt': [
     '', '  f1_strategy=obsessed',
-    '  the_boys=current_binge',
+    '  the_boys=finished (still processing that ending)',
     '  security_research=always',
     '  baking=stress_triggered',
     '  badminton=competitive',
@@ -57,8 +57,8 @@ const FILES = {
   '~/about/beyond-code.txt': [
     '', '  Trilingual: English, Hindi, Punjabi',
     '  TC10K finisher. Competitive badminton.',
-    '  Watches F1 for strategy, The Boys for chaos.',
-    '  Stress-baker. Readathon merit holder.', '',
+    '  Stress-bakes when CI turns red.',
+    '  Will argue F1 strategy until everyone leaves.', '',
   ],
   '~/easter-eggs/.secret/.note': [
     '', '  If you found this, you are probably the kind of',
@@ -502,7 +502,8 @@ export default function Terminal({ show, onClose, onSudoku }) {
     <div
       className="fixed bottom-0 left-0 right-0 z-[9999] font-mono flex flex-col"
       style={{
-        height: 280,
+        height: 'min(280px, 40vh)',
+        maxHeight: '280px',
         background: 'var(--color-bg)',
         borderTop: '1px solid var(--color-border)',
         boxShadow: '0 -8px 32px color-mix(in srgb, var(--color-text) 20%, transparent)',
