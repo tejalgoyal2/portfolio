@@ -20,15 +20,17 @@ import HeroCanvas from '../scene/HeroCanvas';
 export default function Hero() {
   const wordmarkRef = useRef(null);
 
-  // Tiny entrance: slide the wordmark up + fade caption in.
+  // Tiny entrance — animate a CSS custom property so it composes with the
+  // centering transform rather than clobbering it.
   useEffect(() => {
     const el = wordmarkRef.current;
     if (!el) return;
-    el.style.transform = 'translateY(20px)';
+    el.style.setProperty('--entrance-y', '24px');
     el.style.opacity = '0';
     requestAnimationFrame(() => {
-      el.style.transition = 'transform 900ms cubic-bezier(0.23, 1, 0.32, 1), opacity 900ms ease-out';
-      el.style.transform = 'translateY(0)';
+      el.style.transition =
+        'transform 900ms cubic-bezier(0.23, 1, 0.32, 1), opacity 900ms ease-out';
+      el.style.setProperty('--entrance-y', '0px');
       el.style.opacity = '1';
     });
   }, []);
@@ -51,16 +53,19 @@ export default function Hero() {
         <span className="hero-word hero-word--offset">GOYAL</span>
       </h1>
 
-      {/* 3D padlock — positioned to overlap the wordmark */}
+      {/* 3D padlock — right-anchored focal object, lives BEHIND the type
+       *  (z-index 2 vs the wordmark's 3). Slight overlap of GOYAL's tail
+       *  letters happens by design — the padlock "locks" onto the name.
+       */}
       <HeroCanvas
         className="hero-canvas"
         style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -52%)',
-          width: 'min(640px, 52vw)',
-          height: 'min(640px, 70vh)',
+          top: '52%',
+          right: '2vw',
+          transform: 'translateY(-50%)',
+          width: 'min(520px, 42vw)',
+          height: 'min(520px, 62vh)',
           pointerEvents: 'none',
           zIndex: 2,
         }}

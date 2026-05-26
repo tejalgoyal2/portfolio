@@ -62,33 +62,37 @@
   color: var(--yellow);
 }
 
-/* The wordmark */
+/* The wordmark — left-anchored so the padlock can sit confidently to
+ * the right without occluding letters. The 'L' of GOYAL still bleeds
+ * past the edge for that confident Buttermax energy.
+ */
 .hero-wordmark {
   position: absolute;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  left: 4vw;
+  --entrance-y: 0px;
+  transform: translateY(calc(-50% + var(--entrance-y)));
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(120px, 26vw, 460px);
+  font-size: clamp(86px, 17.5vw, 320px);
   line-height: 0.86;
   letter-spacing: -0.025em;
   color: var(--ink);
   white-space: nowrap;
-  z-index: 1;
+  z-index: 3;          /* in front of the padlock, so type stays readable */
   pointer-events: none;
   user-select: none;
+  text-align: left;
 }
 
-/* Two lines so the words can stack with offset, or one line that crops */
 .hero-word {
   display: block;
 }
 
 .hero-word--offset {
-  /* nudge GOYAL slightly right so the L hangs past the edge */
-  transform: translateX(8%);
+  /* small nudge so GOYAL's stem aligns visually under TEJAL's */
+  transform: translateX(0);
 }
 
 .hero-canvas {
@@ -865,15 +869,24 @@
   display: block;
 }
 
-/* Responsive — mobile is a secondary citizen here but should not break */
-@media (max-width: 760px) {
-  .hero-wordmark { font-size: clamp(80px, 22vw, 200px); }
-  .hero-canvas { width: 70vw !important; height: 50vh !important; }
+/* Responsive — mobile/tablet ramp-down. The desktop layout is the design;
+ * narrower viewports collapse columns rather than shrink everything.
+ */
+@media (max-width: 880px) {
+  .about-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+  .about-col-stats { grid-column: 1 / -1; }
+  .project-row { grid-template-columns: 50px 1fr auto; gap: 18px; }
+  .project-tech { display: none; }
+}
+
+@media (max-width: 640px) {
+  .hero-wordmark { font-size: clamp(72px, 22vw, 200px); }
+  .hero-canvas { width: 64vw !important; height: 48vh !important; }
   .about-grid { grid-template-columns: 1fr; gap: 24px; }
   .skills-canvas-wrap { height: 460px; }
   .skills-header { flex-direction: column; gap: 16px; align-items: flex-start; }
   .skills-sub { text-align: left; }
-  .project-row { grid-template-columns: 50px 1fr; gap: 16px; }
+  .project-row { grid-template-columns: 40px 1fr; gap: 14px; }
   .project-tech, .project-status, .project-cta { display: none; }
   .experience-row { grid-template-columns: 1fr; gap: 12px; }
   .blog-card { flex: 0 0 290px; }
