@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useTypingText } from '../hooks/useTypingText';
 import { gsap } from '../hooks/useGSAP';
 import { useMagneticEffect } from '../hooks/useMagneticEffect';
@@ -46,6 +46,9 @@ export default function HeroContent() {
   const scrollRef = useRef(null);
   const typed = useTypingText(ROLES, 70, 2200);
 
+  // Chromatic aberration glitch after name reveal
+  const [showGlitch, setShowGlitch] = useState(false);
+
   useEffect(() => {
     const ctx = gsap.context(() => {
       const nameEl = nameRef.current;
@@ -54,6 +57,7 @@ export default function HeroContent() {
       const text = nameEl.textContent;
       nameEl.textContent = '';
       nameEl.setAttribute('aria-label', text);
+      nameEl.setAttribute('data-text', text);
 
       const chars = [];
       for (const char of text) {
@@ -79,12 +83,16 @@ export default function HeroContent() {
         startAt: { y: 50, rotateX: -90, opacity: 0 },
       });
 
+      // Fire chromatic aberration glitch after name lands
+      tl.call(() => setShowGlitch(true));
+      tl.call(() => setShowGlitch(false), null, '+=0.45');
+
       tl.from(pronounceRef.current, {
         opacity: 0,
         y: 10,
         duration: 0.5,
         ease: 'power2.out',
-      }, '-=0.2');
+      }, '-=0.3');
 
       tl.from(taglineRef.current, {
         opacity: 0,
@@ -131,26 +139,70 @@ export default function HeroContent() {
     return () => ctx.revert();
   }, []);
 
+  // ── Role text micro-glitch every 8-12s ──
+  useEffect(() => {
+    const el = roleRef.current;
+    if (!el) return;
+    const fire = () => {
+      el.classList.add('role-glitching');
+      setTimeout(() => el.classList.remove('role-glitching'), 200);
+    };
+    const id = setInterval(fire, 8000 + Math.random() * 4000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div
       ref={containerRef}
       className="relative z-[1] w-full max-w-[1100px] mx-auto px-6 flex flex-col justify-center min-h-screen"
     >
       <div className="max-w-[680px]">
-        {/* Name */}
-        <h1
-          ref={nameRef}
-          className="font-display font-bold tracking-[-0.02em] m-0 leading-[1.05]"
-          style={{
-            fontSize: 'clamp(40px, 7vw, 80px)',
-            color: 'var(--color-text)',
-            perspective: '600px',
-          }}
-        >
-          TEJAL GOYAL
-        </h1>
+        {/* Name with chromatic aberration layers */}
+        <div className="relative">
+          <h1
+            ref={nameRef}
+            className="font-display font-bold tracking-[-0.02em] m-0 leading-[1.05] relative z-[1]"
+            style={{
+              fontSize: 'clamp(40px, 7vw, 80px)',
+              color: 'var(--color-text)',
+              perspective: '600px',
+            }}
+          >
+            TEJAL GOYAL
+          </h1>
 
-        {/* Pronunciation — click to hear */}
+          {/* Chromatic aberration layers — red and cyan ghost text */}
+          {showGlitch && (
+            <>
+              <span
+                className="chromatic-red font-display font-bold tracking-[-0.02em] leading-[1.05] absolute top-0 left-0 pointer-events-none select-none"
+                style={{
+                  fontSize: 'clamp(40px, 7vw, 80px)',
+                  color: 'rgba(236, 34, 37, 0.35)',
+                  zIndex: 0,
+                  animation: 'chromatic-shift-red 400ms steps(6) forwards',
+                }}
+                aria-hidden="true"
+              >
+                TEJAL GOYAL
+              </span>
+              <span
+                className="chromatic-cyan font-display font-bold tracking-[-0.02em] leading-[1.05] absolute top-0 left-0 pointer-events-none select-none"
+                style={{
+                  fontSize: 'clamp(40px, 7vw, 80px)',
+                  color: 'rgba(0, 255, 255, 0.3)',
+                  zIndex: 0,
+                  animation: 'chromatic-shift-cyan 400ms steps(6) forwards',
+                }}
+                aria-hidden="true"
+              >
+                TEJAL GOYAL
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Pronunciation — click to hear (comic speech bubble) */}
         <div ref={pronounceRef} className="mt-2">
           <button
             className="pronunciation-hint font-mono text-[12px] tracking-[0.5px] relative inline-flex items-center gap-1.5 bg-transparent border-none p-0"
@@ -164,7 +216,6 @@ export default function HeroContent() {
             aria-label="Hear pronunciation of Tejal"
           >
             /&thinsp;tay-jull&thinsp;/
-            <span className="pronunciation-speaker text-[10px]" style={{ opacity: 0.5 }}>&#9835;</span>
           </button>
         </div>
 
@@ -229,31 +280,85 @@ export default function HeroContent() {
             color: var(--color-text) !important;
             background: color-mix(in srgb, var(--color-interactive) 5%, transparent);
           }
+
+          /* ── Pronunciation speech bubble ── */
           .pronunciation-hint::after {
             content: "that's how you say my name — click to hear it";
             position: absolute;
             left: 0;
-            top: calc(100% + 6px);
+            top: calc(100% + 14px);
             font-size: 10px;
             color: var(--color-text-secondary);
             white-space: nowrap;
+            background: var(--color-surface-elevated);
+            border: 1px solid var(--color-border);
+            padding: 7px 14px;
+            border-radius: 10px 12px 12px 4px;
+            transform: rotate(-1deg) translateY(-4px);
             opacity: 0;
-            transform: translateY(-4px);
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
             pointer-events: none;
           }
+          .pronunciation-hint::before {
+            content: '';
+            position: absolute;
+            left: 14px;
+            top: calc(100% + 8px);
+            width: 10px;
+            height: 10px;
+            background: var(--color-surface-elevated);
+            border-left: 1px solid var(--color-border);
+            border-top: 1px solid var(--color-border);
+            transform: rotate(45deg);
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none;
+            z-index: 1;
+          }
           .pronunciation-hint:hover::after {
             opacity: 1;
-            transform: translateY(0);
+            transform: rotate(-1deg) translateY(0);
+          }
+          .pronunciation-hint:hover::before {
+            opacity: 1;
           }
           .pronunciation-hint:hover {
             color: var(--color-interactive) !important;
           }
-          .pronunciation-hint:hover .pronunciation-speaker {
-            opacity: 0.9 !important;
-          }
           .pronunciation-hint:active {
             transform: scale(0.97);
+          }
+
+          /* ── Chromatic aberration on name reveal ── */
+          @keyframes chromatic-shift-red {
+            0%   { opacity: 0; transform: translate(0, 0); }
+            10%  { opacity: 0.6; transform: translate(4px, -1px); }
+            25%  { opacity: 0.4; transform: translate(-3px, 2px); }
+            40%  { opacity: 0.5; transform: translate(3px, 0); }
+            60%  { opacity: 0.35; transform: translate(-2px, -1px); }
+            80%  { opacity: 0.15; transform: translate(1px, 1px); }
+            100% { opacity: 0; transform: translate(0, 0); }
+          }
+          @keyframes chromatic-shift-cyan {
+            0%   { opacity: 0; transform: translate(0, 0); }
+            10%  { opacity: 0.5; transform: translate(-3px, 1px); }
+            25%  { opacity: 0.35; transform: translate(2px, -2px); }
+            40%  { opacity: 0.45; transform: translate(-2px, 0); }
+            60%  { opacity: 0.3; transform: translate(3px, 1px); }
+            80%  { opacity: 0.1; transform: translate(-1px, -1px); }
+            100% { opacity: 0; transform: translate(0, 0); }
+          }
+
+          /* ── Role text micro-glitch ── */
+          @keyframes role-glitch {
+            0%, 100% { text-shadow: none; transform: translateX(0); }
+            20%  { text-shadow: -2px 0 rgba(255,0,64,0.5), 2px 0 rgba(0,255,255,0.5); transform: translateX(-1px); }
+            40%  { text-shadow: 2px 0 rgba(255,0,64,0.4), -2px 0 rgba(0,255,255,0.4); transform: translateX(1px); }
+            60%  { text-shadow: -1px 0 rgba(255,0,64,0.5), 1px 0 rgba(0,255,255,0.5); transform: translateX(0); }
+            80%  { text-shadow: 1px 0 rgba(255,0,64,0.3), -1px 0 rgba(0,255,255,0.3); transform: translateX(-1px); }
+          }
+          .role-glitching {
+            animation: role-glitch 200ms steps(4) 1 !important;
           }
         `}</style>
       </div>

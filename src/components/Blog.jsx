@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { BLOG_POSTS } from '../data/blog';
 import SectionHeader from './SectionHeader';
-import { gsap } from '../hooks/useGSAP';
+import { gsap, ScrollTrigger } from '../hooks/useGSAP';
 
 const DWELL_MS = 2500;
 
@@ -50,7 +50,7 @@ function BlogCard({ post }) {
       href={post.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="shrink-0 w-[340px] rounded-xl no-underline relative overflow-hidden"
+      className="shrink-0 w-[340px] rounded-xl no-underline relative overflow-hidden halftone-hover"
       style={{
         background: hov
           ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--color-interactive) 6%, transparent) 0%, var(--color-surface-elevated) 55%)`
@@ -131,21 +131,23 @@ export default function Blog() {
   // Duplicate posts for seamless infinite marquee
   const displayPosts = [...BLOG_POSTS, ...BLOG_POSTS];
 
-  // Auto-scroll with seamless loop
+  // Auto-scroll with seamless loop — only starts when section is visible
   useEffect(() => {
     const container = scrollRef.current;
     const track = trackRef.current;
     if (!container || !track) return;
 
+    // Start from first card
+    container.scrollLeft = 0;
+
     let paused = false;
+    let visible = false;
     let raf;
-    // Calculate the width of one set of posts (half the track)
     const getHalfWidth = () => track.scrollWidth / 2;
 
     const tick = () => {
-      if (!paused) {
+      if (!paused && visible) {
         container.scrollLeft += 0.5;
-        // When we've scrolled past the first set, snap back seamlessly
         const half = getHalfWidth();
         if (container.scrollLeft >= half) {
           container.scrollLeft -= half;
@@ -157,12 +159,24 @@ export default function Blog() {
     const pause = () => { paused = true; };
     const resume = () => { paused = false; };
 
+    // Only auto-scroll when section is in viewport
+    const trigger = ScrollTrigger.create({
+      trigger: container,
+      start: 'top 90%',
+      end: 'bottom 10%',
+      onEnter: () => { visible = true; },
+      onLeave: () => { visible = false; },
+      onEnterBack: () => { visible = true; },
+      onLeaveBack: () => { visible = false; },
+    });
+
     container.addEventListener('mouseenter', pause);
     container.addEventListener('mouseleave', resume);
     raf = requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(raf);
+      trigger.kill();
       container.removeEventListener('mouseenter', pause);
       container.removeEventListener('mouseleave', resume);
     };

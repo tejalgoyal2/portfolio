@@ -13,6 +13,7 @@ import Blog from './components/Blog';
 import Terminal from './components/Terminal';
 import Sudoku from './components/Sudoku';
 import CursorLight from './components/CursorLight';
+import Onomatopoeia from './components/Onomatopoeia';
 
 function ScrollEffects() {
   const overlayRef = useRef(null);
@@ -31,7 +32,7 @@ function ScrollEffects() {
       scrollHandler = (e) => { velocity = e.velocity; };
       lenis.on('scroll', scrollHandler);
 
-      // Scroll-velocity skew: content tilts in scroll direction
+      // Scroll-velocity skew + subtle parallax: content tilts in scroll direction
       const tick = () => {
         const skew = Math.max(-2, Math.min(2, velocity * 0.01));
         velocity *= 0.93;
@@ -39,6 +40,22 @@ function ScrollEffects() {
         raf = requestAnimationFrame(tick);
       };
       raf = requestAnimationFrame(tick);
+
+      // Per-section parallax (mushing effect): wrapper shifts ±15px
+      document.querySelectorAll('.section-mush').forEach((wrapper) => {
+        gsap.fromTo(wrapper, {
+          y: -15,
+        }, {
+          y: 15,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: wrapper,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 0.6,
+          },
+        });
+      });
     };
 
     init();
@@ -119,6 +136,7 @@ export default function App() {
   return (
     <div className="min-h-screen" style={{ fontFamily: 'var(--font-body)' }}>
       <CursorLight />
+      <Onomatopoeia />
       <Navbar
         onTerminalToggle={() => setTermOpen(p => !p)}
         terminalOpen={termOpen}
@@ -137,13 +155,12 @@ export default function App() {
         }}
       >
         <ScrollEffects />
-        <Projects />
-
-        <Experience />
-        <Skills />
-        <Blog />
-        <About />
-        <Contact />
+        <div className="section-mush"><Projects /></div>
+        <div className="section-mush"><Experience /></div>
+        <div className="section-mush"><Skills /></div>
+        <div className="section-mush"><Blog /></div>
+        <div className="section-mush"><About /></div>
+        <div className="section-mush"><Contact /></div>
 
         <footer className="text-center py-6 px-5" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
           <span className="text-[11px] tracking-[1.5px] uppercase" style={{ color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)' }}>

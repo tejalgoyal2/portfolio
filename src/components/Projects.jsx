@@ -38,7 +38,6 @@ function Badge({ status }) {
 
 function FeaturedProject({ project, index }) {
   const cardRef = useRef(null);
-  const detailRef = useRef(null);
   const [hov, setHov] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [mouse, setMouse] = useState({ x: 50, y: 50 });
@@ -57,19 +56,7 @@ function FeaturedProject({ project, index }) {
     });
   };
 
-  useEffect(() => {
-    if (!detailRef.current) return;
-    gsap.killTweensOf(detailRef.current);
-    if (expanded) {
-      gsap.to(detailRef.current, {
-        maxHeight: 500, opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto',
-      });
-    } else {
-      gsap.to(detailRef.current, {
-        maxHeight: 0, opacity: 0, duration: 0.25, ease: 'power2.out', overwrite: 'auto',
-      });
-    }
-  }, [expanded]);
+  // Expand/collapse handled by CSS grid-template-rows transition (no GSAP needed)
 
   useEffect(() => () => clearTimeout(tiltTimer.current), []);
 
@@ -99,7 +86,7 @@ function FeaturedProject({ project, index }) {
   return (
     <div
       ref={cardRef}
-      className="featured-card rounded-2xl relative"
+      className="featured-card halftone-hover rounded-2xl relative"
       style={{
         background: hov
           ? `radial-gradient(circle at ${mouse.x}% ${mouse.y}%, color-mix(in srgb, var(--color-interactive) 6%, transparent) 0%, var(--color-surface) 55%)`
@@ -141,18 +128,27 @@ function FeaturedProject({ project, index }) {
           {project.desc}
         </p>
 
-        {/* Expandable long description */}
+        {/* Expandable long description — CSS grid transition */}
         <div
-          ref={detailRef}
-          className="overflow-hidden"
-          style={{ maxHeight: 0, opacity: 0 }}
+          style={{
+            display: 'grid',
+            gridTemplateRows: expanded ? '1fr' : '0fr',
+            transition: 'grid-template-rows 400ms cubic-bezier(0.23, 1, 0.32, 1)',
+          }}
         >
-          <p
-            className="text-[13px] leading-[1.8] mb-6 max-w-[600px]"
-            style={{ color: 'var(--color-text-dim)' }}
-          >
-            {project.long}
-          </p>
+          <div style={{
+            overflow: 'hidden',
+            minHeight: 0,
+            opacity: expanded ? 1 : 0,
+            transition: 'opacity 300ms ease-out',
+          }}>
+            <p
+              className="text-[13px] leading-[1.8] mb-6 max-w-[600px]"
+              style={{ color: 'var(--color-text-dim)' }}
+            >
+              {project.long}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-8">
@@ -223,7 +219,7 @@ function GridCard({ project, baseRotateY, baseTranslateZ }) {
 
   return (
     <div
-      className="concave-card project-card rounded-xl"
+      className="concave-card project-card halftone-hover rounded-xl"
       style={{
         flex: '1 1 0',
         maxWidth: '260px',

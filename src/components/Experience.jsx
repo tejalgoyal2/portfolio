@@ -14,7 +14,6 @@ function shortOrg(org) {
 
 function TimelineEntry({ entry, index, total, isActive }) {
   const entryRef = useRef(null);
-  const detailsRef = useRef(null);
   const timerRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -31,19 +30,7 @@ function TimelineEntry({ entry, index, total, isActive }) {
     return () => clearTimeout(timerRef.current);
   }, []);
 
-  useEffect(() => {
-    if (!detailsRef.current) return;
-    gsap.killTweensOf(detailsRef.current);
-    if (expanded) {
-      gsap.to(detailsRef.current, {
-        maxHeight: 500, opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto',
-      });
-    } else {
-      gsap.to(detailsRef.current, {
-        maxHeight: 0, opacity: 0, duration: 0.25, ease: 'power2.out', overwrite: 'auto',
-      });
-    }
-  }, [expanded]);
+  // Expand/collapse handled by CSS grid-template-rows transition (no GSAP needed)
 
   return (
     <div
@@ -109,24 +96,33 @@ function TimelineEntry({ entry, index, total, isActive }) {
           </span>
         </div>
 
-        {/* Expandable content */}
+        {/* Expandable content — CSS grid transition */}
         <div
-          ref={detailsRef}
-          className="overflow-hidden"
-          style={{ maxHeight: 0, opacity: 0 }}
+          style={{
+            display: 'grid',
+            gridTemplateRows: expanded ? '1fr' : '0fr',
+            transition: 'grid-template-rows 400ms cubic-bezier(0.23, 1, 0.32, 1)',
+          }}
         >
-          <p className="text-[13px] leading-[1.8] mt-3 mb-4" style={{ color: 'var(--color-text-secondary)' }}>
-            {entry.desc}
-          </p>
-          <div className="flex flex-col gap-2">
-            {entry.details.map((d, j) => (
-              <div key={j} className="flex gap-3 text-[12px] leading-[1.7]">
-                <span className="shrink-0 mt-0.5" style={{ color: 'var(--color-interactive)', opacity: 0.4 }}>
-                  &#9656;
-                </span>
-                <span style={{ color: 'var(--color-text-secondary)' }}>{d}</span>
-              </div>
-            ))}
+          <div style={{
+            overflow: 'hidden',
+            minHeight: 0,
+            opacity: expanded ? 1 : 0,
+            transition: 'opacity 300ms ease-out',
+          }}>
+            <p className="text-[13px] leading-[1.8] mt-3 mb-4" style={{ color: 'var(--color-text-secondary)' }}>
+              {entry.desc}
+            </p>
+            <div className="flex flex-col gap-2">
+              {entry.details.map((d, j) => (
+                <div key={j} className="flex gap-3 text-[12px] leading-[1.7]">
+                  <span className="shrink-0 mt-0.5" style={{ color: 'var(--color-interactive)', opacity: 0.4 }}>
+                    &#9656;
+                  </span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{d}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
