@@ -1,0 +1,125 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * Comic primitives — speech bubble, panel, onomatopoeia. Higher-level
+ * variants live in /comic React components; these are the shared styles.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* --- Speech bubble --- */
+.speech-bubble {
+  position: relative;
+  display: inline-block;
+  padding: 10px 18px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--outline);
+  border-radius: 18px 22px 22px 6px;
+  font-family: var(--font-hand);
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  transform: rotate(-2deg);
+  box-shadow:
+    3px 3px 0 var(--outline),
+    6px 6px 0 color-mix(in oklch, var(--ink), transparent 60%);
+}
+
+.speech-bubble::after {
+  /* tail (a small rotated diamond) */
+  content: "";
+  position: absolute;
+  left: 22px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: var(--paper);
+  border-right: 2px solid var(--outline);
+  border-bottom: 2px solid var(--outline);
+  transform: rotate(45deg);
+}
+
+/* --- Comic panel --- */
+.comic-panel {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2.5px solid var(--outline);
+  box-shadow:
+    4px 4px 0 var(--outline),
+    8px 8px 0 color-mix(in oklch, var(--outline), transparent 75%);
+}
+
+.comic-panel--rotated-l { transform: rotate(-0.7deg); }
+.comic-panel--rotated-r { transform: rotate(0.5deg); }
+
+/* --- Onomatopoeia (single burst) --- */
+.onom {
+  position: fixed;
+  font-family: var(--font-onom);
+  font-size: 44px;
+  color: var(--yellow-hot);
+  text-shadow:
+    -2px 0 var(--outline),
+     2px 0 var(--outline),
+     0 -2px var(--outline),
+     0  2px var(--outline),
+    -2px -2px var(--outline),
+     2px -2px var(--outline),
+    -2px  2px var(--outline),
+     2px  2px var(--outline),
+     5px 5px 0 var(--red);
+  pointer-events: none;
+  user-select: none;
+  z-index: 99999;
+  will-change: transform, opacity;
+  animation: onom-pop 700ms var(--ease-snap) forwards;
+}
+
+/* --- Chromatic text (data-text driven) ---
+ * Wrap any text in <span class="chroma" data-text="HELLO">HELLO</span>.
+ * The pseudo-elements paint red and cyan offsets.
+ */
+.chroma {
+  position: relative;
+  display: inline-block;
+}
+
+.chroma::before,
+.chroma::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.chroma::before {
+  color: var(--red);
+  transform: translate(-3px, 1px);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.chroma::after {
+  color: var(--cyan);
+  transform: translate(3px, -1px);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+.chroma > .chroma-base {
+  position: relative;
+  z-index: 1;
+}
+
+/* hand-lettered annotation */
+.hand-letter {
+  font-family: var(--font-hand);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+  color: var(--paper);
+}
+
+.hand-letter--ink {
+  color: var(--ink);
+}

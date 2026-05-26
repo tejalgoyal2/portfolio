@@ -1,0 +1,53 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * Paper grain + global halftone — always-on overlays that make every
+ * section feel like a single printed comic book.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+.paper-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  filter: url(#paper-noise);
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+.halftone-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9997;
+  background-image: radial-gradient(circle, var(--dot) 0.5px, transparent 0.5px);
+  background-size: 8px 8px;
+  opacity: 0.05;
+  mix-blend-mode: soft-light;
+}
+
+/* a less subtle halftone — applied to specific panels */
+.halftone-strong {
+  background-image: radial-gradient(circle, var(--dot) 0.6px, transparent 0.6px);
+  background-size: 6px 6px;
+}
+
+/* paper-fill — the comic panel surface */
+.paper-fill {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, color-mix(in oklch, var(--paper-warm), transparent 70%) 0, transparent 50%),
+    radial-gradient(circle at 80% 70%, color-mix(in oklch, var(--paper-warm), transparent 60%) 0, transparent 50%);
+  color: var(--ink);
+}
+
+/* hand-drawn ink outline */
+.ink-outline {
+  border: 2px solid var(--outline);
+  box-shadow:
+    3px 3px 0 var(--outline),
+    6px 6px 0 color-mix(in oklch, var(--outline), transparent 70%);
+}
+
+.ink-outline-thin {
+  border: 1.5px solid var(--outline);
+  box-shadow: 2px 2px 0 var(--outline);
+}
