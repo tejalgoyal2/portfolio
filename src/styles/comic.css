@@ -50,11 +50,26 @@
 .comic-panel--rotated-l { transform: rotate(-0.7deg); }
 .comic-panel--rotated-r { transform: rotate(0.5deg); }
 
-/* --- Onomatopoeia (single burst) --- */
-.onom {
+/* --- Onomatopoeia ---
+ * Two-element structure: an anchor (positioned fixed at the click point with
+ * translate(-50%, -50%) centering) and an inner .onom node that runs the
+ * pop animation. The split is intentional — the keyframe overrides
+ * `transform`, so centering must live on a separate element.
+ */
+.onom-anchor {
   position: fixed;
+  pointer-events: none;
+  user-select: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.onom {
+  display: inline-block;
   font-family: var(--font-onom);
   font-size: 44px;
+  font-weight: 400;
   color: var(--yellow-hot);
   text-shadow:
     -2px 0 var(--outline),
@@ -68,7 +83,6 @@
      5px 5px 0 var(--red);
   pointer-events: none;
   user-select: none;
-  z-index: 99999;
   will-change: transform, opacity;
   animation: onom-pop 700ms var(--ease-snap) forwards;
 }

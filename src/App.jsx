@@ -2,6 +2,8 @@ import { useScrollProgress } from './hooks/useScrollProgress';
 import { useLenis } from './hooks/useLenis';
 import SvgFilters from './fx/SvgFilters';
 import PaperOverlay from './fx/PaperOverlay';
+import OnomatopoeiaTrail from './fx/OnomatopoeiaTrail';
+import MagneticCursor from './cursor/MagneticCursor';
 
 /**
  * Phase 1 — Foundation app shell.
@@ -17,6 +19,8 @@ export default function App() {
     <>
       <SvgFilters />
       <PaperOverlay />
+      <MagneticCursor />
+      <OnomatopoeiaTrail />
 
       {/* scroll-progress indicator (tiny, top-right; will be replaced) */}
       <div
@@ -58,9 +62,16 @@ export default function App() {
         <section style={demoSectionStyle('about')}>
           <h2 className="font-serif" style={{ fontSize: 80, color: 'var(--paper)' }}>About</h2>
           <p style={{ maxWidth: 600, textAlign: 'center', color: 'var(--text-dim)' }}>
-            This is just a placeholder. Sections, magnetic cursor, and the
-            morphing 3D protagonist arrive in phases 2–8.
+            Move the cursor over the buttons below — the pointer should frame
+            each one and the buttons should magnetize toward the mouse.
+            Clicking fires a comic-word burst.
           </p>
+          <div style={{ display: 'flex', gap: 16, marginTop: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <a href="https://github.com/tejalgoyal2" target="_blank" rel="noreferrer" style={demoLink}>GitHub</a>
+            <a href="https://linkedin.com/in/tejalgoyal" target="_blank" rel="noreferrer" style={demoLink}>LinkedIn</a>
+            <a href="mailto:itejalgoyal@gmail.com" style={demoLink}>Email</a>
+            <button style={demoLink} onClick={(e) => e.preventDefault()}>Resume</button>
+          </div>
         </section>
 
         <section style={demoSectionStyle('skills')}>
@@ -79,6 +90,20 @@ export default function App() {
     </>
   );
 }
+
+const demoLink = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 12,
+  letterSpacing: 1.5,
+  textTransform: 'uppercase',
+  padding: '10px 22px',
+  border: '1.5px solid var(--paper)',
+  borderRadius: 999,
+  color: 'var(--paper)',
+  background: 'transparent',
+  textDecoration: 'none',
+  display: 'inline-block',
+};
 
 const titleStyle = {
   fontSize: 'clamp(64px, 12vw, 180px)',
