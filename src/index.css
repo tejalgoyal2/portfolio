@@ -37,6 +37,8 @@
   html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
   }
 
   html.lenis, html.lenis body {
@@ -119,18 +121,18 @@
   border-radius: 8px;
 }
 
-/* Light mode - lavender palette */
+/* Light mode - muted lavender */
 [data-theme="light"] {
-  --color-bg: #eee8f5;
-  --color-surface: #f4f0fa;
-  --color-surface-elevated: #e6dfef;
-  --color-border: #d0c4e0;
-  --color-border-subtle: #ddd4ea;
+  --color-bg: #f0ecf6;
+  --color-surface: #f5f2fb;
+  --color-surface-elevated: #e8e3f0;
+  --color-border: #cfc6dc;
+  --color-border-subtle: #ddd5e8;
 
-  --color-text: #1a1528;
-  --color-text-secondary: #4a4060;
-  --color-text-dim: #8878a0;
-  --color-text-ghost: #bfb3d4;
+  --color-text: #1a1525;
+  --color-text-secondary: #4f4468;
+  --color-text-dim: #8a7da0;
+  --color-text-ghost: #bdb3cc;
 
   --color-interactive: #5b4eff;
   --color-interactive-hover: #4438d9;
@@ -140,19 +142,6 @@
   --color-amber: #a05c00;
   --color-red: #c02030;
   --color-cyan: #0880a0;
-}
-
-/* Light mode: keep hero dark for particles + drama */
-[data-theme="light"] .hero-dark-override {
-  --color-bg: #08090d;
-  --color-text: #e4e4e9;
-  --color-text-secondary: #8f919e;
-  --color-text-dim: #4a4c5a;
-  --color-text-ghost: #2a2c3a;
-  --color-interactive: #8b8eff;
-  --color-border: #1f2233;
-  --color-border-subtle: #151725;
-  --color-surface: #111318;
 }
 
 /* Contact link hover */

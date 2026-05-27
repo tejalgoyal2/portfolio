@@ -68,7 +68,7 @@ export default function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="hero-dark-override relative w-full overflow-hidden"
+      className="hero-section relative w-full overflow-hidden"
       style={{
         background: 'var(--color-bg)',
         height: '100vh',
@@ -82,15 +82,6 @@ export default function Hero() {
         <HeroContent />
         <ParticleSlider count={particleCount} onChange={setParticleCount} />
       </div>
-      {/* Bottom vignette so the hero fades before content arrives */}
-      <div
-        className="absolute bottom-0 left-0 right-0 pointer-events-none"
-        style={{
-          height: '30%',
-          background: 'linear-gradient(to top, var(--color-bg) 0%, transparent 100%)',
-          opacity: 0.6,
-        }}
-      />
     </section>
   );
 }

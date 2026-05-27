@@ -26,7 +26,7 @@ function ScrollEffects() {
       const lenis = getLenis();
       if (!lenis) return requestAnimationFrame(init);
 
-      const sections = document.querySelectorAll('section:not(.hero-dark-override)');
+      const sections = document.querySelectorAll('section:not(.hero-section)');
 
       scrollHandler = (e) => { velocity = e.velocity; };
       lenis.on('scroll', scrollHandler);
@@ -128,13 +128,12 @@ export default function App() {
 
       <Hero />
 
-      {/* Content slides over sticky hero with rounded top edge */}
+      {/* Content slides over sticky hero */}
       <main
-        className="relative rounded-t-[24px]"
+        className="relative"
         style={{
           zIndex: 2,
           background: 'var(--color-bg)',
-          boxShadow: '0 -40px 100px color-mix(in srgb, var(--color-bg) 80%, transparent), 0 -4px 30px color-mix(in srgb, var(--color-interactive) 10%, transparent)',
         }}
       >
         <ScrollEffects />
