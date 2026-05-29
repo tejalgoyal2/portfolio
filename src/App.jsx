@@ -1,11 +1,9 @@
 import { usePressScroll } from './press/usePressScroll';
 import Loader from './press/Loader';
 import PaperBackdrop from './press/PaperBackdrop';
-import RedThread from './press/RedThread';
 import PressCursor from './press/PressCursor';
 import PressImpacts from './press/PressImpacts';
 import InkBleed from './press/InkBleed';
-import Folio from './press/Folio';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Skills from './sections/Skills';
@@ -15,11 +13,12 @@ import Blog from './sections/Blog';
 import Contact from './sections/Contact';
 
 /**
- * THE PRESS — app root. usePressScroll wires the single Lenis↔GSAP loop that
- * every section animates off. Persistent press layers mount once: PaperBackdrop
- * (running ground), RedThread (the spine, inside the page), PressCursor and
- * PressImpacts (portaled). Sections mount inside <main> in reading order; they
- * are added here as each department is built.
+ * App root. usePressScroll wires the single Lenis↔GSAP loop that every section
+ * animates off. Persistent layers mount once: PaperBackdrop (the warm paper
+ * ground), PressCursor and PressImpacts (portaled). Sections mount inside <main>
+ * in reading order. Cohesion comes from a continuous sheet — the cream spreads
+ * flow into the dark ones across a single torn ink-bleed seam — and a shared
+ * motion grammar, not a drawn connector.
  */
 export default function App() {
   usePressScroll();
@@ -30,10 +29,8 @@ export default function App() {
       <PaperBackdrop />
       <PressCursor />
       <PressImpacts />
-      <Folio />
 
       <main id="top">
-        <RedThread />
         <Hero />
         <About />
         <Skills />
