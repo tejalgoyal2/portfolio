@@ -1,7 +1,10 @@
-import { useLenis } from './hooks/useLenis';
-import SvgFilters from './fx/SvgFilters';
-import OnomatopoeiaTrail from './fx/OnomatopoeiaTrail';
-import MagneticCursor from './cursor/MagneticCursor';
+import { usePressScroll } from './press/usePressScroll';
+import Loader from './press/Loader';
+import PaperBackdrop from './press/PaperBackdrop';
+import RedThread from './press/RedThread';
+import PressCursor from './press/PressCursor';
+import PressImpacts from './press/PressImpacts';
+import InkBleed from './press/InkBleed';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Skills from './sections/Skills';
@@ -11,25 +14,29 @@ import Blog from './sections/Blog';
 import Contact from './sections/Contact';
 
 /**
- * App root. Mounts persistent layers (SVG filter defs, magnetic cursor,
- * onomatopoeia click trail) and the sections in order. Lenis is wired up
- * for smooth scroll. No always-on WebGL background — the only canvas is
- * inside the Hero, scoped to its viewport.
+ * THE PRESS — app root. usePressScroll wires the single Lenis↔GSAP loop that
+ * every section animates off. Persistent press layers mount once: PaperBackdrop
+ * (running ground), RedThread (the spine, inside the page), PressCursor and
+ * PressImpacts (portaled). Sections mount inside <main> in reading order; they
+ * are added here as each department is built.
  */
 export default function App() {
-  useLenis();
+  usePressScroll();
 
   return (
     <>
-      <SvgFilters />
-      <MagneticCursor />
-      <OnomatopoeiaTrail />
+      <Loader />
+      <PaperBackdrop />
+      <PressCursor />
+      <PressImpacts />
 
       <main id="top">
+        <RedThread />
         <Hero />
         <About />
         <Skills />
         <Projects />
+        <InkBleed tone="ink" />
         <Experience />
         <Blog />
         <Contact />

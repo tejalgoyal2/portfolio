@@ -1,109 +1,193 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 import { BLOG_POSTS } from '../data/blog';
+import KineticHeadline from '../press/KineticHeadline';
+import Redacted from '../press/Redacted';
 
 /**
- * Blog — horizontal auto-scrolling strip on the ink canvas. Cards have
- * a subtle vertical stagger driven by a sine curve (the "fluid mushing"
- * idea from Drumspirit, scaled down for restraint). Hover pauses the
- * marquee and lifts/rotates the active card.
+ * The Op-Ed Desk — a horizontal filmstrip of cream column clippings on the
+ * ink surface. The marquee auto-scrolls via the shared GSAP ticker (no own rAF).
+ * Punchline words in each title are redacted (ink bar); hover un-redacts them
+ * like declassifying a source. Drag to browse; hover to pause + reveal.
  */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The one word per title we redact. Readers lean in, hover to reveal.
+// These are the *punchline* — the word that changes the meaning of the headline.
+// ─────────────────────────────────────────────────────────────────────────────
+const PUNCHLINES = {
+  "WalletRIP Had a Security Problem. I Didn't Fix It. Here's the Full Story.": "Didn't",
+  "Dime: An Expense Tracker That Actually Has Opinions About Your Spending": "Opinions",
+  "Nib: A Menu Bar Scratchpad, an Apple Rant, and the State of AI and Swift": "Rant",
+  "I Built My Own Sudoku App Because an Ad Interrupted My Winning Streak": "Interrupted",
+  "I Got Tired of My Apps Looking Like Every Other AI Project, So I Built a Design Language": "Tired",
+  "I Built an Interactive Attack Path Visualizer Because Spreadsheets Aren't Scary Enough": "Scary",
+  "The Resume System Worked. So Naturally, I Broke It Trying to Make It Better.": "Broke",
+  "Building OnTop: Three Broken APIs and One Very Clever Workaround": "Clever",
+  "How I Built an AI Resume System That Actually Works": "Actually",
+  "First Post: Setting Up This Blog with GitHub Skills": "First",
+};
 
 function formatDate(d) {
   if (!d) return '';
-  const date = new Date(`${d}T00:00:00`);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(`${d}T00:00:00`).toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+// Splits the title string at the punchline word and wraps it in Redacted.
+function RedactedTitle({ title }) {
+  const word = PUNCHLINES[title];
+  if (!word) return title;
+  const idx = title.indexOf(word);
+  if (idx === -1) return title;
+  return (
+    <>
+      {title.slice(0, idx)}
+      <Redacted trigger="hover" tone="ink" stamp={false}>
+        {word}
+      </Redacted>
+      {title.slice(idx + word.length)}
+    </>
+  );
 }
 
 export default function Blog() {
-  const stripRef = useRef(null);
   const containerRef = useRef(null);
+  const stripRef = useRef(null);
+  const offsetRef = useRef(0);
+  const hoverRef = useRef(false);
+  const visibleRef = useRef(false);
+  const dragRef = useRef({ active: false, startX: 0, base: 0, moved: false });
+
+  const [reduced] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  // Duplicate for seamless infinite loop; reduced-motion uses single set (static grid)
+  const displayPosts = reduced ? BLOG_POSTS : [...BLOG_POSTS, ...BLOG_POSTS];
 
   useEffect(() => {
-    const strip = stripRef.current;
+    if (reduced) return;
     const container = containerRef.current;
+    const strip = stripRef.current;
     if (!strip || !container) return;
 
-    let raf;
-    let paused = false;
-    let visible = true;
-    let offset = 0;
-
-    // Apply per-card sine-wave vertical stagger
-    const cards = Array.from(strip.querySelectorAll('.blog-card'));
+    // Sine-wave stagger via CSS custom properties so :hover can compose cleanly
+    // (no JS-driven hover needed — CSS picks up the props)
+    const cards = Array.from(strip.querySelectorAll('.opdesk-card'));
     cards.forEach((card, i) => {
-      const dy = Math.sin(i * 0.6) * 14;
-      card.style.transform = `translateY(${dy}px)`;
+      card.style.setProperty('--sine-y', `${Math.sin(i * 0.65) * 12}px`);
+      card.style.setProperty('--sine-r', `${(i % 2 === 0 ? 1 : -1) * 1.2}deg`);
     });
 
-    const halfWidth = () => strip.scrollWidth / 2;
-
+    // Ticker: runs on GSAP's shared rAF — one loop to rule them all
     const tick = () => {
-      if (!paused && visible) {
-        offset += 0.4;
-        if (offset >= halfWidth()) offset -= halfWidth();
-        strip.style.transform = `translateX(${-offset}px)`;
-      }
-      raf = requestAnimationFrame(tick);
+      if (hoverRef.current || dragRef.current.active || !visibleRef.current) return;
+      const half = strip.scrollWidth / 2;
+      if (half <= 0) return;
+      offsetRef.current = (offsetRef.current + 0.45) % half;
+      strip.style.transform = `translateX(${-offsetRef.current}px)`;
     };
 
-    const onEnter = () => (paused = true);
-    const onLeave = () => (paused = false);
-    strip.addEventListener('mouseenter', onEnter);
-    strip.addEventListener('mouseleave', onLeave);
-
+    // Pause when section leaves viewport (battery / CPU relief)
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => (visible = e.isIntersecting)),
+      (entries) => entries.forEach((e) => (visibleRef.current = e.isIntersecting)),
       { threshold: 0 }
     );
     io.observe(container);
 
-    raf = requestAnimationFrame(tick);
-
+    gsap.ticker.add(tick);
     return () => {
-      cancelAnimationFrame(raf);
-      strip.removeEventListener('mouseenter', onEnter);
-      strip.removeEventListener('mouseleave', onLeave);
+      gsap.ticker.remove(tick);
       io.disconnect();
     };
-  }, []);
+  }, [reduced]);
 
-  // Duplicate posts for seamless marquee
-  const displayPosts = [...BLOG_POSTS, ...BLOG_POSTS];
+  // ── Drag-to-scrub handlers ─────────────────────────────────────────────────
+  const onPointerDown = (e) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { active: true, startX: e.clientX, base: offsetRef.current, moved: false };
+  };
+  const onPointerMove = (e) => {
+    if (!dragRef.current.active) return;
+    const delta = dragRef.current.startX - e.clientX;
+    if (Math.abs(delta) > 5) dragRef.current.moved = true;
+    const strip = stripRef.current;
+    if (!strip) return;
+    const half = strip.scrollWidth / 2;
+    if (half <= 0) return;
+    // Clamp to valid range to prevent over-scrolling
+    offsetRef.current = ((dragRef.current.base + delta) % half + half) % half;
+    strip.style.transform = `translateX(${-offsetRef.current}px)`;
+  };
+  const onPointerUp = () => {
+    dragRef.current.active = false;
+  };
+  // Block link navigation if the pointer moved (drag, not click)
+  const onClickCapture = (e) => {
+    if (dragRef.current.moved) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragRef.current.moved = false;
+    }
+  };
 
   return (
-    <section className="blog" id="blog">
-      <header className="blog-header">
-        <div>
-          <p className="blog-meta">// 05 — Field notes</p>
-          <h2 className="blog-title">JOURNAL</h2>
-        </div>
-        <p className="blog-sub">
-          What I&apos;m reading,<br />
-          breaking, building.
-        </p>
+    <section className="opdesk" id="blog">
+      <header className="opdesk-header">
+        <p className="opdesk-kicker">THE OP-ED DESK</p>
+        <KineticHeadline as="h2" font="impact" className="opdesk-title">
+          WORDS, FILED PUBLICLY
+        </KineticHeadline>
+        {!reduced && (
+          <p className="opdesk-hint" aria-hidden="true">
+            DRAG TO BROWSE &middot; HOVER TO DECLASSIFY
+          </p>
+        )}
       </header>
 
-      <div ref={containerRef} className="blog-strip-wrap">
-        <div ref={stripRef} className="blog-strip">
+      <div
+        ref={containerRef}
+        className={`opdesk-strip-wrap${reduced ? ' opdesk-strip-wrap--static' : ''}`}
+        onMouseEnter={() => (hoverRef.current = true)}
+        onMouseLeave={() => (hoverRef.current = false)}
+        onPointerDown={reduced ? undefined : onPointerDown}
+        onPointerMove={reduced ? undefined : onPointerMove}
+        onPointerUp={reduced ? undefined : onPointerUp}
+        onPointerLeave={reduced ? undefined : onPointerUp}
+        onClickCapture={reduced ? undefined : onClickCapture}
+      >
+        <div ref={stripRef} className="opdesk-strip">
           {displayPosts.map((post, i) => (
             <a
               key={`${post.title}-${i}`}
               href={post.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="blog-card"
+              className="opdesk-card"
+              draggable={false}
             >
-              <p className="blog-card-date">{formatDate(post.date)}</p>
-              <h3 className="blog-card-title">{post.title}</h3>
-              <p className="blog-card-preview">{post.preview}</p>
-              {post.tags && (
-                <div className="blog-card-tags">
+              <p className="opdesk-card-date">{formatDate(post.date)}</p>
+              <h3 className="opdesk-card-title">
+                <RedactedTitle title={post.title} />
+              </h3>
+              <p className="opdesk-card-preview">{post.preview}</p>
+              {post.tags?.length > 0 && (
+                <div className="opdesk-card-tags">
+                  <span className="opdesk-card-filed">FILED UNDER</span>
                   {post.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="blog-card-tag">{tag}</span>
+                    <span key={tag} className="opdesk-card-tag">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               )}
-              <span className="blog-card-cta">read &rarr;</span>
+              <span className="opdesk-card-cta" aria-hidden="true">
+                READ →
+              </span>
             </a>
           ))}
         </div>
