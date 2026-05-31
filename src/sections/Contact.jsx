@@ -1,24 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import Stamp from '../press/Stamp';
 
 /**
- * Stop The Press — the back-page finale. Red floods the whole spread;
- * classified CTAs read like a news-desk docket; the "— 30 —" end mark
- * closes the run (journalist's signal: story is complete).
- *
- * Reveal is pure progressive enhancement with ZERO ScrollTrigger dependency:
- * the content is fully visible by default (no-JS / reduced-motion). Only when
- * JS runs with motion allowed do we add `contact--anim` (which hides the blocks
- * in CSS) and let an IntersectionObserver add `is-in` to stagger them back in.
- * If anything misbehaves, the worst case is the entrance not playing — the page
- * can never be a blank red screen again. The headline uses KineticHeadline's
- * `inview` mode for the same reason (its own ScrollTrigger could strand the
- * glyphs at opacity 0 on this terminal section).
+ * Let's talk — the warm red finale. Reveal is pure progressive enhancement with
+ * zero ScrollTrigger dependency: the content is fully visible by default (no-JS
+ * / reduced-motion). Only when JS runs with motion allowed do we add
+ * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
+ * stagger them back in. Worst case is the entrance not playing — never a blank
+ * red screen. The headline uses KineticHeadline's `inview` mode for the same
+ * reason.
  */
 export default function Contact() {
   const rootRef = useRef(null);
-  const [decoded, setDecoded] = useState(false);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -26,8 +20,6 @@ export default function Contact() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
 
-    // Opt into the hidden→reveal choreography only now that we know JS + motion
-    // are available. The press plate settling onto the paper.
     root.classList.add('contact--anim');
 
     const io = new IntersectionObserver(
@@ -48,7 +40,7 @@ export default function Contact() {
     <section ref={rootRef} className="contact" id="contact">
       <div className="contact-inner">
         <header className="contact-hd">
-          <p className="contact-kicker">BACK PAGE &middot; FINAL EDITION</p>
+          <p className="contact-kicker">Get in touch</p>
           <KineticHeadline
             as="h2"
             font="impact"
@@ -56,10 +48,10 @@ export default function Contact() {
             spread={false}
             inview
           >
-            STOP THE PRESS
+            LET&rsquo;S TALK
           </KineticHeadline>
           <p className="contact-sub">
-            Got a story worth running? Let&apos;s talk.
+            Building something interesting? I&rsquo;d like to hear about it.
           </p>
         </header>
 
@@ -105,27 +97,9 @@ export default function Contact() {
 
         <footer className="contact-colophon">
           <p className="contact-colophon-text">
-            THE PERSONAL PRESS &middot; Printed in Victoria, BC &middot; Set
-            in Fraunces &amp; Newsreader &middot; Built by hand.
+            Designed &amp; built by hand in Victoria, BC &middot; Set in Fraunces
+            &amp; Newsreader.
           </p>
-          <div className="contact-cryptogram">
-            <span
-              className="cryptogram-text"
-              aria-label={decoded ? 'Print is not dead' : 'Encoded message'}
-              title={decoded ? undefined : 'ROT13 — try the button'}
-            >
-              {decoded ? 'PRINT IS NOT DEAD' : 'CEVAG VF ABG QRNQ'}
-            </span>
-            <button
-              className="cryptogram-toggle"
-              type="button"
-              onClick={() => setDecoded((d) => !d)}
-              aria-label={decoded ? 'Re-encode' : 'Decode hidden message'}
-            >
-              {decoded ? '↩' : 'DECODE'}
-            </button>
-          </div>
-          <p className="contact-end">— 30 —</p>
         </footer>
       </div>
     </section>

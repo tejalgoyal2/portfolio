@@ -53,7 +53,7 @@ export default function About() {
         <header className="about-head">
           <span className="kicker">Profile</span>
           <KineticHeadline as="h2" font="name" className="about-headline">
-            He treats his own code as a suspect
+            I treat my own code as a suspect
           </KineticHeadline>
         </header>
 
@@ -99,14 +99,14 @@ export default function About() {
           </div>
 
           {/* Column 3 — stats + marginalia */}
-          <aside className="about-col about-col--rail" aria-label="On the record">
+          <aside className="about-col about-col--rail" aria-label="By the numbers">
             <dl className="about-stats">
               <div className="about-stat">
-                <dt>Dateline</dt>
+                <dt>Based in</dt>
                 <dd>Victoria, BC</dd>
               </div>
               <div className="about-stat">
-                <dt>Established</dt>
+                <dt>Since</dt>
                 <dd>2002</dd>
               </div>
               <div className="about-stat">
@@ -118,8 +118,8 @@ export default function About() {
                 <dd><Redacted trigger="scroll">167 / 170</Redacted></dd>
               </div>
               <div className="about-stat">
-                <dt>On the record</dt>
-                <dd>1 published paper</dd>
+                <dt>Published</dt>
+                <dd>1 paper</dd>
               </div>
               <div className="about-stat">
                 <dt>Classified</dt>
@@ -127,7 +127,7 @@ export default function About() {
               </div>
             </dl>
 
-            <ul className="about-margin" aria-label="Off the record">
+            <ul className="about-margin" aria-label="Off the clock">
               <li>F1 on weekends.</li>
               <li>Co-founded an NGO with my brother — 1,000+ trees in.</li>
               <li>State-level badminton, once.</li>
