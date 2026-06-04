@@ -1,0 +1,52 @@
+name: Sync blog posts
+
+# Fetch the Jekyll Atom feed and regenerate src/data/blog.js.
+# If anything changed, commit as Tejal and push → triggers auto-deploy.
+
+on:
+  schedule:
+    # Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+
+  # Manual trigger from the Actions tab
+  workflow_dispatch:
+
+  # Instant trigger: blog repo sends this event on push to _posts/**
+  # Set up a PAT secret (PORTFOLIO_DEPLOY_TOKEN) in the blog repo and add a
+  # repository_dispatch workflow there to enable instant updates.
+  repository_dispatch:
+    types: [blog-updated]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout portfolio
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync blog posts from feed
+        run: node scripts/sync-blog.mjs
+
+      - name: Commit updated blog.js if changed
+        run: |
+          git config user.name "Tejal Goyal"
+          git config user.email "itejalgoyal@gmail.com"
+          git add src/data/blog.js
+          if git diff --cached --quiet; then
+            echo "No blog changes — skipping commit."
+          else
+            git commit -m "Update blog posts"
+            git push
+          fi

@@ -1,5 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#08090d"/>
-  <text x="4" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="700" fill="#e8e8ed">TG</text>
-  <circle cx="28" cy="24" r="2.2" fill="#8b8eff"/>
+  <!-- Cream newsprint stock -->
+  <rect width="32" height="32" rx="3.5" fill="#f3ede3"/>
+  <!-- Hairline border — the type-case slug edge -->
+  <rect width="32" height="32" rx="3.5" fill="none" stroke="#2d2215" stroke-width="1.5" stroke-opacity="0.35"/>
+  <!-- Pilcrow ¶ — the press / paragraph mark, centred -->
+  <text
+    x="17"
+    y="24.5"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="21"
+    font-weight="900"
+    fill="#2d2215"
+    text-anchor="middle"
+    dominant-baseline="auto">¶</text>
 </svg>
