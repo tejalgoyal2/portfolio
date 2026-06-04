@@ -5,10 +5,12 @@ import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
 
 /**
- * The Op-Ed Desk — a horizontal filmstrip of cream column clippings on the
- * ink surface. The marquee auto-scrolls via the shared GSAP ticker (no own rAF).
- * Punchline words in each title are redacted (ink bar); hover un-redacts them
- * like declassifying a source. Drag to browse; hover to pause + reveal.
+ * Writing — a horizontal filmstrip of cream clippings on the dark spread. The
+ * marquee auto-scrolls via the shared GSAP ticker (no own rAF). Each card tilts
+ * in real CSS 3D toward the cursor — pointer-tracked rotateX/Y + a lift on Z,
+ * composed with the static sine scatter — so the strip feels tactile, not flat.
+ * Punchline words are redacted; hover reveals them. Drag or horizontal-scroll to
+ * browse. Reduced motion → a flat static grid, no marquee, no tilt.
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,6 +64,8 @@ export default function Blog() {
   const visibleRef = useRef(false);
   const dragRef = useRef({ active: false, startX: 0, base: 0, moved: false });
   const wheelRef = useRef(false); // true briefly after a horizontal wheel — pauses auto
+  const tiltFrame = useRef(0);
+  const tiltData = useRef(null);
 
   const [reduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -124,6 +128,7 @@ export default function Blog() {
       io.disconnect();
       container.removeEventListener('wheel', onWheel);
       clearTimeout(wheelIdle);
+      if (tiltFrame.current) cancelAnimationFrame(tiltFrame.current);
     };
   }, [reduced]);
 
@@ -156,16 +161,41 @@ export default function Blog() {
     }
   };
 
+  // ── Per-card real-3D tilt — pointer-tracked rotate + Z lift, rAF-throttled ──
+  const onCardMove = (e) => {
+    if (dragRef.current.active) return; // don't fight a drag
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    tiltData.current = { el, x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
+    if (tiltFrame.current) return;
+    tiltFrame.current = requestAnimationFrame(() => {
+      tiltFrame.current = 0;
+      const d = tiltData.current;
+      if (!d) return;
+      const px = d.x / d.w - 0.5;
+      const py = d.y / d.h - 0.5;
+      d.el.style.setProperty('--cy', `${(px * 10).toFixed(2)}deg`);
+      d.el.style.setProperty('--cx', `${(-py * 10).toFixed(2)}deg`);
+      d.el.style.setProperty('--cz', '24px');
+    });
+  };
+  const onCardLeave = (e) => {
+    const el = e.currentTarget;
+    el.style.setProperty('--cx', '0deg');
+    el.style.setProperty('--cy', '0deg');
+    el.style.setProperty('--cz', '0px');
+  };
+
   return (
     <section className="opdesk" id="blog">
       <header className="opdesk-header">
-        <p className="opdesk-kicker">THE OP-ED DESK</p>
+        <p className="opdesk-kicker">Writing</p>
         <KineticHeadline as="h2" font="impact" className="opdesk-title">
-          WORDS, FILED PUBLICLY
+          THINGS I WROTE DOWN
         </KineticHeadline>
         {!reduced && (
           <p className="opdesk-hint" aria-hidden="true">
-            DRAG OR SCROLL &middot; HOVER TO DECLASSIFY
+            DRAG OR SCROLL &middot; HOVER TO REVEAL
           </p>
         )}
       </header>
@@ -190,6 +220,8 @@ export default function Blog() {
               rel="noopener noreferrer"
               className="opdesk-card"
               draggable={false}
+              onPointerMove={reduced ? undefined : onCardMove}
+              onPointerLeave={reduced ? undefined : onCardLeave}
             >
               <p className="opdesk-card-date">{formatDate(post.date)}</p>
               <h3 className="opdesk-card-title">
@@ -198,7 +230,7 @@ export default function Blog() {
               <p className="opdesk-card-preview">{post.preview}</p>
               {post.tags?.length > 0 && (
                 <div className="opdesk-card-tags">
-                  <span className="opdesk-card-filed">FILED UNDER</span>
+                  <span className="opdesk-card-filed">TAGGED</span>
                   {post.tags.slice(0, 3).map((tag) => (
                     <span key={tag} className="opdesk-card-tag">
                       {tag}

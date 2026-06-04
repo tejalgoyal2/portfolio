@@ -137,37 +137,6 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--ink);
 }
-.mast-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-}
-.mast-status-label {
-  font-family: var(--font-data);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--paper);
-  background: var(--red);
-  padding: 0.1em 0.4em;
-  border-radius: 2px;
-}
-.mast-status-text {
-  font-family: var(--font-data);
-  font-size: clamp(0.62rem, 0.9vw, 0.74rem);
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.mast-status-text::after {
-  content: "▌";
-  color: var(--red);
-  animation: mast-caret 1s steps(1) infinite;
-}
-
 .mast-plate {
   margin: 0;
   padding-block: clamp(0.5rem, 1.4vw, 1.1rem);
@@ -181,20 +150,6 @@ html.press-booting { overflow: hidden; }
   color: var(--ink);
   white-space: nowrap;
   will-change: clip-path;
-}
-
-.mast-edition {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-block: 0.5rem;
-  font-family: var(--font-data);
-  font-size: clamp(0.6rem, 0.9vw, 0.72rem);
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
 }
 
 /* lead story */
@@ -240,16 +195,12 @@ html.press-booting { overflow: hidden; }
   animation: mast-cue-bob 2.4s var(--ease-set) infinite;
 }
 
-@keyframes mast-caret {
-  50% { opacity: 0; }
-}
 @keyframes mast-cue-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(4px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mast-status-text::after { animation: none; }
   .mast-cue { animation: none; }
 }
 
@@ -402,84 +353,66 @@ html.press-booting { overflow: hidden; }
   color: var(--ink-soft);
 }
 
-.type-case {
-  position: relative;
+.skill-index {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: clamp(220px, 26vw, 300px) clamp(180px, 22vw, 244px);
-  grid-template-areas:
-    "sec sec sec sec lang lang lang lang ml ml ml ml"
-    "backend backend backend frontend frontend frontend tools tools tools embedded embedded embedded";
-  gap: 10px;
-  padding: 10px;
-  background: var(--paper-deep);
-  border: 3px solid var(--ink);
-  border-radius: 4px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem) clamp(2rem, 4vw, 4rem);
+  border-top: 3px solid var(--ink);
+  padding-top: clamp(1.75rem, 3.5vw, 3rem);
 }
-.compartment {
-  position: relative;
-  padding: 0.6rem 0.7rem;
-  background: var(--paper);
-  border: 1px solid var(--ink-ghost);
-  border-radius: 3px;
-  box-shadow: inset 0 2px 7px oklch(60% 0.03 70 / 0.18);
-  overflow: hidden;
-}
-.compartment-label {
-  position: relative;
-  z-index: 2;
-  display: inline-block;
+.skill-cat { break-inside: avoid; }
+.skill-cat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--paper-deep);
   font-family: var(--font-data);
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid var(--paper-deep);
-  pointer-events: none;
 }
-
-/* static type tray — reduced-motion fallback (also the a11y source) */
-.compartment-slugs {
-  margin-top: 0.6rem;
+/* a small red register tick — the one spot of colour per label, accent only */
+.skill-cat-label::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--red);
+  flex-shrink: 0;
+}
+.skill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  align-content: flex-start;
+  gap: 0.45rem 0.5rem;
 }
-.slug-static {
-  font-family: var(--font-read);
-  font-weight: 600;
-  font-size: 1rem;
+.skill {
+  font-family: var(--font-data);
+  font-size: clamp(0.78rem, 0.95vw, 0.9rem);
+  letter-spacing: 0.01em;
   line-height: 1;
-  padding: 0.45rem 0.6rem;
+  padding: 0.5em 0.7em;
   background: var(--paper-stock);
-  border: 1px solid var(--ink-ghost);
-  border-radius: 6px;
+  border: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-radius: 3px;
   color: var(--ink);
+  cursor: default;
+  transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set),
+    opacity 0.16s var(--ease-set), transform 0.16s var(--ease-set);
 }
-
-/* live physics — canvas takes over, static slugs go sr-only (kept for AT) */
-.type-case-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: none;
-  touch-action: none;
-}
-.type-case.is-live .type-case-canvas { display: block; }
-.type-case.is-live .compartment-slugs {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+/* signature hover: the touched slug inks to dark, its neighbours step back —
+   the "pick a slug" feeling, pure CSS, no physics to pile up */
+.skill-list:hover .skill { opacity: 0.4; }
+.skill-list:hover .skill:hover {
+  opacity: 1;
+  background: var(--ink);
+  color: var(--paper);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 1024px) {
@@ -488,14 +421,6 @@ html.press-booting { overflow: hidden; }
   }
   .about-col--rail { grid-column: 1 / -1; }
   .about-col--rail::before { display: none; }
-  .type-case {
-    grid-template-rows: repeat(4, clamp(180px, 30vw, 220px));
-    grid-template-areas:
-      "sec sec sec sec sec sec lang lang lang lang lang lang"
-      "ml ml ml ml ml ml ml ml backend backend backend backend"
-      "frontend frontend frontend frontend frontend frontend tools tools tools tools tools tools"
-      "embedded embedded embedded embedded embedded embedded embedded embedded embedded embedded embedded embedded";
-  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -526,26 +451,6 @@ html.press-booting { overflow: hidden; }
   margin: 0;
 }
 
-/* the red string — pinned over the board, drawn live while a file is open */
-.cf-wires {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 6;
-  pointer-events: none;
-  overflow: visible;
-}
-.cf-wire {
-  stroke: var(--red);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 4 6;
-  opacity: 0;
-  transition: opacity 0.25s var(--ease-set);
-  filter: drop-shadow(0 1px 1.5px oklch(20% 0.02 60 / 0.3));
-}
-
 .cf-features {
   display: flex;
   flex-direction: column;
@@ -558,31 +463,71 @@ html.press-booting { overflow: hidden; }
   gap: clamp(1rem, 2vw, 1.4rem);
 }
 
-/* a case file — inverts and opens on hover */
+/* A case file. Rest = cream sheet. Hover inverts to ink, tilts in REAL CSS 3D
+   toward the cursor (perspective + rotateX/Y driven by JS custom props), and a
+   warm desk-lamp glow tracks the pointer. overflow:hidden clips that glow to
+   the rounded rect (and forces a flat plane — which is fine, the card itself is
+   the 3D surface; no child needs preserve-3d). */
 .case-file {
   position: relative;
+  overflow: hidden;
   background: var(--paper-stock);
   border: 1.5px solid var(--ink);
   border-radius: 4px;
   padding: clamp(1.2rem, 2.4vw, 2rem);
   color: var(--ink);
   box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
+  transform: perspective(1100px) translateY(var(--lift, 0px))
+    rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
-    transform 0.4s var(--ease-set), box-shadow 0.4s var(--ease-set),
+    transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
     border-color 0.3s var(--ease-set);
 }
+/* while the pointer is over the card, the tilt tracks it crisply (short, linear)
+   — on leave the class drops and transform eases home over the longer 0.5s */
+.case-file.is-tilt {
+  transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
+    transform 0.1s linear, box-shadow 0.4s var(--ease-set),
+    border-color 0.3s var(--ease-set);
+}
+/* lift the card's own content above the glow layer */
+.case-file > *:not(.cf-glow) { position: relative; z-index: 1; }
 .cf-features .case-file { padding: clamp(1.6rem, 3vw, 2.6rem); }
 
 .case-file:hover {
   background: var(--ink);
   color: var(--paper);
-  transform: translateY(-3px);
-  box-shadow: 7px 11px 0 oklch(20% 0.02 60 / 0.22);
-  z-index: 2;
+  --lift: -5px;
+  box-shadow: 7px 14px 0 oklch(20% 0.02 60 / 0.2),
+    0 22px 46px oklch(20% 0.02 60 / 0.28);
+  z-index: 3;
 }
 .case-file.is-linked {
   border-color: var(--red);
   box-shadow: 0 0 0 2px var(--red), 4px 6px 0 oklch(56% 0.2 27 / 0.2);
+}
+
+/* the desk-lamp — a warm radial pool that follows the cursor (--mx/--my set on
+   pointermove). Screened over the inked card it reads as light falling on the
+   page; hidden until hover so the cream rest state stays clean. */
+.cf-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    220px circle at var(--mx, 50%) var(--my, 50%),
+    oklch(88% 0.13 78 / 0.55),
+    transparent 65%
+  );
+  mix-blend-mode: screen;
+  transition: opacity 0.35s var(--ease-set);
+}
+.case-file:hover .cf-glow { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .case-file { transform: none; }
 }
 
 .cf-top {
@@ -620,23 +565,13 @@ html.press-booting { overflow: hidden; }
 }
 .case-file:hover .cf-deck { color: oklch(88% 0.014 85); }
 
-/* expand body — collapsed at rest, opens on hover via grid-rows */
-.cf-expand {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.45s var(--ease-set);
-}
-.case-file:hover .cf-expand { grid-template-rows: 1fr; }
-.cf-inner {
-  overflow: hidden;
-  min-height: 0;
-}
-.case-file:hover .cf-inner { padding-top: 1.2rem; }
-
+/* Feature dossier (metrics + notes) renders always — no hover-expand, so
+   sibling cards never reflow. Spacing is owned by the blocks themselves. */
 .cf-metrics {
   display: flex;
   flex-wrap: wrap;
   gap: clamp(1.1rem, 3vw, 2.4rem);
+  margin-top: 1.5rem;
   margin-bottom: 1.1rem;
   padding-bottom: 1.1rem;
   border-bottom: 1px solid oklch(58% 0.01 60 / 0.4);
@@ -674,7 +609,7 @@ html.press-booting { overflow: hidden; }
   font-size: 0.95rem;
   line-height: 1.55;
   max-width: 70ch;
-  margin: 0 0 1.2rem;
+  margin: 1.3rem 0 0;
   color: var(--ink-soft);
 }
 .case-file:hover .cf-notes { color: oklch(86% 0.014 85); }
@@ -685,6 +620,7 @@ html.press-booting { overflow: hidden; }
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem 2rem;
+  margin-top: 1.3rem;
 }
 .cf-filed {
   display: flex;
@@ -731,6 +667,11 @@ html.press-booting { overflow: hidden; }
  * ──────────────────────────────────────────────────────────────────────── */
 .experience {
   position: relative;
+  z-index: 1;
+  /* Owns its dark ground so the bright text is legible regardless of scroll —
+     no scrubbed fixed layer to desync. The InkBleed seam above sells the
+     cream→ink turn; from here down the sheet is ink. */
+  background: var(--ink);
   color: var(--paper);
   padding: clamp(9vh, 14vh, 16vh) 0 clamp(6rem, 12vh, 9rem);
 }
@@ -743,20 +684,9 @@ html.press-booting { overflow: hidden; }
 }
 
 .ledger {
-  --led-indent: clamp(1.5rem, 4vw, 3rem);
   position: relative;
-  padding-left: var(--led-indent);
+  border-top: 1px solid oklch(58% 0.01 60 / 0.32);
 }
-.led-spine {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--red);
-  transform-origin: top center;
-}
-
 .led-entry {
   position: relative;
   display: grid;
@@ -764,17 +694,6 @@ html.press-booting { overflow: hidden; }
   gap: clamp(1rem, 3vw, 2.5rem);
   padding: clamp(1.4rem, 3vh, 2.2rem) 0;
   border-bottom: 1px solid oklch(58% 0.01 60 / 0.32);
-}
-.led-entry::before {
-  content: "";
-  position: absolute;
-  left: calc(-1 * var(--led-indent) - 5px);
-  top: clamp(1.7rem, 3.6vh, 2.6rem);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--paper);
-  border: 2px solid var(--red);
 }
 .led-period {
   font-family: var(--font-data);
@@ -834,15 +753,7 @@ html.press-booting { overflow: hidden; }
   color: oklch(91% 0.012 85);
 }
 
-.led-expand {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.5s var(--ease-set);
-}
-.led-entry.is-open .led-expand { grid-template-rows: 1fr; }
 .led-dispatches {
-  overflow: hidden;
-  min-height: 0;
   list-style: none;
   margin: 0;
   padding: 0.9rem 0 0;
@@ -862,19 +773,6 @@ html.press-booting { overflow: hidden; }
   left: 0;
   color: var(--red);
 }
-.led-cue {
-  display: inline-block;
-  margin-top: 0.7rem;
-  font-family: var(--font-data);
-  font-size: 0.64rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-  opacity: 0.7;
-  transition: color 0.3s, opacity 0.3s;
-}
-.led-entry.is-open .led-cue { color: var(--red); opacity: 1; }
-
 /* redaction sits on the ink spread — keep revealed text legible on ink */
 .experience .redacted { color: var(--paper); }
 
@@ -896,6 +794,11 @@ html.press-booting { overflow: hidden; }
  * Cream cards scattered on the press table; punchlines redacted.
  * ──────────────────────────────────────────────────────────────────────── */
 .opdesk {
+  position: relative;
+  z-index: 1;
+  /* Continues the dark sheet from Experience — owns its ink ground so the cream
+     clippings and light type read regardless of scroll. */
+  background: var(--ink);
   padding: clamp(7vh, 11vh, 13vh) 0 clamp(5rem, 9vh, 7rem);
   overflow: hidden;
 }
@@ -949,6 +852,10 @@ html.press-booting { overflow: hidden; }
   gap: 2rem;
   width: max-content;
   will-change: transform;
+  /* perspective for the cards' real CSS 3D tilt (each card is a direct child);
+     the JS-driven translateX marquee lives on this same element and the two
+     properties are independent, so they compose cleanly. */
+  perspective: 1000px;
   /* vertical padding so hover-lift doesn't get clipped by the overflow:hidden */
   padding: 3.5rem clamp(1.5rem, 5vw, 6rem);
 }
@@ -973,13 +880,17 @@ html.press-booting { overflow: hidden; }
   text-decoration: none;
   display: flex;
   flex-direction: column;
-  /* sine stagger is applied via CSS custom properties by JS */
-  transform: translateY(var(--sine-y, 0px)) rotate(var(--sine-r, 0deg));
+  /* Real CSS 3D tilt: --cx/--cy (rotateX/Y) and --cz (translateZ toward the
+     viewer) are pointer-tracked by JS; the static sine scatter (--sine-y/-r)
+     composes after. The moderate transform transition gives a floaty trail
+     rather than a rigid snap — the "clippings drifting on the table" feel. */
+  transform: rotateX(var(--cx, 0deg)) rotateY(var(--cy, 0deg))
+    translateZ(var(--cz, 0px)) translateY(var(--sine-y, 0px))
+    rotate(var(--sine-r, 0deg));
   transition: transform 0.3s var(--ease-set), box-shadow 0.3s;
   position: relative;
 }
 .opdesk-card:hover {
-  transform: translateY(calc(var(--sine-y, 0px) - 5px)) rotate(var(--sine-r, 0deg));
   box-shadow:
     0 6px 0 rgba(20, 16, 10, 0.38),
     0 14px 44px rgba(20, 16, 10, 0.4);
@@ -1059,8 +970,12 @@ html.press-booting { overflow: hidden; }
   padding-top: 0.5rem;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .opdesk-card { transform: none !important; animation: none !important; }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
- * Contact — Stop The Press (back-page finale, self-painted red spread)
+ * Contact — the finale, self-painted red spread
  * ──────────────────────────────────────────────────────────────────────── */
 .contact {
   position: relative;
@@ -1192,7 +1107,7 @@ html.press-booting { overflow: hidden; }
   opacity: 0.82;
 }
 
-/* ── Colophon + end mark ─────────────────────────────────────────────────── */
+/* ── Colophon ────────────────────────────────────────────────────────────── */
 .contact-colophon {
   border-top: 1px solid oklch(95.5% 0.014 85 / 0.2);
   padding-top: 2rem;
@@ -1204,16 +1119,6 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--paper);
   opacity: 0.45;
-  margin-bottom: 2.5rem;
-}
-.contact-end {
-  font-family: var(--font-name);
-  font-size: clamp(1.3rem, 2.5vw, 1.9rem);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-align: center;
-  color: var(--paper);
-  opacity: 0.6;
   margin: 0;
 }
 
