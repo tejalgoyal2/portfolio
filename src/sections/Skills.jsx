@@ -8,15 +8,22 @@ const { Engine, Runner, World, Bodies, Mouse, MouseConstraint, Events, Composite
 
 /**
  * The Back Shop — a printer's California job case. Each skill is a movable-type
- * slug that lives in its category compartment; grab one and flick it and it
- * clacks. Physics (matter.js) runs only while the case is on screen; the slugs
- * are drawn with a custom Canvas2D pass so the type stays crisp and legible —
- * legibility first, joy second. Reduced-motion gets a tidy static type tray.
+ * slug that lies flat in its category compartment, laid out in tidy rows; grab
+ * one and flick it and it slides and clacks. This is a TOP-DOWN tray, not a
+ * gravity bin: there's no gravity, so slugs never pile into an unreadable heap —
+ * they rest where they're laid (readable by construction) and a flicked slug
+ * glides on air-friction until it bumps a wall and settles. Physics (matter.js)
+ * runs only while the case is on screen; the slugs are drawn with a custom
+ * Canvas2D pass so the type stays crisp and legible — legibility first, joy
+ * second. Reduced-motion gets the tidy static type tray instead.
  */
-const LABEL_H = 42; // reserved strip so piled slugs never bury the label
+const LABEL_H = 42; // reserved strip so slugs never sit under the label
 const SLUG_FONT = '600 18px "Newsreader", Georgia, serif';
 const PAD_X = 14;
 const SLUG_H = 38;
+const GAP_X = 8; // horizontal space between slugs in a row
+const GAP_Y = 8; // vertical space between rows
+const EDGE = 6; // inset from compartment walls
 const THROW_V = 6; // release speed (px/step) above which a flick "lands"
 
 export default function Skills() {
@@ -40,7 +47,7 @@ export default function Skills() {
     };
 
     const engine = Engine.create();
-    engine.gravity.y = 1;
+    engine.gravity.y = 0; // top-down tray — slugs lie flat, nothing falls
     const world = engine.world;
     const runner = Runner.create();
 
@@ -97,27 +104,64 @@ export default function Skills() {
       World.add(world, walls);
     };
 
+    // Lay each compartment's slugs in tidy, width-packed rows. The block is
+    // vertically centred when it fits; when a dense category (ML has 14) would
+    // overflow, the row stride compresses so every slug still lands inside the
+    // box — tidy and fully readable at rest, never an overlapping jumble.
     const spawnSlugs = (boxes) => {
       measure.font = SLUG_FONT;
       SKILL_NODES.forEach((cat, i) => {
         const b = boxes[i];
         if (!b) return;
-        cat.items.forEach((item) => {
-          const w = Math.ceil(measure.measureText(item).width) + PAD_X * 2;
-          const half = w / 2;
-          const minX = b.x + half + 3;
-          const maxX = Math.max(minX, b.x + b.w - half - 3);
-          const px = minX + Math.random() * (maxX - minX);
-          const py = b.y + 6 + Math.random() * Math.max(10, b.h * 0.5);
-          const body = Bodies.rectangle(px, py, w, SLUG_H, {
-            restitution: 0.3,
-            friction: 0.4,
-            frictionAir: 0.015,
-            chamfer: { radius: 6 },
-            angle: (Math.random() - 0.5) * 0.3,
+
+        const items = cat.items.map((label) => ({
+          label,
+          w: Math.ceil(measure.measureText(label).width) + PAD_X * 2,
+        }));
+
+        // pack into rows by available width
+        const usableW = Math.max(40, b.w - EDGE * 2);
+        const rows = [[]];
+        let rowW = 0;
+        items.forEach((it) => {
+          const cur = rows[rows.length - 1];
+          const needed = cur.length ? rowW + GAP_X + it.w : it.w;
+          if (cur.length && needed > usableW) {
+            rows.push([it]);
+            rowW = it.w;
+          } else {
+            cur.push(it);
+            rowW = needed;
+          }
+        });
+
+        // vertical placement — centre the block, or compress stride to fit
+        const nRows = rows.length;
+        const blockH = nRows * SLUG_H + (nRows - 1) * GAP_Y;
+        let stride = SLUG_H + GAP_Y;
+        let y0;
+        if (blockH <= b.h) {
+          y0 = b.y + (b.h - blockH) / 2 + SLUG_H / 2;
+        } else {
+          stride = (b.h - SLUG_H) / Math.max(1, nRows - 1);
+          y0 = b.y + SLUG_H / 2;
+        }
+
+        rows.forEach((row, r) => {
+          const rW = row.reduce((s, it) => s + it.w, 0) + GAP_X * (row.length - 1);
+          let cx = b.x + Math.max(EDGE, (b.w - rW) / 2);
+          const cy = y0 + r * stride;
+          row.forEach((it) => {
+            const body = Bodies.rectangle(cx + it.w / 2, cy, it.w, SLUG_H, {
+              restitution: 0.2,
+              friction: 0.3,
+              frictionAir: 0.08, // air-drag so a flicked slug glides, then rests
+              chamfer: { radius: 6 },
+            });
+            slugs.push({ body, label: it.label, w: it.w });
+            World.add(world, body);
+            cx += it.w + GAP_X;
           });
-          slugs.push({ body, label: item, w });
-          World.add(world, body);
         });
       });
     };
@@ -169,7 +213,9 @@ export default function Skills() {
     mouse.pixelRatio = 1; // bodies live in CSS px; ctx handles DPR for drawing
     const mc = MouseConstraint.create(engine, {
       mouse,
-      constraint: { stiffness: 0.18, render: { visible: false } },
+      // stiff + damped so the grabbed slug tracks the cursor directly (no
+      // rubber-band lag — that was what felt "phoney").
+      constraint: { stiffness: 0.65, damping: 0.12, render: { visible: false } },
     });
     World.add(world, mc);
 
