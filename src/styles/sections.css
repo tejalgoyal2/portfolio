@@ -649,6 +649,17 @@ html.press-booting { overflow: hidden; }
   line-height: 0.85;
   color: var(--red);
 }
+/* Phrase metrics ("deny-first", "append-only") read as a short red descriptor,
+   not a giant numeral — the big-number style wrapped and collided with the
+   notes below it. Still red, still the headline face, just sized to its words. */
+.cf-metric-n--phrase {
+  font-size: clamp(0.98rem, 1.4vw, 1.1rem);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  font-weight: 800;
+  align-self: flex-start;
+  padding-top: 0.15rem;
+}
 .cf-metric-l {
   font-family: var(--font-data);
   font-size: 0.64rem;
@@ -769,7 +780,7 @@ html.press-booting { overflow: hidden; }
   font-family: var(--font-data);
   font-size: 0.8rem;
   letter-spacing: 0.05em;
-  color: oklch(72% 0.02 60);
+  color: oklch(82% 0.022 60);
   padding-top: 0.5rem;
   white-space: nowrap;
 }
@@ -812,7 +823,7 @@ html.press-booting { overflow: hidden; }
   font-style: italic;
   font-size: 1rem;
   margin: 0.35rem 0 0;
-  color: oklch(78% 0.014 80);
+  color: oklch(87% 0.016 80);
 }
 .led-desc {
   font-family: var(--font-read);
@@ -820,7 +831,7 @@ html.press-booting { overflow: hidden; }
   line-height: 1.5;
   max-width: 64ch;
   margin: 0.6rem 0 0;
-  color: oklch(86% 0.012 85);
+  color: oklch(91% 0.012 85);
 }
 
 .led-expand {
@@ -843,7 +854,7 @@ html.press-booting { overflow: hidden; }
   font-family: var(--font-read);
   font-size: 0.96rem;
   line-height: 1.45;
-  color: oklch(84% 0.012 85);
+  color: oklch(89% 0.012 85);
 }
 .led-dispatch::before {
   content: "\25B8";
@@ -1074,6 +1085,23 @@ html.press-booting { overflow: hidden; }
   position: relative;
   max-width: 860px;
 }
+
+/* Progressive-enhancement entrance (see Contact.jsx). By default every block is
+   visible — no-JS and reduced-motion read the full page. Only when JS adds
+   `contact--anim` do the blocks start hidden, and only the IntersectionObserver
+   class `is-in` reveals them. No ScrollTrigger anywhere → never a blank screen. */
+.contact--anim .contact-inner > * {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.7s var(--ease-set), transform 0.7s var(--ease-set);
+}
+.contact--anim.is-in .contact-inner > * {
+  opacity: 1;
+  transform: none;
+}
+.contact--anim.is-in .contact-hd { transition-delay: 0.04s; }
+.contact--anim.is-in .contact-body { transition-delay: 0.16s; }
+.contact--anim.is-in .contact-colophon { transition-delay: 0.3s; }
 
 .contact-hd { margin-bottom: clamp(2.5rem, 5vh, 4.5rem); }
 .contact-kicker {

@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 /**
  * The red thread — one continuous string drawn down the whole page as you
  * scroll, the visible spine that makes the seven sections read as a single
  * artifact (not stacked cards). Measures the full document, lays a meandering
- * path, and reveals it via stroke-dashoffset on scrub. Projects branches off
- * this later via registered anchor points. Stroke stays crisp via
- * non-scaling-stroke; rebuilds on resize.
+ * path, and reveals it by mapping live scroll progress directly to
+ * stroke-dashoffset — deliberately NOT a ScrollTrigger scrub. That keeps it
+ * reflow-proof: when a case-file or ledger entry expands and the document
+ * grows, we rebuild the path and re-apply progress in the same frame, so the
+ * thread is never left blank (the old "break") and we never call a global
+ * ScrollTrigger.refresh() that re-snapped every other scrubbed trigger (the old
+ * "jerk"). Stroke stays crisp via non-scaling-stroke; rebuilds on resize.
  */
 function buildPath(w, h) {
   const segs = Math.max(6, Math.round(h / 520));
@@ -36,7 +38,29 @@ export default function RedThread() {
     const svg = svgRef.current;
     const path = pathRef.current;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let st;
+
+    let len = 0;
+    let scrollQueued = false;
+
+    // Map live scroll position → how much of the thread is drawn. Reading
+    // scrollY/scrollHeight every frame means a reflow can't desync us: the
+    // worst case is one frame of staleness, corrected on the next tick.
+    const apply = () => {
+      scrollQueued = false;
+      if (!len) return;
+      if (reduced) {
+        path.style.strokeDashoffset = 0;
+        return;
+      }
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1;
+      path.style.strokeDashoffset = len * (1 - progress);
+    };
+    const onScroll = () => {
+      if (scrollQueued) return;
+      scrollQueued = true;
+      requestAnimationFrame(apply);
+    };
 
     const layout = () => {
       const w = wrap.clientWidth;
@@ -44,40 +68,36 @@ export default function RedThread() {
       if (!w || !h) return;
       svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
       path.setAttribute('d', buildPath(w, h));
-      const len = path.getTotalLength();
+      len = path.getTotalLength();
       path.style.strokeDasharray = len;
-
-      st?.kill();
-      if (reduced) {
-        path.style.strokeDashoffset = 0;
-        return;
-      }
-      path.style.strokeDashoffset = len;
-      st = gsap.to(path, {
-        strokeDashoffset: 0,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: document.documentElement,
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 0.6,
-        },
-      }).scrollTrigger;
+      // Re-apply progress in the same frame as the rebuild → the thread is
+      // never momentarily reset to fully-hidden during an expand/collapse.
+      apply();
     };
 
     // wait for layout/fonts before first measure
     requestAnimationFrame(layout);
     if (document.fonts?.ready) document.fonts.ready.then(layout);
 
+    // Debounce reflow rebuilds: an expanding case-file / ledger entry fires the
+    // ResizeObserver many times in quick succession — coalesce to one per frame.
+    let layoutQueued = 0;
     const ro = new ResizeObserver(() => {
-      layout();
-      ScrollTrigger.refresh();
+      cancelAnimationFrame(layoutQueued);
+      layoutQueued = requestAnimationFrame(layout);
     });
     ro.observe(wrap);
 
+    // Passive window scroll fires on Lenis's native document scroll, so we don't
+    // depend on window.__lenis being mounted by the time this effect runs.
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', layout);
+
     return () => {
-      st?.kill();
+      cancelAnimationFrame(layoutQueued);
       ro.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', layout);
     };
   }, []);
 

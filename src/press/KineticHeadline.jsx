@@ -9,6 +9,9 @@ import { gsap } from 'gsap';
  * tell). Reduced-motion → plain appearance.
  *
  *   as: tag name   font: 'name' (Fraunces) | 'impact' (Anton)   misregister: bool
+ *   inview: play on an IntersectionObserver instead of a ScrollTrigger — use it
+ *   on terminal/edge sections where ScrollTrigger's computed start can fail to
+ *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
  */
 export default function KineticHeadline({
   children,
@@ -18,6 +21,7 @@ export default function KineticHeadline({
   className = '',
   spread = true,
   intro = false,
+  inview = false,
 }) {
   const rootRef = useRef(null);
   const text = String(children);
@@ -34,9 +38,13 @@ export default function KineticHeadline({
         gsap.set(chars, { opacity: 1, yPercent: 0, rotateZ: 0 });
         return;
       }
+      // intro waits for the loader; inview plays off an IntersectionObserver;
+      // everything else rides a one-shot ScrollTrigger.
+      const useIO = inview && !intro;
       const tl = gsap.timeline({
-        paused: intro,
-        scrollTrigger: intro ? undefined : { trigger: root, start: 'top 82%', once: true },
+        paused: intro || useIO,
+        scrollTrigger:
+          intro || useIO ? undefined : { trigger: root, start: 'top 82%', once: true },
       });
       tl.fromTo(
         chars,
@@ -76,6 +84,18 @@ export default function KineticHeadline({
           window.addEventListener('press:loaded', play, { once: true });
           detach = () => window.removeEventListener('press:loaded', play);
         }
+      } else if (useIO) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              tl.play(0);
+              io.disconnect();
+            }
+          },
+          { threshold: 0.25 }
+        );
+        io.observe(root);
+        detach = () => io.disconnect();
       }
     }, root);
 
@@ -83,7 +103,7 @@ export default function KineticHeadline({
       detach?.();
       ctx.revert();
     };
-  }, [text, misregister, spread, intro]);
+  }, [text, misregister, spread, intro, inview]);
 
   return (
     <Tag ref={rootRef} className={`kinetic kinetic--${font} ${className}`} aria-label={text}>

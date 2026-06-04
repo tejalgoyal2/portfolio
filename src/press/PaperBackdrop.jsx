@@ -7,6 +7,11 @@ import { gsap } from 'gsap';
  * cream→ink change is a single continuous bleed across the section seam instead
  * of a hard cut. Only opacity animates (GPU-cheap). Anchored to the first
  * element marked data-ground="ink"; if none is mounted yet, it stays cream.
+ *
+ * The ramp finishes early — by the time the ink section's top reaches 70% of
+ * the viewport (still near the bottom, before its header is read) the ground is
+ * already solid ink. That makes the dark ground the legibility guarantor, not a
+ * mid-transition near-cream the cream text would wash out against.
  */
 export default function PaperBackdrop() {
   const inkRef = useRef(null);
@@ -22,7 +27,7 @@ export default function PaperBackdrop() {
       {
         opacity: 1,
         ease: 'none',
-        scrollTrigger: { trigger: ink, start: 'top 92%', end: 'top 48%', scrub: true },
+        scrollTrigger: { trigger: ink, start: 'top bottom', end: 'top 70%', scrub: true },
       }
     );
 
