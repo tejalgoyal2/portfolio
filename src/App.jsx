@@ -3,7 +3,6 @@ import Loader from './press/Loader';
 import PaperBackdrop from './press/PaperBackdrop';
 import PressCursor from './press/PressCursor';
 import PressImpacts from './press/PressImpacts';
-import InkBleed from './press/InkBleed';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Skills from './sections/Skills';
@@ -17,7 +16,7 @@ import Contact from './sections/Contact';
  * animates off. Persistent layers mount once: PaperBackdrop (the warm paper
  * ground), PressCursor and PressImpacts (portaled). Sections mount inside <main>
  * in reading order. Cohesion comes from a continuous sheet — the cream spreads
- * flow into the dark ones across a single torn ink-bleed seam — and a shared
+ * darken into the dark ones across a single gradient ink-seam — and a shared
  * motion grammar, not a drawn connector.
  */
 export default function App() {
@@ -35,7 +34,7 @@ export default function App() {
         <About />
         <Skills />
         <Projects />
-        <InkBleed tone="ink" />
+        <div className="ink-seam" aria-hidden="true" />
         <Experience />
         <Blog />
         <Contact />

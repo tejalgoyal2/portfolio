@@ -84,8 +84,8 @@ export default function Blog() {
     // (no JS-driven hover needed — CSS picks up the props)
     const cards = Array.from(strip.querySelectorAll('.opdesk-card'));
     cards.forEach((card, i) => {
-      card.style.setProperty('--sine-y', `${Math.sin(i * 0.65) * 12}px`);
-      card.style.setProperty('--sine-r', `${(i % 2 === 0 ? 1 : -1) * 1.2}deg`);
+      card.style.setProperty('--sine-y', `${Math.sin(i * 0.65) * 8}px`);
+      card.style.setProperty('--sine-r', `${(i % 2 === 0 ? 1 : -1) * 1}deg`);
     });
 
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
@@ -162,6 +162,10 @@ export default function Blog() {
   };
 
   // ── Per-card real-3D tilt — pointer-tracked rotate + Z lift, rAF-throttled ──
+  // While tracking, the card carries .is-tilt (a short linear transition) so the
+  // tilt follows the cursor in real time. On leave we drop the class and zero the
+  // props, letting the default eased transition glide the card back to rest — a
+  // gentle settle rather than a rigid snap, and no 0.3s-delayed chase (the jerk).
   const onCardMove = (e) => {
     if (dragRef.current.active) return; // don't fight a drag
     const el = e.currentTarget;
@@ -174,13 +178,15 @@ export default function Blog() {
       if (!d) return;
       const px = d.x / d.w - 0.5;
       const py = d.y / d.h - 0.5;
-      d.el.style.setProperty('--cy', `${(px * 10).toFixed(2)}deg`);
-      d.el.style.setProperty('--cx', `${(-py * 10).toFixed(2)}deg`);
-      d.el.style.setProperty('--cz', '24px');
+      d.el.classList.add('is-tilt');
+      d.el.style.setProperty('--cy', `${(px * 7).toFixed(2)}deg`);
+      d.el.style.setProperty('--cx', `${(-py * 7).toFixed(2)}deg`);
+      d.el.style.setProperty('--cz', '12px');
     });
   };
   const onCardLeave = (e) => {
     const el = e.currentTarget;
+    el.classList.remove('is-tilt');
     el.style.setProperty('--cx', '0deg');
     el.style.setProperty('--cy', '0deg');
     el.style.setProperty('--cz', '0px');

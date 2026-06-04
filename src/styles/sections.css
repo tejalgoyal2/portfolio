@@ -669,7 +669,7 @@ html.press-booting { overflow: hidden; }
   position: relative;
   z-index: 1;
   /* Owns its dark ground so the bright text is legible regardless of scroll —
-     no scrubbed fixed layer to desync. The InkBleed seam above sells the
+     no scrubbed fixed layer to desync. The gradient ink-seam above sells the
      cream→ink turn; from here down the sheet is ink. */
   background: var(--ink);
   color: var(--paper);
@@ -882,13 +882,17 @@ html.press-booting { overflow: hidden; }
   flex-direction: column;
   /* Real CSS 3D tilt: --cx/--cy (rotateX/Y) and --cz (translateZ toward the
      viewer) are pointer-tracked by JS; the static sine scatter (--sine-y/-r)
-     composes after. The moderate transform transition gives a floaty trail
-     rather than a rigid snap — the "clippings drifting on the table" feel. */
+     composes after. Default transition is a soft eased glide used on leave so
+     the card settles back to rest; .is-tilt swaps in a short linear transition
+     while the cursor is tracking so the tilt follows in real time. */
   transform: rotateX(var(--cx, 0deg)) rotateY(var(--cy, 0deg))
     translateZ(var(--cz, 0px)) translateY(var(--sine-y, 0px))
     rotate(var(--sine-r, 0deg));
-  transition: transform 0.3s var(--ease-set), box-shadow 0.3s;
+  transition: transform 0.55s var(--ease-set), box-shadow 0.3s;
   position: relative;
+}
+.opdesk-card.is-tilt {
+  transition: transform 0.1s linear, box-shadow 0.3s;
 }
 .opdesk-card:hover {
   box-shadow:
@@ -1134,7 +1138,7 @@ html.press-booting { overflow: hidden; }
 /* ──────────────────────────────────────────────────────────────────────────
  * Fold shadows — page-curl gradient at the bottom of each cream spread.
  * Sells the "turning the page" transition between cream departments.
- * Skipped on Projects (InkBleed's torn edge handles that seam).
+ * Skipped on Projects (the gradient ink-seam handles that cream→ink turn).
  * ──────────────────────────────────────────────────────────────────────── */
 .hero::after,
 .about::after,

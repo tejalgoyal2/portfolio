@@ -264,19 +264,21 @@ button.press-stamp {
   outline-offset: 3px;
 }
 
-/* ── Ink-bleed seam — the cohesion device ─────────────────────────────────────
- * A torn boundary placed at each cream↔ink turn (see App.jsx). The SVG fills its
- * lower portion with ink and leaves the displaced top edge transparent, so the
- * fixed cream paper shows through above the tear and the section's own ink ground
- * meets it below. The -1px pull closes any sub-pixel gap; line-height:0 kills the
- * inline-SVG descender. Static — no per-frame work, nothing to jank.
+/* ── Ink-seam — the cohesion device ───────────────────────────────────────────
+ * A single standalone gradient band placed at the cream→ink turn (see App.jsx):
+ * transparent at the top, where the fixed warm paper ground shows straight
+ * through, ramping to solid ink at the base, where the dark section's own ground
+ * takes over. The two spreads read as one sheet that darkens — ink soaking down
+ * the page — with no hard line and no torn edge. The -1px pull closes any
+ * sub-pixel gap. Static — no per-frame work, nothing to jank, zero reflow.
  * ──────────────────────────────────────────────────────────────────────────── */
-.ink-bleed {
+.ink-seam {
   display: block;
   position: relative;
   z-index: 1;
   width: 100%;
+  height: clamp(120px, 16vh, 200px);
   margin-bottom: -1px;
-  line-height: 0;
+  background: linear-gradient(to bottom, transparent 0%, var(--ink) 100%);
   pointer-events: none;
 }
