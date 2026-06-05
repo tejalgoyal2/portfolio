@@ -52,6 +52,34 @@ a {
   text-decoration: none;
 }
 
+/* Themed scrollbar — a thin press-red thumb. Red is the one accent that stays
+   legible over both the cream spreads and the ink ones, so a single global
+   thumb colour works the whole way down. A transparent border + padding-box
+   clip slims the visible thumb and gives it breathing room with no colour ring
+   on the dark sections. (macOS overlay scrollbars may stay hidden until scroll
+   unless "Always show scroll bars" is set — that's an OS preference, not CSS.) */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--red) transparent;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--red);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--red-deep);
+  background-clip: padding-box;
+}
+
 /* Red ink selection on paper; ink-dark spreads flip it to paper-on-red */
 ::selection {
   background: var(--red);
