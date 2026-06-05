@@ -267,3 +267,135 @@ html.cursor-hidden select {
 @media (prefers-reduced-motion: reduce) {
   .kh-char { opacity: 1; }
 }
+
+/* ── Wire ticker — masthead news band ─────────────────────────────────────── */
+.wire-ticker {
+  /* Full-bleed inside any max-width container: push to both viewport edges */
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+.wire-ticker-strip {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+  flex-shrink: 0;
+}
+.wire-ticker-set {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0 0.5rem;
+}
+.wire-ticker-static {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding: 0 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Running folio — fixed section marker ─────────────────────────────────── */
+.press-folio {
+  position: fixed;
+  bottom: 1.4rem;
+  right: 1.6rem;
+  z-index: 100;
+  font-family: var(--font-data);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper-stock);
+  padding: 0.28em 0.6em;
+  border: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+/* ── Halftone monogram ────────────────────────────────────────────────────── */
+.press-monogram {
+  color: var(--ink);
+  display: block;
+  flex-shrink: 0;
+}
+.mast-seal {
+  opacity: 0.55;
+  align-self: center;
+}
+
+/* ── Interactive stamp ────────────────────────────────────────────────────── */
+button.press-stamp {
+  background: transparent;
+  line-height: normal;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.press-stamp--interactive {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.press-stamp--interactive:hover {
+  opacity: 1;
+  transform: rotate(var(--stamp-rot, -4deg)) scale(1.08);
+}
+.press-stamp--interactive:active {
+  transform: rotate(var(--stamp-rot, -4deg)) scale(0.93);
+}
+.press-stamp--interactive:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* ── Colophon cryptogram ──────────────────────────────────────────────────── */
+.contact-cryptogram {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65em;
+  margin-block: 0.5rem;
+}
+.cryptogram-text {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+  opacity: 0.45;
+  font-style: italic;
+  transition: opacity 0.3s ease;
+}
+.cryptogram-text[aria-label*="Print"] {
+  opacity: 0.8;
+  font-style: normal;
+}
+.cryptogram-toggle {
+  font-family: var(--font-data);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--red-wet);
+  background: transparent;
+  border: 1px solid var(--red-wet);
+  border-radius: 2px;
+  padding: 0.12em 0.45em;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+.cryptogram-toggle:hover { opacity: 1; }

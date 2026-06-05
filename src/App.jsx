@@ -5,6 +5,7 @@ import RedThread from './press/RedThread';
 import PressCursor from './press/PressCursor';
 import PressImpacts from './press/PressImpacts';
 import InkBleed from './press/InkBleed';
+import Folio from './press/Folio';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Skills from './sections/Skills';
@@ -29,6 +30,7 @@ export default function App() {
       <PaperBackdrop />
       <PressCursor />
       <PressImpacts />
+      <Folio />
 
       <main id="top">
         <RedThread />

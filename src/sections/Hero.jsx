@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
+import Dateline from '../press/Dateline';
+import Monogram from '../press/Monogram';
+import WireTicker from '../press/WireTicker';
 
 /**
  * The Front Page — masthead. A real broadsheet nameplate band (kicker + live
@@ -12,7 +15,7 @@ import KineticHeadline from '../press/KineticHeadline';
  * ticker, byline/deck/cue — waits for `press:loaded` so the page sets itself
  * the instant the press finishes printing.
  */
-const STATUS = 'TODAY — shipping MCP servers @ BCI · partly cloudy, compiling';
+const STATUS = 'TODAY — modernizing a 13-screen ops app @ BCI · partly cloudy, compiling';
 
 export default function Hero() {
   const rootRef = useRef(null);
@@ -104,11 +107,14 @@ export default function Hero() {
           <div className="mast-rule" aria-hidden="true" />
           <div className="mast-edition mast-meta">
             <span>VOL.&nbsp;I · NO.&nbsp;1</span>
-            <span>VICTORIA, BC · EST.&nbsp;2017</span>
+            <Monogram size={36} className="mast-seal" />
+            <span><Dateline />&nbsp;· VICTORIA,&nbsp;BC · EST.&nbsp;2002</span>
             <span>PRICE: YOUR ATTENTION</span>
           </div>
           <div className="mast-rule mast-rule--thick" aria-hidden="true" />
         </div>
+
+        <WireTicker />
 
         {/* lead story */}
         <div className="mast-lead">
@@ -119,7 +125,8 @@ export default function Hero() {
           <p className="mast-byline">by Tejal Goyal — software · security · ml</p>
           <p className="mast-deck">
             Software engineer who came up through machine-learning research and a
-            cybersecurity desk. Currently building MCP servers and AI agents at BCI.
+            cybersecurity desk. Now building and modernizing the enterprise
+            financial systems BCI&rsquo;s investment teams run on.
           </p>
         </div>
 
