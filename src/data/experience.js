@@ -2,12 +2,13 @@ export const EXPERIENCE = [
   {
     role: "Software Engineering Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "May 2026 – Present", active: true,
-    desc: "Building MCP servers, modernized financial apps, and cloud infrastructure on the Enterprise Solutions team.",
+    desc: "Enterprise Solutions: building and modernizing the financial apps BCI's investment & risk teams run on — React/Azure rebuilds, Power Platform, data pipelines, and AI-agent plumbing.",
     details: [
-      "Developing Python MCP servers connecting AI agents to enterprise financial databases and application APIs",
-      "Contributing to a React/Azure financial system rebuilt from legacy .NET/WPF using AI-assisted development",
-      "Working across Azure resource groups, Data Factory pipelines, and Privileged Identity Management",
-      "Building PowerApps applications and supporting Power Platform governance across the org",
+      "Built the first modal-overlay pattern in a 13-screen PowerApps ops app — surfaced 28 fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
+      "Contributing to the flagship React/Azure app rebuilt off a vendor-locked .NET/WPF stack — eliminated licensing risk, moved on-prem to cloud, made the codebase AI-readable",
+      "Automated a manual quarterly commission report in Power Automate — caught a wrong parameter count and a stored-proc name typo in the ticket, root-caused a SQL-connector DATE-type 500/503",
+      "Working across Azure resource groups, Data Factory pipelines, and PIM; bridged Okta/IAM knowledge from the security desk into the new team via a shared Claude project",
+      "Developing Python MCP servers so AI agents can query enterprise financial DBs and app APIs directly — local implementation shipped, in code review",
     ],
   },
   {

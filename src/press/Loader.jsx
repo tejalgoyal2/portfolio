@@ -115,7 +115,7 @@ export default function Loader() {
           <span className="loader-ghost" aria-hidden="true">TEJAL GOYAL</span>
           <h1 className="loader-plate">TEJAL GOYAL</h1>
         </div>
-        <span className="loader-edition">VOL.&nbsp;I · NO.&nbsp;1 · VICTORIA, BC</span>
+        <span className="loader-edition">VOL.&nbsp;I · NO.&nbsp;1 · VICTORIA, BC · EST.&nbsp;2002</span>
       </div>
     </div>
   );

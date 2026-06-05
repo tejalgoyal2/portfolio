@@ -65,9 +65,10 @@ export default function About() {
               federated-learning lab where I scaled experiments from 50 to a
               million simulated clients, spent a winter on a cybersecurity desk
               hunting shadow AI and chasing a malicious binary to ground — and now
-              I build the MCP servers that let AI agents talk to enterprise
-              systems. The thread through all of it: break things to understand
-              them, then build the better version.
+              I build and modernize the financial apps BCI&rsquo;s investment
+              teams depend on: React/Azure rebuilds, platform tooling, AI
+              plumbing woven in. The thread through all of it: break things to
+              understand them, then build the better version.
             </p>
 
             <blockquote className="about-pq">
@@ -106,7 +107,7 @@ export default function About() {
               </div>
               <div className="about-stat">
                 <dt>Established</dt>
-                <dd>2017</dd>
+                <dd>2002</dd>
               </div>
               <div className="about-stat">
                 <dt>MEng GPA</dt>
