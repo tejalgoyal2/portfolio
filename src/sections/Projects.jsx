@@ -16,6 +16,12 @@ import Stamp from '../press/Stamp';
 const STAMP_TONE = { LIVE: 'red', REPO: 'ink', PROTOTYPE: 'ink' };
 const LINK_LABEL = { live: 'Live site', github: 'Source', youtube: 'Demo' };
 
+// Most metrics are headline numerals, rendered huge. A few files (Claubi) are
+// filed under short phrases instead ("deny-first", "append-only") — detect the
+// non-numeric ones so CSS can set them at a readable descriptor size rather than
+// the giant-numeral style, which wrapped and overlapped the case notes.
+const isNumericMetric = (v) => /^[\d.,]+[%+]?$/.test(String(v).trim());
+
 function CaseFile({ project, index, register, onEnter, onLeave, linked }) {
   const { name, status, desc, long, tech, links } = project;
   const metrics = METRICS[name] || [];
@@ -32,7 +38,7 @@ function CaseFile({ project, index, register, onEnter, onLeave, linked }) {
       <div className="cf-top">
         <span className="cf-no">{String(index).padStart(2, '0')}</span>
         <h3 className="cf-name">{name}</h3>
-        <Stamp label={status} tone={STAMP_TONE[status] || 'ink'} rotate={-5} pressIn />
+        <Stamp label={status} tone={STAMP_TONE[status] || 'ink'} rotate={-5} pressIn interactive={status === 'LIVE' || status === 'REPO'} />
       </div>
 
       <p className="cf-deck">{desc}</p>
@@ -43,7 +49,11 @@ function CaseFile({ project, index, register, onEnter, onLeave, linked }) {
             <div className="cf-metrics">
               {metrics.map((m) => (
                 <div className="cf-metric" key={m.label}>
-                  <span className="cf-metric-n">{m.n}</span>
+                  <span
+                    className={`cf-metric-n${isNumericMetric(m.n) ? '' : ' cf-metric-n--phrase'}`}
+                  >
+                    {m.n}
+                  </span>
                   <span className="cf-metric-l">{m.label}</span>
                 </div>
               ))}

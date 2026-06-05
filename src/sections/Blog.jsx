@@ -61,6 +61,7 @@ export default function Blog() {
   const hoverRef = useRef(false);
   const visibleRef = useRef(false);
   const dragRef = useRef({ active: false, startX: 0, base: 0, moved: false });
+  const wheelRef = useRef(false); // true briefly after a horizontal wheel — pauses auto
 
   const [reduced] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -85,7 +86,7 @@ export default function Blog() {
 
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
     const tick = () => {
-      if (hoverRef.current || dragRef.current.active || !visibleRef.current) return;
+      if (hoverRef.current || dragRef.current.active || wheelRef.current || !visibleRef.current) return;
       const half = strip.scrollWidth / 2;
       if (half <= 0) return;
       offsetRef.current = (offsetRef.current + 0.45) % half;
@@ -99,10 +100,30 @@ export default function Blog() {
     );
     io.observe(container);
 
+    // Horizontal wheel / trackpad scrubs the strip without hijacking the page's
+    // vertical scroll. React's onWheel is passive (can't preventDefault), so we
+    // bind a non-passive native listener. Only horizontal intent is captured;
+    // vertical deltas fall straight through to the page.
+    let wheelIdle;
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical → let the page scroll
+      const half = strip.scrollWidth / 2;
+      if (half <= 0) return;
+      e.preventDefault();
+      offsetRef.current = (((offsetRef.current + e.deltaX) % half) + half) % half;
+      strip.style.transform = `translateX(${-offsetRef.current}px)`;
+      wheelRef.current = true; // pause the marquee so it doesn't fight the user
+      clearTimeout(wheelIdle);
+      wheelIdle = setTimeout(() => (wheelRef.current = false), 1200);
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
       io.disconnect();
+      container.removeEventListener('wheel', onWheel);
+      clearTimeout(wheelIdle);
     };
   }, [reduced]);
 
@@ -144,7 +165,7 @@ export default function Blog() {
         </KineticHeadline>
         {!reduced && (
           <p className="opdesk-hint" aria-hidden="true">
-            DRAG TO BROWSE &middot; HOVER TO DECLASSIFY
+            DRAG OR SCROLL &middot; HOVER TO DECLASSIFY
           </p>
         )}
       </header>
