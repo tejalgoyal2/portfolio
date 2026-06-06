@@ -565,6 +565,21 @@ html.press-booting { overflow: hidden; }
 }
 .case-file:hover .cf-deck { color: oklch(88% 0.014 85); }
 
+/* An editor's scribble — my own hand on the one file I sink the most weekends
+   into. Caveat in wet red, kicked off-axis so it reads as a margin note and not
+   a label. Red is the accent that holds on both the cream ground and the ink
+   hover-invert, so it needs no per-state override. */
+.cf-pen {
+  font-family: var(--font-pen);
+  font-size: clamp(1.25rem, 1.9vw, 1.7rem);
+  line-height: 1;
+  color: var(--red-wet);
+  margin: 0.55rem 0 0 0.15rem;
+  transform: rotate(-3.5deg);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
 /* Feature dossier (metrics + notes) renders always — no hover-expand, so
    sibling cards never reflow. Spacing is owned by the blocks themselves. */
 .cf-metrics {
@@ -669,10 +684,13 @@ html.press-booting { overflow: hidden; }
   position: relative;
   z-index: 1;
   /* Owns its dark ground so the bright text is legible regardless of scroll —
-     no scrubbed fixed layer to desync. The gradient ink-seam above sells the
-     cream→ink turn; from here down the sheet is ink. */
-  background: var(--ink);
+     no scrubbed fixed layer to desync. The seam above sells the cream→dark turn;
+     from here down the sheet is deep red-ink (--ground), the dark end of the
+     press red, so it belongs to the same family as the cream and the finale. */
+  background: var(--ground);
   color: var(--paper);
+  /* on the dark-red ground, lift the red accents so kickers/marks stay vivid */
+  --red: oklch(66% 0.224 27);
   padding: clamp(9vh, 14vh, 16vh) 0 clamp(6rem, 12vh, 9rem);
 }
 .led-head { margin-bottom: clamp(2.4rem, 6vh, 4rem); }
@@ -796,9 +814,13 @@ html.press-booting { overflow: hidden; }
 .opdesk {
   position: relative;
   z-index: 1;
-  /* Continues the dark sheet from Experience — owns its ink ground so the cream
-     clippings and light type read regardless of scroll. */
-  background: var(--ink);
+  /* Continues the dark sheet from Experience on the same deep red-ink ground, so
+     the lower page is one warm family (cream → dark-red → vivid red) instead of
+     turning to mud. Owns its ground so the cream clippings and light type read
+     regardless of scroll. NB: no blanket --red override here — the clippings are
+     cream cards whose interior reds must stay the true press red; only the kicker
+     (on the dark ground) is lifted, below. */
+  background: var(--ground);
   padding: clamp(7vh, 11vh, 13vh) 0 clamp(5rem, 9vh, 7rem);
   overflow: hidden;
 }
@@ -812,7 +834,8 @@ html.press-booting { overflow: hidden; }
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--red);
+  /* lifted off the dark-red ground (same hue as --ground at L56 would mute) */
+  color: oklch(66% 0.224 27);
   margin-bottom: 0.9rem;
 }
 .opdesk-title {
@@ -852,10 +875,10 @@ html.press-booting { overflow: hidden; }
   gap: 2rem;
   width: max-content;
   will-change: transform;
-  /* perspective for the cards' real CSS 3D tilt (each card is a direct child);
-     the JS-driven translateX marquee lives on this same element and the two
-     properties are independent, so they compose cleanly. */
-  perspective: 1000px;
+  /* No perspective here: a shared perspective on this wide, translateX-driven
+     track projects every off-center card toward one central vanishing point, so
+     the marquee warps the cards as it slides. Each card owns its own
+     perspective() instead (see .opdesk-card) — self-contained, no global skew. */
   /* vertical padding so hover-lift doesn't get clipped by the overflow:hidden */
   padding: 3.5rem clamp(1.5rem, 5vw, 6rem);
 }
@@ -880,12 +903,14 @@ html.press-booting { overflow: hidden; }
   text-decoration: none;
   display: flex;
   flex-direction: column;
-  /* Real CSS 3D tilt: --cx/--cy (rotateX/Y) and --cz (translateZ toward the
-     viewer) are pointer-tracked by JS; the static sine scatter (--sine-y/-r)
-     composes after. Default transition is a soft eased glide used on leave so
-     the card settles back to rest; .is-tilt swaps in a short linear transition
-     while the cursor is tracking so the tilt follows in real time. */
-  transform: rotateX(var(--cx, 0deg)) rotateY(var(--cy, 0deg))
+  /* Real CSS 3D tilt with a per-card perspective() so each clipping has its own
+     vanishing point — at rest the card is flat (cx/cy/cz = 0, just the sine
+     scatter); the marquee's translateX on the parent can't warp it. --cx/--cy
+     (rotateX/Y) and --cz (translateZ toward the viewer) are pointer-tracked by
+     JS. Default transition is a soft eased glide used on leave so the card
+     settles back to rest; .is-tilt swaps in a short linear transition while the
+     cursor is tracking so the tilt follows in real time. */
+  transform: perspective(900px) rotateX(var(--cx, 0deg)) rotateY(var(--cy, 0deg))
     translateZ(var(--cz, 0px)) translateY(var(--sine-y, 0px))
     rotate(var(--sine-r, 0deg));
   transition: transform 0.55s var(--ease-set), box-shadow 0.3s;
@@ -1135,24 +1160,12 @@ html.press-booting { overflow: hidden; }
   .opdesk-strip-wrap--static .opdesk-card { width: 100%; max-width: 380px; }
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
- * Fold shadows — page-curl gradient at the bottom of each cream spread.
- * Sells the "turning the page" transition between cream departments.
- * Skipped on Projects (the gradient ink-seam handles that cream→ink turn).
- * ──────────────────────────────────────────────────────────────────────── */
-.hero::after,
-.about::after,
-.skills::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background: linear-gradient(to bottom, transparent, var(--paper-deep));
-  pointer-events: none;
-  z-index: 4;
-}
+/* No fold-shadow bands between the cream spreads. Hero → About → Skills →
+ * Projects are all printed on the one cream stock, so a darkening band at each
+ * boundary was a fake seam on continuous paper — it read as an unfinished smudge.
+ * Cohesion across the cream run comes from shared rhythm (kicker + kinetic head +
+ * the registration cursor), not a drawn divider. The only real turns left are
+ * cream→dark-red and dark-red→red, and those are torn deckle edges (below). */
 
 /* Op-Ed Desk hint — use paper-at-opacity on ink ground so it reads */
 .opdesk-hint {
@@ -1177,13 +1190,3 @@ html.press-booting { overflow: hidden; }
   color: var(--red);
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
- * 1024px responsive — additional breakpoint adjustments
- * ──────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .hero::after,
-  .about::after,
-  .skills::after {
-    height: 40px;
-  }
-}

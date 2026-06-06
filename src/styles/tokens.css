@@ -11,10 +11,16 @@
   --color-paper-stock: oklch(92%   0.020 82);  /* card / slug stock */
   --color-paper-deep:  oklch(88%   0.026 80);  /* fold shadows, insets */
 
-  /* ink — warm near-black, never pure #000 */
+  /* ink — warm near-black, never pure #000 (text on paper, marks, bars) */
   --color-ink:         oklch(20%   0.018 60);
   --color-ink-soft:    oklch(38%   0.012 60);  /* secondary text */
   --color-ink-ghost:   oklch(58%   0.010 60);  /* captions, datelines */
+
+  /* ground — the dark spreads (Experience, Blog) are a deep red-ink, not a
+     neutral brown: the page is one warm hue story, cream → dark-red → vivid red.
+     The old near-neutral dark read as mud against the cream + red; this is the
+     dark end of the press red, so the whole lower page belongs to one family. */
+  --color-ground:      oklch(17%   0.060 27);
 
   /* the press red — stamps, string, links, emphasis */
   --color-red:         oklch(56%   0.214 27);
@@ -46,6 +52,8 @@
   --ink:         oklch(20%   0.018 60);
   --ink-soft:    oklch(38%   0.012 60);
   --ink-ghost:   oklch(58%   0.010 60);
+
+  --ground:      oklch(17%   0.060 27);  /* dark-red ink — the dark spreads */
 
   --red:         oklch(56%   0.214 27);
   --red-deep:    oklch(46%   0.190 28);

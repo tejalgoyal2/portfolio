@@ -264,21 +264,122 @@ button.press-stamp {
   outline-offset: 3px;
 }
 
-/* ── Ink-seam — the cohesion device ───────────────────────────────────────────
- * A single standalone gradient band placed at the cream→ink turn (see App.jsx):
- * transparent at the top, where the fixed warm paper ground shows straight
- * through, ramping to solid ink at the base, where the dark section's own ground
- * takes over. The two spreads read as one sheet that darkens — ink soaking down
- * the page — with no hard line and no torn edge. The -1px pull closes any
- * sub-pixel gap. Static — no per-frame work, nothing to jank, zero reflow.
- * ──────────────────────────────────────────────────────────────────────────── */
-.ink-seam {
+/* ── Torn deckle seams — the page is a stack of printed sheets ─────────────────
+ * Where one colored stock ends, it's torn to reveal the sheet beneath. Only the
+ * two real colour turns get a seam: cream → dark-red (Projects→Experience) and
+ * dark-red → red (Blog→Contact). Each seam is one short band that paints the
+ * upper stock on top and the lower stock below, split by an irregular hand-torn
+ * clip-path — a confident, intentional edge, not a muddy gradient or a screen of
+ * dots. Pure static geometry: zero reflow, nothing to desync with scroll. A
+ * faint deckle shadow hugs just under the tear so the upper sheet reads as
+ * sitting over the lower one. The cream run above (Hero→Projects) needs no seam —
+ * it's all one stock. The -1px pull closes any sub-pixel gap to the next spread. */
+.seam {
+  /* one hand-torn edge: uniform x steps, jittered depth — reads as paper torn by
+     hand, never a mechanical sawtooth. x in %, y in px (crisp, scale-stable). */
+  --tear: polygon(
+    0 26px, 3% 16px, 6% 30px, 9% 12px, 13% 24px, 17% 34px, 21% 18px,
+    25% 29px, 29% 14px, 33% 32px, 37% 20px, 41% 30px, 45% 15px, 49% 26px,
+    53% 36px, 57% 19px, 61% 29px, 65% 13px, 69% 25px, 73% 33px, 77% 17px,
+    81% 28px, 85% 14px, 89% 31px, 93% 21px, 97% 27px, 100% 18px,
+    100% 100%, 0 100%
+  );
   display: block;
   position: relative;
   z-index: 1;
   width: 100%;
-  height: clamp(120px, 16vh, 200px);
+  height: 52px;
   margin-bottom: -1px;
-  background: linear-gradient(to bottom, transparent 0%, var(--ink) 100%);
   pointer-events: none;
+  /* clip the reveal slide so the dropping sheet never spills into the spread above */
+  overflow: hidden;
+}
+/* The torn lower sheet. A real element (not ::before) so Seam.jsx can drop it
+   into place as the seam scrolls in — like a fresh sheet hitting the press bed.
+   Its default state is the FINAL torn edge (opacity 1), so with no JS or under
+   reduced motion the seam is simply a crisp torn boundary. */
+.seam-tear {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--tear);
+  /* a thread of wet press-red glistens along the torn edge; below it the upper
+     sheet's edge drops a soft shadow onto the sheet beneath — reads freshly run */
+  filter: drop-shadow(0 -1px 0 oklch(62% 0.23 27)) drop-shadow(0 2px 1px rgba(15, 10, 8, 0.3));
+  opacity: 1;
+  will-change: transform, opacity;
+}
+/* cream → dark-red: band is transparent up top so the cream backdrop (grain and
+   all) shows through the torn gaps; the torn lower shape is the dark-red ground */
+.seam--cream-ink { background: transparent; }
+.seam--cream-ink .seam-tear { background: var(--ground); }
+/* dark-red → red: the upper stays the dark ground, the torn lower shape is the
+   press red. Mirror the tear so the two seams aren't an obvious copy of each. */
+.seam--ink-red { background: var(--ground); }
+.seam--ink-red .seam-tear { background: var(--red); transform: scaleX(-1); }
+
+/* ── The wire — newsroom crawl under the nameplate ────────────────────────────
+ * A slim ink band that runs a slow dispatch crawl between Hero and About.
+ * .wire-track holds two identical runs; PressTicker advances its translate off
+ * the shared gsap.ticker, idling at a base crawl and quickening with the Lenis
+ * scroll velocity, so the band reacts to the page moving and then settles. It's
+ * transform-only — compositor-cheap, no reflow — and wraps at one run-width for
+ * a seamless loop. Mostly monospace wire copy; the occasional red handwritten
+ * aside (--font-pen) breaks the formality the way an editor's margin note would.
+ * Pauses on hover; holds dead still under reduced motion. */
+.wire {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  border-block: 1px solid color-mix(in oklch, var(--paper) 16%, transparent);
+  /* a quiet inner vignette so the crawl fades at the edges instead of clipping */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+}
+.wire-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  /* position is driven in JS off the shared gsap.ticker (see PressTicker.jsx) so
+     the crawl can quicken with scroll velocity — no CSS keyframe to fight it */
+}
+.wire-run {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.wire-item {
+  flex: none;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.85rem 0;
+  color: var(--paper);
+  opacity: 0.82;
+}
+.wire-item--pen {
+  font-family: var(--font-pen);
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--red-wet);
+  opacity: 1;
+  padding: 0;
+  /* nudge the larger script onto the mono baseline */
+  transform: translateY(-0.06em);
+}
+.wire-sep {
+  flex: none;
+  color: var(--red);
+  font-size: 0.5rem;
+  margin: 0 1.5rem;
+  transform: translateY(-0.1em);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* JS skips the ticker under reduced motion; pin the track so it reads as a
+     static dispatch strip with no transform applied */
+  .wire-track { transform: none; }
 }
