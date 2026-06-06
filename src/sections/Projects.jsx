@@ -24,7 +24,7 @@ const TILT_MAX = 7; // degrees of rotate at the card's edge
 const isNumericMetric = (v) => /^[\d.,]+[%+]?$/.test(String(v).trim());
 
 function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
-  const { name, status, desc, long, tech, links } = project;
+  const { name, status, desc, long, note, tech, links } = project;
   const metrics = METRICS[name] || [];
   const linkEntries = Object.entries(links || {});
   const feature = variant === 'feature';
@@ -96,6 +96,8 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
       </div>
 
       <p className="cf-deck">{desc}</p>
+
+      {feature && note && <p className="cf-pen">{note}</p>}
 
       {feature && (
         <>

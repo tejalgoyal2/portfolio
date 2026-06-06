@@ -17,6 +17,7 @@ export const PROJECTS = [
     tier: 1, name: "Claubi", status: "REPO", color: "#f97316",
     desc: "Security-hardened, local-first AI coding agent in Rust. Deny-first permissions, append-only audit logging, no vendor lock-in.",
     long: "AI coding agent that treats AI-generated code as untrusted by default. Runs any model locally through Ollama. Deny-first permission model inspired by AWS IAM and CrowdStrike prevention policies. Append-only audit log (JSONL). Full Ollama client with streaming chat, model switching, CLI REPL. Planned: multi-model routing, planner-executor-reviewer pipeline, Ratatui TUI, local MCP server.",
+    note: "where my weekends go",
     tech: ["Rust", "Ollama"],
     links: { github: "https://github.com/tejalgoyal2/claubi" },
   },
