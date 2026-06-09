@@ -5,8 +5,8 @@ name: Sync blog posts
 
 on:
   schedule:
-    # Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
-    - cron: '0 */6 * * *'
+    # Once daily at 08:00 UTC
+    - cron: '0 8 * * *'
 
   # Manual trigger from the Actions tab
   workflow_dispatch:
