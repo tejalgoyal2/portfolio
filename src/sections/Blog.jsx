@@ -132,15 +132,33 @@ export default function Blog() {
     };
   }, [reduced]);
 
-  // ── Drag-to-scrub handlers ─────────────────────────────────────────────────
+  // ── Drag-to-scrub handlers ──────────────────────────────────────────────────
+  // Pointer capture is acquired LAZILY — only once real drag movement is
+  // detected, not on every pointerdown. Capturing immediately on pointerdown
+  // re-targets the eventual pointerup/click synthesis to this wrapper instead
+  // of whatever <a> was under the cursor (a WebKit quirk), which silently
+  // killed navigation on the card links. A plain click never captures, so the
+  // browser's normal click-through to the anchor is left alone.
   const onPointerDown = (e) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { active: true, startX: e.clientX, base: offsetRef.current, moved: false };
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      base: offsetRef.current,
+      moved: false,
+      pointerId: e.pointerId,
+      captured: false,
+    };
   };
   const onPointerMove = (e) => {
     if (!dragRef.current.active) return;
     const delta = dragRef.current.startX - e.clientX;
-    if (Math.abs(delta) > 5) dragRef.current.moved = true;
+    if (Math.abs(delta) > 5) {
+      dragRef.current.moved = true;
+      if (!dragRef.current.captured) {
+        e.currentTarget.setPointerCapture(dragRef.current.pointerId);
+        dragRef.current.captured = true;
+      }
+    }
     const strip = stripRef.current;
     if (!strip) return;
     const half = strip.scrollWidth / 2;
@@ -149,7 +167,10 @@ export default function Blog() {
     offsetRef.current = ((dragRef.current.base + delta) % half + half) % half;
     strip.style.transform = `translateX(${-offsetRef.current}px)`;
   };
-  const onPointerUp = () => {
+  const onPointerUp = (e) => {
+    if (dragRef.current.captured) {
+      e.currentTarget.releasePointerCapture(dragRef.current.pointerId);
+    }
     dragRef.current.active = false;
   };
   // Block link navigation if the pointer moved (drag, not click)
