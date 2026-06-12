@@ -170,7 +170,7 @@ export default function Projects() {
         <header className="cf-head">
           <span className="kicker">Work</span>
           <KineticHeadline as="h2" font="impact" className="cf-headline">
-            Ten things built. Some broke.
+            Eleven things built. Some broke.
           </KineticHeadline>
           <p className="cf-sub">
             Hover a file — the cases it&rsquo;s related to light up alongside it.

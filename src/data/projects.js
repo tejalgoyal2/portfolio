@@ -50,6 +50,13 @@ export const PROJECTS = [
     links: { live: "https://sudoku.tgoyal.me" },
   },
   {
+    tier: 2, name: "type", status: "LIVE", color: "#fda4af",
+    desc: "A keyboard-only page where typing has real physics — glyphs land with spring weight, the page itself has mass, and six styles react to your rhythm. No timer, no prompts, no judging.",
+    long: "Hand-rolled canvas renderer and physics engine, zero animation libraries. Variable font weight records how hard each key was struck; glyphs settle via closed-form underdamped springs. Six styles — Print, Clean, Ember, Tide, Frost, Gale — cycle on F4, each shedding matter proportional to flow. Every keystroke imparts a real impulse to a spring-mounted page. Streak tracking, secret words that swap styles mid-sentence, a 12-second seismograph, and a lifetime odometer — all local, nothing leaves the browser.",
+    tech: ["TypeScript", "Canvas API", "Vite", "Cloudflare Workers"],
+    links: { live: "https://type.tgoyal.me", github: "https://github.com/tejalgoyal2/type" },
+  },
+  {
     tier: 2, name: "Phishing Classifier", status: "REPO", color: "#f87171",
     desc: "ML pipeline achieving 98.2% accuracy classifying phishing emails across 82K+ samples.",
     long: "End-to-end ML pipeline on 82,486 emails. Custom preprocessing with regex URL/email stripping. Engineered features: urgency flags, caps ratio, punctuation patterns. TF-IDF with GridSearchCV best params. Logistic regression selected over RF/SVM/NB for precision-recall balance. Top phishing indicators: 'verify', 'restriction', 'suspended'.",

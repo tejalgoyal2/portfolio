@@ -35,6 +35,10 @@ export const METRICS = {
   ],
   SmartHire: [{ n: '2,000', label: 'résumés tested' }],
   Sudoku: [{ n: '1', label: 'solution, guaranteed' }],
+  type: [
+    { n: '6', label: 'visual styles' },
+    { n: '0', label: 'animation libraries' },
+  ],
   'Phishing Classifier': [
     { n: '98.2%', label: 'accuracy' },
     { n: '82,486', label: 'emails' },
