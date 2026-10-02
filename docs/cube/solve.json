@@ -1,0 +1,65 @@
+{
+ "orientation": "white on D (bottom), yellow on U (top), green F (front), red R, orange L, blue B. Standard notation; clockwise = as seen looking at that face.",
+ "scramble": "F R U' R' U R U R2 F' R U R U' R' U R U2 R' U' R U' R' F U R U' R' F' U F U' F' U F U2 F' L U' L' U' L U L' U B U B' U' R U R' U' R U2 R' U' F B2 R D' B L",
+ "scramble_length": 62,
+ "start_state_faces_UDFBRL": {
+  "U": "OYBBYBYYR",
+  "D": "BOOGWGGBR",
+  "F": "GBGOGWYYB",
+  "B": "ORWOBGWOY",
+  "R": "WRWRRWYRB",
+  "L": "GWOYOGRWR"
+ },
+ "stages": [
+  {
+   "caption": "cross",
+   "moves": "L' B' D R' B2 F'",
+   "count": 6
+  },
+  {
+   "caption": "pair 1",
+   "moves": "U R U2 R' U R U' R'",
+   "count": 8
+  },
+  {
+   "caption": "pair 2",
+   "moves": "U B U' B'",
+   "count": 4
+  },
+  {
+   "caption": "pair 3",
+   "moves": "U' L U' L' U L U L'",
+   "count": 8
+  },
+  {
+   "caption": "pair 4",
+   "moves": "F U2 F' U' F U F'",
+   "count": 7
+  },
+  {
+   "caption": "top cross",
+   "moves": "U' F R U R' U' F'",
+   "count": 7
+  },
+  {
+   "caption": "top face",
+   "moves": "R U R' U R U2 R'",
+   "count": 7
+  },
+  {
+   "caption": "solved",
+   "moves": "U' R U R' U' R' F R2 U' R' U' R U R' F'",
+   "count": 15
+  }
+ ],
+ "total_moves": 62,
+ "slot_order": [
+  "FR",
+  "RB",
+  "BL",
+  "LF"
+ ],
+ "optimal_cross_len": 6,
+ "seed": 2026,
+ "attempt": 0
+}

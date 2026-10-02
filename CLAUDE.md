@@ -1,3 +1,6 @@
+# Current work
+Read `docs/REVAMP.md` first. It is the plan for the current revamp and overrides anything below that conflicts with it. The libraries listed under Resources are optional references, not required building blocks.
+
 # Resources
 
 ## Libraries
