@@ -152,33 +152,69 @@ html.press-booting { overflow: hidden; }
   will-change: clip-path;
 }
 
-/* lead story */
-.mast-lead {
-  margin-top: clamp(2.25rem, 6vw, 4.5rem);
-  max-width: 64rem;
+/* the nameplate's sorts — Nameplate.jsx locks each one's width to its resting
+   advance so an inked (wider) letter spills into its gutter, never reflows */
+.np { display: inline; }
+.np-sort {
+  display: inline-block;
+  text-align: center;
 }
+.np-space { display: inline-block; width: 0.22em; }
+
+/* see main.jsx — only the two-column lead re-wraps badly on a font swap */
+@media (min-width: 721px) {
+  html.fonts-pending .mast-lead { visibility: hidden; }
+}
+
+/* lead story — the copy on the left, the cube's slot on the right */
+.mast-lead {
+  margin-top: clamp(2rem, 5vw, 4rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  /* top-aligned: a late font swap then only nudges what's below the headline */
+  align-items: start;
+}
+.mast-copy { min-width: 0; }
 .mast-headline {
-  font-size: clamp(2.6rem, 8vw, 7rem);
+  font-size: clamp(2.6rem, 6.4vw, 6.6rem);
   line-height: 0.92;
   letter-spacing: 0.005em;
   text-transform: uppercase;
 }
-.mast-byline {
+.mast-byline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.75rem;
   margin-top: clamp(1.25rem, 2.5vw, 2rem);
+  opacity: 0;
+}
+.mast-byline {
   font-family: var(--font-data);
   font-size: clamp(0.74rem, 1vw, 0.86rem);
   letter-spacing: 0.06em;
   color: var(--red);
-  opacity: 0;
 }
 .mast-deck {
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
   max-width: 52ch;
   font-family: var(--font-read);
   font-size: clamp(1.05rem, 1.5vw, 1.3rem);
   line-height: 1.5;
   color: var(--ink-soft);
   opacity: 0;
+}
+/* an empty square the WebGL cube is drawn into — sized here, filled by the stage */
+.mast-cube {
+  justify-self: center;
+  width: min(100%, 30rem, 52svh);
+  aspect-ratio: 1;
+}
+
+@media (max-width: 720px) {
+  .mast-lead { grid-template-columns: 1fr; }
+  .mast-cube { width: min(64vw, 17rem); }
 }
 
 .mast-cue {
@@ -791,6 +827,25 @@ html.press-booting { overflow: hidden; }
   left: 0;
   color: var(--red);
 }
+/* the margin rule — Experience.jsx scrubs its scaleY down the ledger */
+.led-rule {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem));
+  width: 2px;
+  background: var(--red);
+  transform-origin: 50% 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .led-rule { transform: none; }
+}
+.count-up {
+  display: inline-block;
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: left;
+}
+
 /* redaction sits on the ink spread — keep revealed text legible on ink */
 .experience .redacted { color: var(--paper); }
 

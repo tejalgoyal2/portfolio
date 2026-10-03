@@ -7,7 +7,8 @@ import { fireImpact } from './PressImpacts';
  * mono inside a 2px box, rotated a few degrees, faintly distressed. Optional
  * press-in slam when it scrolls into view. Optional interactive mode — renders
  * as a <button>; click or Enter/Space fires a stamp impact + a brief audio tick
- * (user-gesture-gated, never autoplay).
+ * (user-gesture-gated, never autoplay). `impact` overrides the burst word and
+ * `onPress` lets a stamp do something besides land (the icon rain).
  */
 export default function Stamp({
   label,
@@ -15,6 +16,8 @@ export default function Stamp({
   rotate = -4,
   pressIn = false,
   interactive = false,
+  impact,
+  onPress,
   className = '',
 }) {
   const ref = useRef(null);
@@ -62,8 +65,9 @@ export default function Stamp({
 
   const handleStamp = () => {
     const r = ref.current?.getBoundingClientRect();
-    if (r) fireImpact(label, r.left + r.width / 2, r.top + r.height / 2, tone);
+    if (r) fireImpact(impact || label, r.left + r.width / 2, r.top + r.height / 2, tone);
     playTick();
+    onPress?.();
   };
 
   const handleKeyDown = (e) => {
