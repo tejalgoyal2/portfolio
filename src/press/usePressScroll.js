@@ -26,8 +26,10 @@ export function usePressScroll() {
 
     lenis.on('scroll', ScrollTrigger.update);
 
+    // prioritised so Lenis moves the page before anything else reads the
+    // scroll this frame (canvases that track the paper stay in step with it)
     const raf = (time) => lenis.raf(time * 1000);
-    gsap.ticker.add(raf);
+    gsap.ticker.add(raf, false, true);
     gsap.ticker.lagSmoothing(0);
 
     ScrollTrigger.defaults({ markers: false });
