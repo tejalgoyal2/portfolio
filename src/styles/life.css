@@ -1,0 +1,108 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * The life layer — everything that answers the visitor (src/life, src/gl).
+ * Stacking, bottom to top: the paper → sections → the living type field →
+ * registration marks → the WebGL stage (cube) → icon rain → the ink roller →
+ * impacts → cursor → loader. Every canvas ignores the pointer.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* ── Living type field ───────────────────────────────────────────────────── */
+.type-field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-set);
+}
+.type-field.is-ready { opacity: 1; }
+
+/* ── Registration marks — printed where you press bare paper ──────────────── */
+.reg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.reg-mark {
+  position: absolute;
+  overflow: visible;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.4;
+  transform: translate(-50%, -50%) rotate(var(--rot));
+  animation: reg-print 2.1s var(--ease-set) forwards;
+}
+.reg-mark .reg-dot { fill: currentColor; stroke: none; }
+.reg-mark--paper { color: var(--red); stroke: var(--red); mix-blend-mode: multiply; }
+.reg-mark--ink { color: #fe433e; stroke: #fe433e; }
+.reg-mark--red { color: var(--paper); stroke: var(--paper); }
+@keyframes reg-print {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--rot) - 14deg)) scale(1.6); }
+  12% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.92); }
+  22% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+  60% { opacity: 0.8; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+}
+/* reduced motion: Life.jsx swaps the stamp-in for a plain Web Animations fade */
+
+/* ── The WebGL stage ─────────────────────────────────────────────────────── */
+.stage-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-set);
+}
+.stage-canvas.is-ready { opacity: 1; }
+
+/* the cube's keyboard handle rides over it; invisible until focused */
+.cube-handle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 7;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.cube-handle:focus-visible {
+  opacity: 1;
+  outline: 2px dashed var(--red);
+  outline-offset: 4px;
+}
+
+/* ── Icon rain ───────────────────────────────────────────────────────────── */
+.icon-rain {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 8;
+  pointer-events: none;
+}
+
+/* ── Ink roller ──────────────────────────────────────────────────────────── */
+.ink-roller {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 9000;
+  pointer-events: none;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+.ink-roller.is-on-red { background: var(--paper); }
