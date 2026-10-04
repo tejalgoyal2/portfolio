@@ -48,7 +48,7 @@ export default function About() {
   const PQ = '“I treat AI-generated code as untrusted by default.”';
 
   return (
-    <section ref={rootRef} className="about" aria-label="Profile">
+    <section ref={rootRef} className="about" aria-label="Profile" data-ground="paper" data-section="about">
       <div className="press-container">
         <header className="about-head">
           <span className="kicker">Profile</span>
@@ -60,7 +60,7 @@ export default function About() {
         <div className="about-grid">
           {/* Column 1 — lead + pull-quote */}
           <div className="about-col about-col--lead">
-            <p className="about-lead">
+            <p className="about-lead" data-ink="block">
               I started in electronics engineering, detoured through a
               federated-learning lab where I scaled experiments from 50 to a
               million simulated clients, spent a winter on a cybersecurity desk
@@ -79,19 +79,19 @@ export default function About() {
 
           {/* Column 2 — continued */}
           <div className="about-col about-col--body">
-            <p>
+            <p data-ink>
               The lab taught me that a result you can&rsquo;t reproduce at scale
               isn&rsquo;t a result. So I kept rebuilding the harness until a
               million clients behaved like fifty — and the bugs that fell out on
               the way were the interesting part.
             </p>
-            <p>
+            <p data-ink>
               The security desk taught me the opposite reflex: assume the thing is
               already compromised, then go looking. I learned to read a binary the
               way a good editor reads a draft — suspicious of every line that looks
               too clean.
             </p>
-            <p>
+            <p data-ink>
               Those two instincts run together now. An MCP server is a door
               between an AI agent and a company&rsquo;s real systems. I build the
               door — then I spend just as long trying to kick it in.

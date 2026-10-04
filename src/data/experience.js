@@ -1,10 +1,11 @@
+// {{n}} marks a headline number — Experience counts it up as it scrolls in.
 export const EXPERIENCE = [
   {
     role: "Software Engineering Co-op", org: "British Columbia Investment Management Corporation (BCI)",
     period: "May 2026 – Present", active: true,
     desc: "Enterprise Solutions: building and modernizing the financial apps BCI's investment & risk teams run on — React/Azure rebuilds, Power Platform, data pipelines, and AI-agent plumbing.",
     details: [
-      "Built the first modal-overlay pattern in a 13-screen PowerApps ops app — surfaced 28 fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
+      "Built the first modal-overlay pattern in a 13-screen PowerApps ops app — surfaced {{28}} fee fields and documented a Power Apps Table-control OnSelect limitation in a technical brief the team adopted",
       "Contributing to the flagship React/Azure app rebuilt off a vendor-locked .NET/WPF stack — eliminated licensing risk, moved on-prem to cloud, made the codebase AI-readable",
       "Automated a manual quarterly commission report in Power Automate — caught a wrong parameter count and a stored-proc name typo in the ticket, root-caused a SQL-connector DATE-type 500/503",
       "Working across Azure resource groups, Data Factory pipelines, and PIM; bridged Okta/IAM knowledge from the security desk into the new team via a shared Claude project",
@@ -16,11 +17,11 @@ export const EXPERIENCE = [
     period: "Jan – Apr 2026",
     desc: "Identity, detection, and incident response across an institutional investment manager's security stack.",
     details: [
-      "Spearheaded breakglass documentation for 163+ SSO apps, reducing undocumented gaps from 86% to 22%",
+      "Spearheaded breakglass documentation for {{163+}} SSO apps, reducing undocumented gaps from {{86%}} to {{22%}}",
       "Built PowerShell automation against Confluence REST API, cutting compliance reporting from 3 hours to 10 minutes",
-      "Engineered Shadow AI detection via CrowdStrike LogScale, surfacing 47 unsanctioned AI tools across 1,200+ endpoints",
+      "Engineered Shadow AI detection via CrowdStrike LogScale, surfacing {{47}} unsanctioned AI tools across {{1,200+}} endpoints",
       "Led solo IR investigation: correlated VirusTotal hashes, code signing anomalies, and C2 indicators to confirm malicious activity",
-      "Designed IAM admin role progression framework for Okta, reducing role redundancy by 25% with least-privilege gating",
+      "Designed IAM admin role progression framework for Okta, reducing role redundancy by {{25%}} with least-privilege gating",
       "Validated device trust and BYOD conditional access controls across managed and personal endpoints",
     ],
   },
@@ -29,8 +30,8 @@ export const EXPERIENCE = [
     period: "Jan – Dec 2025",
     desc: "Two TA roles: hands-on Raspberry Pi labs for first-year engineers, and Fourier/Laplace tutorials for ECE 260.",
     details: [
-      "Led weekly Raspberry Pi Pico W labs for 30 students: sensor integration, circuit design, embedded programming",
-      "Mentored 12 teams through term-long design projects with live debugging and troubleshooting",
+      "Led weekly Raspberry Pi Pico W labs for {{30}} students: sensor integration, circuit design, embedded programming",
+      "Mentored {{12}} teams through term-long design projects with live debugging and troubleshooting",
       "Delivered ECE 260 tutorials breaking down Fourier and Laplace transforms into structured solution approaches",
     ],
   },
@@ -40,11 +41,11 @@ export const EXPERIENCE = [
     desc: "Implemented and benchmarked federated learning algorithms from scratch. Co-authored published paper on game-theoretic FL.",
     details: [
       "Built FedAVG from scratch in PyTorch, scaled experiments from 50 to 1M simulated clients across MNIST, CIFAR-10/100, FEMNIST",
-      "Developed Dirichlet-based non-IID distribution, reducing communication rounds by ~15% under severe heterogeneity",
-      "Implemented CMAB framework for class imbalance, improving minority-class accuracy by ~11%",
-      "Benchmarked 8+ FL algorithms (FedAVG, FedProx, DITTO) with modular experimentation framework",
+      "Developed Dirichlet-based non-IID distribution, reducing communication rounds by {{~15%}} under severe heterogeneity",
+      "Implemented CMAB framework for class imbalance, improving minority-class accuracy by {{~11%}}",
+      "Benchmarked {{8+}} FL algorithms (FedAVG, FedProx, DITTO) with modular experimentation framework",
       "Co-authored published paper on game-theoretic approaches to federated learning",
-      "Co-created shared Ubuntu dev server for 6 researchers, standardized CUDA/PyTorch toolchain",
+      "Co-created shared Ubuntu dev server for {{6}} researchers, standardized CUDA/PyTorch toolchain",
     ],
   },
 ];

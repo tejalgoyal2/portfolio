@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { EXPERIENCE } from '../data/experience';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
+import CountUp from '../press/CountUp';
 
 /**
  * Experience — the working history on the first dark spread. The section owns
@@ -11,10 +12,14 @@ import Redacted from '../press/Redacted';
  * and what I actually did — so there's no hover-expand to reflow the page. One
  * security line stays redacted until you scroll it into the clear. Entrance
  * staggers in once; reduced motion just reads it static.
+ *
+ * As you scroll the ledger, a red rule draws itself down the left margin
+ * (scaleY, scrubbed) and the headline numbers — marked {{like this}} in the
+ * data — count up as they arrive.
  */
 const REDACT = 'C2';
 
-function Dispatch({ text }) {
+function Plain({ text }) {
   const i = text.indexOf(`${REDACT} indicators`);
   if (i === -1) return text;
   return (
@@ -25,6 +30,12 @@ function Dispatch({ text }) {
       </Redacted>
       {text.slice(i + REDACT.length)}
     </>
+  );
+}
+
+function Dispatch({ text }) {
+  return text.split(/(\{\{.+?\}\})/).map((part, k) =>
+    part.startsWith('{{') ? <CountUp key={k} value={part.slice(2, -2)} /> : <Plain key={k} text={part} />
   );
 }
 
@@ -48,13 +59,23 @@ export default function Experience() {
         ease: 'power3.out',
         scrollTrigger: { trigger: '.ledger', start: 'top 78%', once: true },
       });
+
+      gsap.fromTo(
+        '.led-rule',
+        { scaleY: 0 },
+        {
+          scaleY: 1,
+          ease: 'none',
+          scrollTrigger: { trigger: '.ledger', start: 'top 70%', end: 'bottom 70%', scrub: true },
+        }
+      );
     }, root);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section ref={rootRef} className="experience" id="experience" aria-label="Experience">
+    <section ref={rootRef} className="experience" id="experience" aria-label="Experience" data-ground="ink" data-section="experience">
       <div className="press-container">
         <header className="led-head">
           <span className="kicker">Experience</span>
@@ -64,6 +85,7 @@ export default function Experience() {
         </header>
 
         <div className="ledger">
+          <span className="led-rule" aria-hidden="true" />
           {EXPERIENCE.map((entry) => (
             <article
               key={`${entry.org}-${entry.period}`}
@@ -81,12 +103,12 @@ export default function Experience() {
                   )}
                 </h3>
                 <p className="led-org">{entry.org}</p>
-                <p className="led-desc">{entry.desc}</p>
+                <p className="led-desc" data-ink>{entry.desc}</p>
 
                 {entry.details?.length > 0 && (
                   <ul className="led-dispatches">
                     {entry.details.map((d, j) => (
-                      <li className="led-dispatch" key={j}>
+                      <li className="led-dispatch" key={j} data-ink="block">
                         <Dispatch text={d} />
                       </li>
                     ))}

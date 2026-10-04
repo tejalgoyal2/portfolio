@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { looseType } from '../life/looseType';
 
 /**
  * A headline that sets like movable type — each glyph drops, rotates a touch,
@@ -12,6 +13,9 @@ import { gsap } from 'gsap';
  *   inview: play on an IntersectionObserver instead of a ScrollTrigger — use it
  *   on terminal/edge sections where ScrollTrigger's computed start can fail to
  *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
+ *
+ * Once set, the glyphs come loose (src/life/looseType): they lift near the
+ * cursor and the headline skews a touch with scroll speed.
  */
 export default function KineticHeadline({
   children,
@@ -31,6 +35,7 @@ export default function KineticHeadline({
     const root = rootRef.current;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let detach;
+    let loosen;
 
     const ctx = gsap.context(() => {
       const chars = gsap.utils.toArray('.kh-char');
@@ -58,6 +63,11 @@ export default function KineticHeadline({
           duration: 0.5,
         }
       );
+      // the type has set — now it can come loose
+      tl.eventCallback('onComplete', () => {
+        loosen?.();
+        loosen = looseType(root);
+      });
       if (misregister) {
         tl.fromTo(
           '.kh-ghost',
@@ -101,6 +111,7 @@ export default function KineticHeadline({
 
     return () => {
       detach?.();
+      loosen?.();
       ctx.revert();
     };
   }, [text, misregister, spread, intro, inview]);

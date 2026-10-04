@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { scroll } from '../life/scroll';
+import { Spring } from '../life/spring';
 import { BLOG_POSTS } from '../data/blog';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
@@ -11,7 +13,12 @@ import Redacted from '../press/Redacted';
  * composed with the static sine scatter — so the strip feels tactile, not flat.
  * Punchline words are redacted; hover reveals them. Drag or horizontal-scroll to
  * browse. Reduced motion → a flat static grid, no marquee, no tilt.
+ *
+ * The strip feels the page move: scroll speed quickens the crawl and leans the
+ * clippings a little (a sprung skew), and both settle back as the page stops.
  */
+const CRAWL = 27; // px/s at rest
+const MAX_LEAN = 3.5; // degrees
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The one word per title we redact. Readers lean in, hover to reveal.
@@ -89,12 +96,25 @@ export default function Blog() {
     });
 
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
-    const tick = () => {
-      if (hoverRef.current || dragRef.current.active || wheelRef.current || !visibleRef.current) return;
+    const lean = new Spring(0, 0.5, 0.6);
+    let wrote = '';
+    const tick = (time, deltaMs) => {
+      if (!visibleRef.current) return;
+      const dt = Math.min(0.05, deltaMs / 1000);
       const half = strip.scrollWidth / 2;
       if (half <= 0) return;
-      offsetRef.current = (offsetRef.current + 0.45) % half;
-      strip.style.transform = `translateX(${-offsetRef.current}px)`;
+      lean.target = Math.max(-1, Math.min(1, -scroll.v / 1600)) * MAX_LEAN;
+      lean.step(dt);
+      if (!(hoverRef.current || dragRef.current.active || wheelRef.current)) {
+        const speed = CRAWL + Math.min(Math.abs(scroll.v) * 0.45, 900);
+        offsetRef.current = (offsetRef.current + speed * dt) % half;
+      }
+      const sk = Math.abs(lean.value) < 0.01 ? 0 : lean.value;
+      const next = `translateX(${(-offsetRef.current).toFixed(2)}px) skewX(${sk.toFixed(3)}deg)`;
+      if (next !== wrote) {
+        wrote = next;
+        strip.style.transform = next;
+      }
     };
 
     // Pause when section leaves viewport (battery / CPU relief)
@@ -214,7 +234,7 @@ export default function Blog() {
   };
 
   return (
-    <section className="opdesk" id="blog">
+    <section className="opdesk" id="blog" data-ground="ink" data-section="writing">
       <header className="opdesk-header">
         <p className="opdesk-kicker">Writing</p>
         <KineticHeadline as="h2" font="impact" className="opdesk-title">

@@ -7,37 +7,40 @@ gsap.registerPlugin(ScrollTrigger);
 /**
  * A torn deckle seam between two colour spreads — the page is a stack of printed
  * sheets, and where one stock ends it's torn to show the one beneath. The static
- * edge lives in CSS (.seam / .seam-tear); this only adds the motion: as the seam
- * scrolls into frame the torn sheet drops the last stretch onto the press bed and
- * settles, the way the rest of the site sets type into the stick. One-shot, off
- * the shared ScrollTrigger. The tear's resting state is the CSS default, so under
- * reduced motion (or with no JS at all) it's simply a crisp torn boundary.
+ * edge lives in CSS (.seam / .seam-tear); this adds the motion: the tear rips
+ * across as you scroll through it. The lower sheet is cut into vertical strips
+ * (each a full-width copy of the torn shape, clipped to its slice) that rise
+ * into place left to right, scrubbed to the scroll — transforms only. The
+ * strips' resting state is the CSS default, so under reduced motion (or with
+ * no JS at all) it's simply a crisp torn boundary.
  *
  *   variant: 'cream-ink' (cream → dark-red) | 'ink-red' (dark-red → red)
  */
+const STRIPS = 32;
+
 export default function Seam({ variant = 'cream-ink' }) {
   const ref = useRef(null);
 
   useEffect(() => {
     const root = ref.current;
-    const tear = root?.querySelector('.seam-tear');
-    if (!tear) return;
+    if (!root) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const mirror = variant === 'ink-red';
-    const base = mirror ? { scaleX: -1 } : {};
-
     const ctx = gsap.context(() => {
+      const strips = gsap.utils.toArray('.seam-strip', root);
+      // the rip runs left → right on the first seam, right → left on the mirrored one
+      const order = variant === 'ink-red' ? strips.slice().reverse() : strips;
       gsap.fromTo(
-        tear,
-        { ...base, yPercent: -60, opacity: 0 },
+        order,
+        { yPercent: 100 },
         {
-          ...base,
           yPercent: 0,
-          opacity: 1,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: root, start: 'top 92%', once: true },
+          ease: 'none',
+          duration: 1,
+          // each strip rises over a window that overlaps its neighbours', so
+          // the front is a soft slope running across, not a staircase
+          stagger: { amount: 1.6 },
+          scrollTrigger: { trigger: root, start: 'top 98%', end: 'top 52%', scrub: true },
         }
       );
     }, root);
@@ -47,7 +50,11 @@ export default function Seam({ variant = 'cream-ink' }) {
 
   return (
     <div ref={ref} className={`seam seam--${variant}`} aria-hidden="true">
-      <span className="seam-tear" />
+      {Array.from({ length: STRIPS }, (_, i) => (
+        <span className="seam-strip" key={i} style={{ '--i': i, '--n': STRIPS }}>
+          <span className="seam-tear" />
+        </span>
+      ))}
     </div>
   );
 }

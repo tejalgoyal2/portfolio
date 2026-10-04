@@ -37,7 +37,7 @@ export default function Contact() {
   }, []);
 
   return (
-    <section ref={rootRef} className="contact" id="contact">
+    <section ref={rootRef} className="contact" id="contact" data-ground="red" data-section="contact">
       <div className="contact-inner">
         <header className="contact-hd">
           <p className="contact-kicker">Get in touch</p>
@@ -50,7 +50,7 @@ export default function Contact() {
           >
             LET&rsquo;S TALK
           </KineticHeadline>
-          <p className="contact-sub">
+          <p className="contact-sub" data-ink>
             Building something interesting? I&rsquo;d like to hear about it.
           </p>
         </header>

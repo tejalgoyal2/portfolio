@@ -11,14 +11,14 @@ import KineticHeadline from '../press/KineticHeadline';
  */
 export default function Skills() {
   return (
-    <section className="skills" aria-label="Skills">
+    <section className="skills" aria-label="Skills" data-ground="paper" data-section="skills">
       <div className="press-container">
         <header className="skills-head">
           <span className="kicker">Skills</span>
           <KineticHeadline as="h2" font="impact" className="skills-headline">
             What I build with
           </KineticHeadline>
-          <p className="skills-instruct">
+          <p className="skills-instruct" data-ink>
             A working set — security, ML, and the web stack I ship on.
           </p>
         </header>

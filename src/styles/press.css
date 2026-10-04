@@ -83,6 +83,56 @@ html.cursor-hidden select {
   margin: -13px 0 0 -13px;
 }
 
+/* per-target states: the crosshair gives way to a drawn mark (PressCursor.jsx).
+   Same paper stroke under difference blending, so each reads on every ground. */
+.cursor-mark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(0.6) rotate(-40deg);
+  transition: opacity 0.18s var(--ease-set), transform 0.3s var(--ease-stamp);
+}
+.press-cross { transition: opacity 0.15s var(--ease-set); }
+.press-cursor-ring[data-state] {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+}
+.press-cursor-ring[data-state] .press-cross { opacity: 0; }
+.press-cursor-ring[data-state="twist"] .cursor-mark--twist,
+.press-cursor-ring[data-state="wheel"] .cursor-mark--wheel,
+.press-cursor-ring[data-state="nib"] .cursor-mark--nib {
+  opacity: 1;
+  transform: none;
+}
+/* the twist arc keeps hinting a quarter turn while you hover the cube */
+.press-cursor-ring[data-state="twist"] .cursor-mark--twist {
+  animation: cursor-twist 4.8s var(--ease-set) infinite;
+}
+.press-cursor-ring[data-state="twist"].is-down .cursor-mark--twist {
+  animation: none;
+  transform: rotate(90deg);
+}
+/* four quarter turns, a beat between each — like a face being turned */
+@keyframes cursor-twist {
+  0%, 14% { transform: rotate(0deg); }
+  25%, 39% { transform: rotate(90deg); }
+  50%, 64% { transform: rotate(180deg); }
+  75%, 89% { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .press-cursor-ring[data-state="twist"] .cursor-mark--twist { animation: none; }
+}
+
 /* ── Onomatopoeia impacts ────────────────────────────────────────────────── */
 .press-impacts {
   position: fixed;
@@ -294,10 +344,17 @@ button.press-stamp {
   /* clip the reveal slide so the dropping sheet never spills into the spread above */
   overflow: hidden;
 }
-/* The torn lower sheet. A real element (not ::before) so Seam.jsx can drop it
-   into place as the seam scrolls in — like a fresh sheet hitting the press bed.
-   Its default state is the FINAL torn edge (opacity 1), so with no JS or under
-   reduced motion the seam is simply a crisp torn boundary. */
+/* The torn lower sheet, cut into vertical strips so Seam.jsx can rip it across
+   as you scroll: each strip is clipped to its slice (1px of overlap hides any
+   hairline) and carries a full-width copy of the torn shape, so the slices line
+   up into one edge. Default state is the FINAL torn edge, so with no JS or
+   under reduced motion the seam is simply a crisp torn boundary. */
+.seam-strip {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc(100% - (var(--i) + 1) * 100% / var(--n) - 1px) 0 calc(var(--i) * 100% / var(--n)));
+  will-change: transform;
+}
 .seam-tear {
   position: absolute;
   inset: 0;
@@ -305,8 +362,6 @@ button.press-stamp {
   /* a thread of wet press-red glistens along the torn edge; below it the upper
      sheet's edge drops a soft shadow onto the sheet beneath — reads freshly run */
   filter: drop-shadow(0 -1px 0 oklch(62% 0.23 27)) drop-shadow(0 2px 1px rgba(15, 10, 8, 0.3));
-  opacity: 1;
-  will-change: transform, opacity;
 }
 /* cream → dark-red: band is transparent up top so the cream backdrop (grain and
    all) shows through the torn gaps; the torn lower shape is the dark-red ground */

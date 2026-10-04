@@ -95,7 +95,7 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
         />
       </div>
 
-      <p className="cf-deck">{desc}</p>
+      <p className="cf-deck" data-ink>{desc}</p>
 
       {feature && note && <p className="cf-pen">{note}</p>}
 
@@ -115,7 +115,7 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
               ))}
             </div>
           )}
-          <p className="cf-notes">{long}</p>
+          <p className="cf-notes" data-ink>{long}</p>
         </>
       )}
 
@@ -165,7 +165,7 @@ export default function Projects() {
   let counter = 0;
 
   return (
-    <section className="projects" id="work" aria-label="Work — projects">
+    <section className="projects" id="work" aria-label="Work — projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
         <header className="cf-head">
           <span className="kicker">Work</span>
