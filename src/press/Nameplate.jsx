@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { pointer } from '../life/pointer';
 import { prefs } from '../life/prefs';
 import { onLayout } from '../life/layout';
+import { naturalLayout } from '../life/sheets';
 import { Spring, smoothstep } from '../life/spring';
 
 /**
@@ -67,19 +68,21 @@ export default function Nameplate({ text }) {
       awake = true;
       reach = Math.max(90, pr.height * 0.95);
     };
-    measure();
+    naturalLayout(measure);
     const offLayout = onLayout(measure);
 
     const tick = (time, deltaMs) => {
       if (prefs.reduced) return;
       const dt = Math.min(0.05, deltaMs / 1000);
-      const top = box.y - window.scrollY;
+      // the plate rides a sheet that sticks and settles, so read where it is now
+      const live = pointer.active ? plate.getBoundingClientRect() : null;
+      const k = live ? live.width / (box.w || 1) : 1;
       const near =
-        pointer.active &&
-        pointer.x > box.x - reach &&
-        pointer.x < box.x + box.w + reach &&
-        pointer.y > top - reach &&
-        pointer.y < top + box.h + reach;
+        !!live &&
+        pointer.x > live.left - reach &&
+        pointer.x < live.right + reach &&
+        pointer.y > live.top - reach &&
+        pointer.y < live.bottom + reach;
       if (!near && !awake) return;
 
       let moving = false;
@@ -87,7 +90,7 @@ export default function Nameplate({ text }) {
         const c = centres[i];
         const sp = springs[i];
         if (near) {
-          const d = Math.hypot(pointer.x - (box.x + c.x), (pointer.y - (top + c.y)) * 1.15);
+          const d = Math.hypot(pointer.x - (live.left + c.x * k), (pointer.y - (live.top + c.y * k)) * 1.15);
           sp.target = 1 - smoothstep(0, reach, d);
         } else sp.target = 0;
         sp.step(dt);

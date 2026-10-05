@@ -4,6 +4,7 @@ import { EXPERIENCE } from '../data/experience';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
 import CountUp from '../press/CountUp';
+import { stickScroll } from '../life/sheets';
 
 /**
  * Experience — the working history on the first dark spread. The section owns
@@ -66,7 +67,18 @@ export default function Experience() {
         {
           scaleY: 1,
           ease: 'none',
-          scrollTrigger: { trigger: '.ledger', start: 'top 70%', end: 'bottom 70%', scrub: true },
+          scrollTrigger: {
+            trigger: '.ledger',
+            start: 'top 70%',
+            // done drawing by the time this sheet sticks and Writing slides over it
+            end: () => {
+              const ledger = root.querySelector('.ledger');
+              const r = ledger.getBoundingClientRect();
+              return Math.min(r.bottom + window.scrollY - window.innerHeight * 0.7, stickScroll(ledger));
+            },
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
         }
       );
     }, root);

@@ -1,4 +1,5 @@
 import { onLayout } from './layout';
+import { naturalLayout } from './sheets';
 
 /**
  * Which stock the press is printing on at a given height: 'paper' (cream),
@@ -22,7 +23,7 @@ let started = false;
 export function startGround() {
   if (started) return;
   started = true;
-  measure();
+  naturalLayout(measure);
   onLayout(measure);
 }
 

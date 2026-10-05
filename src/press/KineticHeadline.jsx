@@ -15,7 +15,7 @@ import { looseType } from '../life/looseType';
  *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
  *
  * Once set, the glyphs come loose (src/life/looseType): they lift near the
- * cursor and the headline skews a touch with scroll speed.
+ * cursor and drop back into place.
  */
 export default function KineticHeadline({
   children,
