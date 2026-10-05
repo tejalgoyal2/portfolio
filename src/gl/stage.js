@@ -3,7 +3,7 @@
 // the loader lifts, transparent, pointer-events off; it pauses when the tab is
 // hidden. Scroll position picks how far the solve has got: each section's
 // stage is spread over the scroll it takes that section to pass the 60% line.
-import { LinearSRGBColorSpace, WebGLRenderer } from 'three';
+import { WebGLRenderer } from 'three';
 import { gsap } from 'gsap';
 import { Director } from '../cube/director';
 import { targetAt } from '../cube/schedule';
@@ -13,6 +13,7 @@ import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
 import { onLayout } from '../life/layout';
 import { groundAt } from '../life/ground';
+import { naturalLayout } from '../life/sheets';
 import { fireImpact } from '../press/PressImpacts';
 import { createCubeView } from './cube-view';
 import { createPresence } from './presence';
@@ -26,7 +27,6 @@ export async function startStage(canvas, hitBtn) {
   } catch {
     return null;
   }
-  renderer.outputColorSpace = LinearSRGBColorSpace; // the shader writes sRGB itself
   renderer.setClearColor(0x000000, 0);
 
   const director = new Director(SCRAMBLE, SOLVE, { instant: prefs.reduced });
@@ -64,7 +64,7 @@ export async function startStage(canvas, hitBtn) {
     }
     spans = next;
   };
-  measureSpans();
+  naturalLayout(measureSpans);
   const offLayout = onLayout(measureSpans);
 
   let w = 0;

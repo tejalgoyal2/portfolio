@@ -1,22 +1,32 @@
-// Draws the logical cube (src/cube) with the Blender cubie and sticker from
-// public/models/cube.glb: 27 instanced bodies, 54 instanced stickers, and one
+// Draws the logical cube (src/cube): the Blender cubie body from
+// public/models/cube.glb, 27 instanced bodies and 54 instanced stickers, one
 // layer turning at a time. Classic sticker colours on black plastic — no
-// material effects (docs/cube/CUBE.md). The only thing that changes with the
-// page is a warm, paper-tinted rim light that fades up over the dark spreads,
-// so a black cube never sinks into a dark-red ground.
+// material effects (docs/cube/CUBE.md).
+//
+// Materials are plain MeshStandardMaterial under two lights: matte, fully
+// opaque stickers (roughness 0.85) and a satin body (0.6), no environment map,
+// clearcoat or transparency. The stickers are built here as thick rounded
+// tiles seated into each face (their base sits below the face, their edge runs
+// out over the cubie's rounded edge), so the colour reads solid with only a
+// thin black seam between tiles. The one thing that changes with the page is
+// a warm edge light that fades up over the dark grounds, so a black cube never
+// sinks into ink.
 import {
   Box3,
   Color,
+  DirectionalLight,
   DynamicDrawUsage,
-  GLSL3,
+  ExtrudeGeometry,
   Group,
+  HemisphereLight,
   InstancedMesh,
   Matrix4,
+  MeshStandardMaterial,
   PerspectiveCamera,
   Quaternion,
   Raycaster,
   Scene,
-  ShaderMaterial,
+  Shape,
   Vector2,
   Vector3,
 } from 'three';
@@ -24,86 +34,69 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { STICKERS, FACE_AXIS, moveQuarterTurns, faceOfNormal } from '../cube/model';
 
 const SPACING = 1.02;
-/** Half the cube's outer size in model units (cubies at ±1.02, half-edge 0.5, sticker proud 0.085). */
-export const CUBE_HALF = 1.605;
+/** Half the cube's outer size in model units (cubies at ±1.02, half-edge 0.5, tiles proud 0.042). */
+export const CUBE_HALF = 1.562;
 /** Radius that contains the cube at any orientation (its corner), in model units. */
-export const CUBE_REACH = 2.62;
+export const CUBE_REACH = 2.6;
 
 // sRGB, tuned to sit with the press palette: the "white" is the paper cream
 // and the red is the press red.
 const STICKER_SRGB = {
-  W: '#f2ece0',
-  Y: '#f4c430',
-  G: '#1d8c4f',
-  B: '#2353b0',
-  R: '#d1262a',
-  O: '#f07b1f',
+  W: '#efe9dc',
+  Y: '#f2c12e',
+  G: '#1f8a4c',
+  B: '#2452ad',
+  R: '#cf2a2c',
+  O: '#ee7a20',
 };
-const PLASTIC = '#121010';
-const RIM = '#f4e7d2';
+const PLASTIC = '#141211';
+const WHITE = new Color('#ffffff');
+const EDGE = '#f4e7d2';
 
-const vert = /* glsl */ `
-out vec3 vN;
-out vec3 vWP;
-out vec3 vCol;
-out vec3 vLocalN;
-void main() {
-  mat4 im = instanceMatrix;
-  vec4 wp = modelMatrix * im * vec4(position, 1.0);
-  vWP = wp.xyz;
-  vN = normalize(mat3(modelMatrix) * (mat3(im) * normal));
-  vLocalN = normalize(mat3(im) * vec3(0.0, 1.0, 0.0));
-#ifdef USE_INSTANCING_COLOR
-  vCol = instanceColor;
-#else
-  vCol = vec3(0.0);
-#endif
-  gl_Position = projectionMatrix * viewMatrix * wp;
+/** A sticker tile: a rounded square slab, its base sunk below the cubie face. */
+function tileGeometry() {
+  const h = 0.455; // half-size of the flat top, before the bevel
+  const r = 0.075; // corner radius
+  const s = new Shape();
+  s.moveTo(-h + r, -h);
+  s.lineTo(h - r, -h);
+  s.quadraticCurveTo(h, -h, h, -h + r);
+  s.lineTo(h, h - r);
+  s.quadraticCurveTo(h, h, h - r, h);
+  s.lineTo(-h + r, h);
+  s.quadraticCurveTo(-h, h, -h, h - r);
+  s.lineTo(-h, -h + r);
+  s.quadraticCurveTo(-h, -h, -h + r, -h);
+  const geo = new ExtrudeGeometry(s, {
+    depth: 0.05,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.012,
+    bevelSegments: 3,
+    curveSegments: 6,
+  });
+  geo.rotateX(-Math.PI / 2); // extrude along +Y, the cubie's +Y face
+  geo.translate(0, 0.48, 0); // spans y 0.468 → 0.542: seated into the face, 0.042 proud
+  geo.computeVertexNormals();
+  return geo;
 }
-`;
 
-const frag = /* glsl */ `
-precision highp float;
-in vec3 vN;
-in vec3 vWP;
-in vec3 vCol;
-in vec3 vLocalN;
-out vec4 outColor;
-
-uniform vec3 uPlastic;
-uniform vec3 uRimCol;
-uniform float uRim;
-uniform float uHover;
-uniform vec3 uHoverN;
-
-void main() {
-  vec3 N = normalize(vN);
-  if (!gl_FrontFacing) N = -N;
-  vec3 V = normalize(cameraPosition - vWP);
-  // a soft key from the upper left, a dim fill from the right
-  vec3 L = normalize(vec3(-0.45, 0.78, 0.55));
-  vec3 F = normalize(vec3(0.7, -0.15, 0.6));
-  float wrap = clamp(dot(N, L) * 0.5 + 0.5, 0.0, 1.0);
-  float fill = max(dot(N, F), 0.0);
-  vec3 H = normalize(L + V);
-  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-
-#ifdef STICKER
-  vec3 base = vCol;
-  float spec = pow(max(dot(N, H), 0.0), 70.0) * 0.32;
-  vec3 col = base * (0.34 + 0.78 * wrap + 0.12 * fill) + spec;
-  float hov = step(0.92, dot(vLocalN, uHoverN)) * uHover;
-  col = mix(col, col * 1.18 + 0.05, hov);
-#else
-  vec3 base = uPlastic;
-  float spec = pow(max(dot(N, H), 0.0), 36.0) * 0.22;
-  vec3 col = base * (0.6 + 0.9 * wrap) + spec * vec3(1.0, 0.96, 0.9);
-#endif
-  // over the dark spreads a warm rim keeps the silhouette on the page
-  col += uRimCol * fres * uRim * 0.55;
-  outColor = vec4(pow(max(col, 0.0), vec3(1.0 / 2.2)), 1.0);
+/** Adds a fresnel edge light (uEdge, uEdgeCol) to a standard material. */
+function withEdgeLight(material, uniforms) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uEdge = uniforms.uEdge;
+    shader.uniforms.uEdgeCol = uniforms.uEdgeCol;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uEdge;\nuniform vec3 uEdgeCol;')
+      .replace(
+        '#include <opaque_fragment>',
+        `float edgeF = pow(1.0 - saturate(dot(normalize(normal), normalize(vViewPosition))), 3.0);
+outgoingLight += uEdgeCol * edgeF * uEdge * 0.6;
+#include <opaque_fragment>`
+      );
+  };
+  return material;
 }
-`;
 
 const m4 = (r, p) =>
   new Matrix4().set(r[0], r[1], r[2], p[0] * SPACING, r[3], r[4], r[5], p[1] * SPACING, r[6], r[7], r[8], p[2] * SPACING, 0, 0, 0, 1);
@@ -117,40 +110,38 @@ export function turnCurve(p) {
   return 1 - Math.exp(-z * w * p) * (Math.cos(wd * p) + (z / Math.sqrt(1 - z * z)) * Math.sin(wd * p));
 }
 
-const linear = (hex) => new Color(hex).convertSRGBToLinear();
-
 export async function createCubeView(director) {
   const gltf = await new GLTFLoader().loadAsync('/models/cube.glb');
-  const geo = (name) => gltf.scene.getObjectByName(name).geometry;
-  const bodyGeo = geo('cubie_body');
-  const stickerGeo = geo('sticker');
+  const bodyGeo = gltf.scene.getObjectByName('cubie_body').geometry;
+  const stickerGeo = tileGeometry();
 
   const uniforms = {
-    uPlastic: { value: linear(PLASTIC) },
-    uRimCol: { value: linear(RIM) },
-    uRim: { value: 0 },
-    uHover: { value: 0 },
-    uHoverN: { value: new Vector3(0, 0, 1) },
+    uEdge: { value: 0 },
+    uEdgeCol: { value: new Color(EDGE) },
   };
-  const bodyMat = new ShaderMaterial({ glslVersion: GLSL3, vertexShader: vert, fragmentShader: frag, uniforms });
-  const stickerMat = new ShaderMaterial({
-    glslVersion: GLSL3,
-    vertexShader: vert,
-    fragmentShader: frag,
-    uniforms,
-    defines: { STICKER: 1 },
-  });
+  const bodyMat = withEdgeLight(new MeshStandardMaterial({ color: PLASTIC, roughness: 0.6, metalness: 0 }), uniforms);
+  const stickerMat = withEdgeLight(new MeshStandardMaterial({ color: '#ffffff', roughness: 0.85, metalness: 0 }), uniforms);
 
   const bodies = new InstancedMesh(bodyGeo, bodyMat, 27);
   const stickers = new InstancedMesh(stickerGeo, stickerMat, STICKERS.length);
   bodies.instanceMatrix.setUsage(DynamicDrawUsage);
   stickers.instanceMatrix.setUsage(DynamicDrawUsage);
   bodies.frustumCulled = stickers.frustumCulled = false;
-  const colours = Object.fromEntries(Object.entries(STICKER_SRGB).map(([k, v]) => [k, linear(v)]));
-  STICKERS.forEach((s) => stickers.setColorAt(s.id, colours[s.colour]));
-  if (stickers.instanceColor) stickers.instanceColor.needsUpdate = true;
+  const colours = Object.fromEntries(Object.entries(STICKER_SRGB).map(([k, v]) => [k, new Color(v)]));
+  const lit = new Color();
+  const paintStickers = (face, amount) => {
+    for (const s of STICKERS) {
+      const c = colours[s.colour];
+      if (face && amount > 0.01 && director.state.stickerFace(s) === face) {
+        lit.copy(c).lerp(WHITE, 0.16 * amount);
+        stickers.setColorAt(s.id, lit);
+      } else stickers.setColorAt(s.id, c);
+    }
+    stickers.instanceColor.needsUpdate = true;
+  };
+  paintStickers(null, 0);
 
-  // rotation that carries the exported sticker (on +Y) onto each sticker's home face
+  // rotation that carries the tile (built on +Y) onto each sticker's home face
   const up = new Vector3(0, 1, 0);
   const stickerBase = STICKERS.map((s) => {
     const n = new Vector3(...s.homeNormal);
@@ -162,6 +153,13 @@ export async function createCubeView(director) {
   const group = new Group();
   group.add(bodies, stickers);
   scene.add(group);
+  // soft room light plus a key from the upper left and a dim fill from the right
+  scene.add(new HemisphereLight('#fff8ec', '#6b6157', 1.6));
+  const key = new DirectionalLight('#fffaf0', 1.9);
+  key.position.set(-0.45, 0.78, 0.55);
+  const fill = new DirectionalLight('#f3efe8', 1.05);
+  fill.position.set(0.75, -0.25, 0.65);
+  scene.add(key, fill);
   // one model unit ≈ one CSS pixel at z = 0 once resize() places the camera
   const camera = new PerspectiveCamera(24, 1, 10, 40000);
 
@@ -171,6 +169,9 @@ export async function createCubeView(director) {
   const axisV = [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1)];
   let layerFor = null;
   let layer = new Set();
+  let hoverFace = null;
+  let hoverAmt = 0;
+  let paintedKey = '';
 
   const update = () => {
     const a = director.active;
@@ -190,6 +191,12 @@ export async function createCubeView(director) {
     }
     bodies.instanceMatrix.needsUpdate = true;
     stickers.instanceMatrix.needsUpdate = true;
+    // the face under the cursor brightens a touch (repainted only when it changes)
+    const pk = `${hoverFace}|${hoverAmt.toFixed(2)}|${director.k}|${director.visitor.length}|${a ? 1 : 0}`;
+    if (pk !== paintedKey) {
+      paintedKey = pk;
+      paintStickers(a ? null : hoverFace, hoverAmt);
+    }
   };
   update();
 
@@ -214,6 +221,13 @@ export async function createCubeView(director) {
       camera.updateProjectionMatrix();
     },
     update,
+    setHover(face, amount) {
+      hoverFace = face;
+      hoverAmt = amount;
+    },
+    setEdge(v) {
+      uniforms.uEdge.value = v;
+    },
     /** The face under a viewport point, or null if the ray misses the cube. */
     pick(x, y) {
       if (group.scale.x < 0.01) return null;
