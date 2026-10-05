@@ -1,57 +1,63 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
-import { startPointer } from './pointer';
+import { startPointer, pointer } from './pointer';
 import { startScroll } from './scroll';
+import { startSheets, sheets, sheetAt, toLocal } from './sheets';
 import { startGround, groundAt } from './ground';
-import { startPaperPress } from './paper';
-import { startTypeField } from './typeField';
-import { startIconRain } from './iconRain';
+import { startPaperPress, isEmptyPaper, HOLD_SECONDS } from './paper';
+import { startIconDrift } from './iconDrift';
+import { startIconBurst } from './iconBurst';
 import { prefs } from './prefs';
 import { afterPrint } from './idle';
 
 /**
  * The life layer's persistent pieces, mounted once beside the press layers:
- * the living type field, the registration marks a press leaves on bare paper,
- * the icon-rain sheet, and the ink roller that fills along the top edge with
- * page progress. The shared pointer / scroll / ground trackers and the one
- * paper-press listener start here too.
+ * the drifting pencil icons and their ripples, the registration marks a click
+ * leaves on bare paper, the press-and-hold ink ring and its burst of icons,
+ * the one-time "hold" hint, and the ink roller that fills along the top edge
+ * with page progress. The shared pointer / scroll / sheet / ground trackers
+ * and the one paper-press listener start here too.
  */
 export default function Life() {
   useEffect(() => {
     startPointer();
     startScroll();
+    startSheets();
     startGround();
     startPaperPress();
   }, []);
 
   return (
     <>
-      <TypeFieldCanvas />
+      <DriftCanvas />
       <RegistrationMarks />
-      <RainCanvas />
+      <BurstCanvas />
+      <HoldRing />
+      <HoldHint />
       <InkRoller />
     </>
   );
 }
 
-function TypeFieldCanvas() {
+function DriftCanvas() {
   const ref = useRef(null);
-  useEffect(() => afterPrint(() => startTypeField(ref.current)), []);
-  return <canvas ref={ref} className="type-field" aria-hidden="true" />;
+  useEffect(() => afterPrint(() => startIconDrift(ref.current)), []);
+  return <canvas ref={ref} className="icon-drift" aria-hidden="true" />;
 }
 
-function RainCanvas() {
+function BurstCanvas() {
   const ref = useRef(null);
-  useEffect(() => startIconRain(ref.current), []);
-  return <canvas ref={ref} className="icon-rain" aria-hidden="true" />;
+  useEffect(() => startIconBurst(ref.current), []);
+  return <canvas ref={ref} className="icon-burst" aria-hidden="true" />;
 }
 
 /**
- * A press on bare paper prints a small registration mark where it landed. The
- * marks are printed on the sheet (document coordinates, so they scroll with
- * it), fade over ~2 s, and at most six are wet at once. Red on the cream, the
- * brighter spread red on the dark-red ground, paper on the red finale.
+ * A click on bare paper prints a small registration mark where it landed. The
+ * mark is printed on that sheet (portalled into it, so it scrolls, sticks and
+ * settles with it and goes under the next sheet), fades over ~2 s, and at most
+ * six are wet at once. Red on the cream, the brighter spread red on the ink
+ * ground, paper on the red finale.
  */
 const MAX_MARKS = 6;
 const MARK_LIFE = 2100;
@@ -73,9 +79,12 @@ function RegistrationMarks() {
     const timers = new Set();
     const onPress = (e) => {
       const { x, y, ground } = e.detail;
+      const i = sheetAt(y);
+      if (i < 0) return;
+      const p = toLocal(i, x, y);
       const id = ++markId;
       const rot = Math.round(Math.random() * 30 - 15);
-      setMarks((list) => [...list, { id, x, y: y + window.scrollY, ground, rot }].slice(-MAX_MARKS));
+      setMarks((list) => [...list, { id, i, x: p.x, y: p.y, ground, rot }].slice(-MAX_MARKS));
       const t = setTimeout(() => {
         timers.delete(t);
         setMarks((list) => list.filter((m) => m.id !== id));
@@ -89,25 +98,170 @@ function RegistrationMarks() {
     };
   }, []);
 
-  return createPortal(
-    <div className="reg-layer" aria-hidden="true">
-      {marks.map((m) => (
-        <svg
-          key={m.id}
-          ref={fadeIfStill}
-          className={`reg-mark reg-mark--${m.ground}`}
-          style={{ left: m.x, top: m.y, '--rot': `${m.rot}deg` }}
-          viewBox="0 0 32 32"
-          width="32"
-          height="32"
-        >
-          <circle cx="16" cy="16" r="7.5" />
-          <circle cx="16" cy="16" r="2.2" className="reg-dot" />
-          <path d="M16 1.5v29M1.5 16h29" />
-        </svg>
-      ))}
-    </div>,
-    document.body
+  const bySheet = new Map();
+  for (const m of marks) {
+    if (!bySheet.has(m.i)) bySheet.set(m.i, []);
+    bySheet.get(m.i).push(m);
+  }
+  return [...bySheet].map(([i, list]) =>
+    sheets[i]
+      ? createPortal(
+          list.map((m) => (
+            <svg
+              key={m.id}
+              ref={fadeIfStill}
+              className={`reg-mark reg-mark--${m.ground}`}
+              style={{ left: m.x, top: m.y, '--rot': `${m.rot}deg` }}
+              viewBox="0 0 32 32"
+              width="32"
+              height="32"
+              aria-hidden="true"
+            >
+              <circle cx="16" cy="16" r="7.5" />
+              <circle cx="16" cy="16" r="2.2" className="reg-dot" />
+              <path d="M16 1.5v29M1.5 16h29" />
+            </svg>
+          )),
+          sheets[i].el,
+          `marks-${i}`
+        )
+      : null
+  );
+}
+
+/**
+ * While a press is held on bare paper, an ink ring fills around the cursor —
+ * full at the biggest splash. It follows the pointer, and is inked for the
+ * ground it started on.
+ */
+const RING_R = 22;
+const RING_C = 2 * Math.PI * RING_R;
+
+function HoldRing() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    const arc = el.querySelector('.hold-arc');
+    const dot = el.querySelector('.hold-dot');
+    let t0 = 0;
+    let on = false;
+    const tick = () => {
+      if (!on) return;
+      const p = Math.min(1, (performance.now() - t0) / 1000 / HOLD_SECONDS);
+      el.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`;
+      arc.style.strokeDashoffset = (RING_C * (1 - p)).toFixed(2);
+      dot.style.transform = `scale(${(0.25 + 0.75 * p).toFixed(3)})`;
+    };
+    const onHold = (e) => {
+      const { phase, ground } = e.detail;
+      if (phase === 'start') {
+        on = true;
+        t0 = performance.now();
+        el.dataset.ground = ground || 'paper';
+        el.classList.add('is-on');
+        tick();
+      } else {
+        on = false;
+        el.classList.remove('is-on');
+      }
+    };
+    window.addEventListener('life:hold', onHold);
+    gsap.ticker.add(tick);
+    return () => {
+      window.removeEventListener('life:hold', onHold);
+      gsap.ticker.remove(tick);
+    };
+  }, []);
+  return (
+    <div ref={ref} className="hold-ring" aria-hidden="true">
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle className="hold-track" cx="28" cy="28" r={RING_R} />
+        <circle
+          className="hold-arc"
+          cx="28"
+          cy="28"
+          r={RING_R}
+          style={{ strokeDasharray: RING_C, strokeDashoffset: RING_C }}
+        />
+        <circle className="hold-dot" cx="28" cy="28" r="7" />
+      </svg>
+    </div>
+  );
+}
+
+/**
+ * Once per session, if the cursor has rested on bare paper for ~3 s, a small
+ * "hold" note appears beside it — the only hint that holding prints. It goes
+ * the moment the cursor or the page moves, or after a few seconds.
+ */
+const HINT_KEY = 'press-hold-hint';
+
+function HoldHint() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!prefs.fine) return;
+    let shown = false;
+    try {
+      shown = sessionStorage.getItem(HINT_KEY) === '1';
+    } catch {
+      /* storage blocked: show it at most once this page view */
+    }
+    if (shown) return;
+    // someone who has already held doesn't need telling
+    const knows = (e) => {
+      if (e.detail?.phase !== 'start') return;
+      shown = true;
+      try {
+        sessionStorage.setItem(HINT_KEY, '1');
+      } catch {
+        /* fine */
+      }
+    };
+    window.addEventListener('life:hold', knows);
+    const el = ref.current;
+    let visible = false;
+    let frame = 0;
+    let since = 0;
+    let atY = 0;
+    const tick = () => {
+      if (shown && !visible) return;
+      frame++;
+      if (visible) {
+        if (pointer.rest < 0.05 || Math.abs(window.scrollY - atY) > 12 || performance.now() - since > 6000) {
+          visible = false;
+          el.classList.remove('is-on');
+          gsap.ticker.remove(tick);
+        }
+        return;
+      }
+      if (!pointer.active || pointer.rest < 3 || frame % 10) return;
+      const html = document.documentElement;
+      if (html.classList.contains('menu-open') || html.classList.contains('is-holding')) return;
+      if (!isEmptyPaper(document.elementFromPoint(pointer.x, pointer.y))) return;
+      visible = true;
+      shown = true;
+      since = performance.now();
+      atY = window.scrollY;
+      try {
+        sessionStorage.setItem(HINT_KEY, '1');
+      } catch {
+        /* fine */
+      }
+      el.dataset.ground = groundAt(pointer.y);
+      el.style.transform = `translate3d(${pointer.x + 18}px, ${pointer.y + 14}px, 0)`;
+      el.classList.add('is-on');
+    };
+    gsap.ticker.add(tick);
+    return () => {
+      gsap.ticker.remove(tick);
+      window.removeEventListener('life:hold', knows);
+    };
+  }, []);
+  return (
+    <div ref={ref} className="hold-hint" aria-hidden="true">
+      <span className="hold-hint-ring" />
+      hold
+    </div>
   );
 }
 
@@ -138,5 +292,5 @@ function InkRoller() {
     gsap.ticker.add(tick);
     return () => gsap.ticker.remove(tick);
   }, []);
-  return <div ref={ref} className={`ink-roller${prefs.reduced ? ' is-still' : ''}`} aria-hidden="true" />;
+  return <div ref={ref} className="ink-roller" aria-hidden="true" />;
 }

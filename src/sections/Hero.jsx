@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
 import Nameplate from '../press/Nameplate';
-import Stamp from '../press/Stamp';
 
 /**
  * The opening — a clean editorial nameplate over a two-column lead: the story
@@ -10,7 +9,7 @@ import Stamp from '../press/Stamp';
  * stage reads its box via data-cube-home). The name sets on mount (behind the
  * loader sheet, so it's seated when the sheet feeds up); the lead line, deck
  * and byline wait for `press:loaded` so the page sets itself the instant the
- * press finishes printing. The DO NOT PRESS stamp is, obviously, the icon rain.
+ * press finishes printing.
  */
 export default function Hero() {
   const rootRef = useRef(null);
@@ -61,8 +60,6 @@ export default function Hero() {
     };
   }, []);
 
-  const rain = () => window.dispatchEvent(new Event('life:rain'));
-
   return (
     <section ref={rootRef} className="hero" aria-label="Intro" data-ground="paper" data-section="hero">
       <div className="press-container">
@@ -97,15 +94,6 @@ export default function Hero() {
             </p>
             <div className="mast-byline-row">
               <p className="mast-byline">Software · AI · Data</p>
-              <Stamp
-                label="DO NOT PRESS"
-                tone="red"
-                rotate={-7}
-                interactive
-                impact="OOPS."
-                onPress={rain}
-                className="mast-rain"
-              />
             </div>
           </div>
 

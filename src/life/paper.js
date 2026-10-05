@@ -1,6 +1,5 @@
 import { bus } from './bus';
 import { groundAt } from './ground';
-import { pointer } from './pointer';
 
 /**
  * Empty paper vs. content. One definition decides where a click prints a
@@ -52,33 +51,97 @@ export function measureMask(pad = 10, decor = true) {
 }
 
 /**
- * The one paper-press listener. A press on the cube twists it; a press on
- * bare paper dispatches `life:press` {x, y, ground} for the registration mark
- * and the type-field ripple. Mice and pens react on pointer-down; touch waits
- * for a tap (click) so a scroll gesture never prints anything.
+ * The one paper-press listener, and the difference between a click and a hold.
+ *
+ * - A press on the cube twists it (mice and pens at once; touch on a tap).
+ * - A quick click on bare paper dispatches `life:press` {x, y, ground}: the
+ *   registration mark and the water ripple.
+ * - Holding past ~¼ s (a long-press on touch) starts printing instead:
+ *   `life:hold` {phase: 'start' | 'end'} drives the ink ring that fills around
+ *   the cursor, and letting go dispatches `life:burst` {x, y, ground, amount},
+ *   amount 0..1 by how long it was held. The two never both fire.
+ * - Moving off before the hold starts (a drag, a text selection, a scroll on
+ *   touch) cancels the press; nothing prints.
  */
+const HOLD_DELAY = { mouse: 230, touch: 420 }; // ms before a press becomes a hold
+const HOLD_FULL = 1.6; // s of holding for the biggest splash
+const SLOP = { mouse: 6, touch: 10 }; // px a press may wander before it's a drag
+
+const emit = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
 let started = false;
+
 export function startPaperPress() {
   if (started) return;
   started = true;
+  const html = document.documentElement;
+  let press = null;
 
-  const press = (x, y, target) => {
-    if (document.documentElement.classList.contains('press-booting')) return;
-    const face = bus.cubeAt?.(x, y);
-    if (face) {
-      bus.twist?.(face);
-      return;
-    }
-    if (!isEmptyPaper(target)) return;
-    window.dispatchEvent(new CustomEvent('life:press', { detail: { x, y, ground: groundAt(y) } }));
+  const end = () => {
+    if (!press) return;
+    clearTimeout(press.timer);
+    if (press.holding) emit('life:hold', { phase: 'end' });
+    html.classList.remove('is-holding');
+    press = null;
+  };
+
+  const startHold = () => {
+    if (!press) return;
+    press.holding = true;
+    press.holdT0 = performance.now();
+    html.classList.add('is-holding');
+    window.getSelection?.()?.removeAllRanges();
+    emit('life:hold', { phase: 'start', x: press.x, y: press.y, ground: groundAt(press.y) });
   };
 
   window.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'touch' || e.button !== 0) return;
-    press(e.clientX, e.clientY, e.target);
+    if (html.classList.contains('press-booting') || html.classList.contains('menu-open')) return;
+    const touch = e.pointerType === 'touch';
+    if (!touch && e.button !== 0) return;
+    const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
+    if (face && !touch) {
+      bus.twist?.(face);
+      return;
+    }
+    if (!face && !isEmptyPaper(e.target)) return;
+    end();
+    press = {
+      id: e.pointerId,
+      kind: touch ? 'touch' : 'mouse',
+      x: e.clientX,
+      y: e.clientY,
+      x0: e.clientX,
+      y0: e.clientY,
+      face,
+      holding: false,
+    };
+    if (!face) press.timer = setTimeout(startHold, HOLD_DELAY[press.kind]);
   });
-  window.addEventListener('click', (e) => {
-    if ((e.pointerType || pointer.type) !== 'touch') return;
-    press(e.clientX, e.clientY, e.target);
+
+  window.addEventListener('pointermove', (e) => {
+    if (!press || e.pointerId !== press.id) return;
+    press.x = e.clientX;
+    press.y = e.clientY;
+    if (!press.holding && Math.hypot(press.x - press.x0, press.y - press.y0) > SLOP[press.kind]) end();
+  });
+
+  window.addEventListener('pointerup', (e) => {
+    if (!press || e.pointerId !== press.id) return;
+    const p = press;
+    if (p.holding) {
+      const held = (performance.now() - p.holdT0) / 1000;
+      emit('life:burst', { x: p.x, y: p.y, ground: groundAt(p.y), amount: Math.min(1, held / HOLD_FULL) });
+    } else if (p.face) bus.twist?.(p.face);
+    else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+    end();
+  });
+
+  window.addEventListener('pointercancel', end);
+  window.addEventListener('blur', end);
+  // a long-press is ours while it's printing: no context menu, no callout
+  window.addEventListener('contextmenu', (e) => {
+    if (press?.holding || press?.kind === 'touch') e.preventDefault();
   });
 }
+
+/** How full a hold is (0..1), for the ink ring. */
+export const HOLD_SECONDS = HOLD_FULL;

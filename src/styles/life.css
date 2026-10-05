@@ -1,12 +1,14 @@
 /* ──────────────────────────────────────────────────────────────────────────
  * The life layer — everything that answers the visitor (src/life, src/gl).
- * Stacking, bottom to top: the paper → sections → the living type field →
- * registration marks → the WebGL stage (cube) → icon rain → the ink roller →
- * impacts → cursor → loader. Every canvas ignores the pointer.
+ * Stacking, bottom to top: the paper → the pile of sheets (main, its own
+ * stacking context; registration marks are printed inside their sheet) →
+ * drifting icons → the WebGL stage (cube) → the icon burst → the hold ring →
+ * the ink roller, section label and menu → impacts → cursor → loader. Every
+ * canvas ignores the pointer.
  * ──────────────────────────────────────────────────────────────────────── */
 
-/* ── Living type field ───────────────────────────────────────────────────── */
-.type-field {
+/* ── Drifting icons and their ripples ────────────────────────────────────── */
+.icon-drift {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -14,22 +16,15 @@
   z-index: 4;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 1.2s var(--ease-set);
+  transition: opacity 1.4s var(--ease-set);
 }
-.type-field.is-ready { opacity: 1; }
+.icon-drift.is-ready { opacity: 1; }
 
-/* ── Registration marks — printed where you press bare paper ──────────────── */
-.reg-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 0;
-  z-index: 5;
-  pointer-events: none;
-}
+/* ── Registration marks — printed on the sheet where you click bare paper ── */
 .reg-mark {
   position: absolute;
+  z-index: 40;
+  pointer-events: none;
   overflow: visible;
   fill: none;
   stroke: var(--red);
@@ -81,14 +76,78 @@
   outline-offset: 4px;
 }
 
-/* ── Icon rain ───────────────────────────────────────────────────────────── */
-.icon-rain {
+/* ── Press-and-hold: the ink ring, the burst, the one-time hint ──────────── */
+.icon-burst {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   z-index: 8;
   pointer-events: none;
+}
+html.is-holding,
+html.is-holding * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.hold-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9;
+  margin: -28px 0 0 -28px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease-set);
+  --ring: var(--red);
+}
+.hold-ring.is-on { opacity: 1; }
+.hold-ring[data-ground="ink"] { --ring: #fe433e; }
+.hold-ring[data-ground="red"] { --ring: var(--paper); }
+.hold-ring svg { overflow: visible; transform: rotate(-90deg); }
+.hold-track,
+.hold-arc { fill: none; stroke: var(--ring); }
+.hold-track { stroke-width: 1; opacity: 0.25; }
+.hold-arc { stroke-width: 3; stroke-linecap: round; }
+.hold-dot { fill: var(--ring); opacity: 0.85; transform-origin: 28px 28px; transform: scale(0.25); }
+
+.hold-hint {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-pen);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--red);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-set);
+}
+.hold-hint.is-on { opacity: 1; }
+.hold-hint[data-ground="ink"] { color: #fe433e; }
+.hold-hint[data-ground="red"] { color: var(--paper); }
+.hold-hint-ring {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: conic-gradient(currentColor var(--fill, 0%), transparent 0);
+  animation: hint-fill 1.8s var(--ease-set) infinite;
+}
+@property --fill {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+@keyframes hint-fill {
+  0% { --fill: 0%; }
+  70%, 100% { --fill: 100%; }
 }
 
 /* ── Ink roller ──────────────────────────────────────────────────────────── */
