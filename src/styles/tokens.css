@@ -16,11 +16,10 @@
   --color-ink-soft:    oklch(38%   0.012 60);  /* secondary text */
   --color-ink-ghost:   oklch(58%   0.010 60);  /* captions, datelines */
 
-  /* ground — the dark spreads (Experience, Blog) are a deep red-ink, not a
-     neutral brown: the page is one warm hue story, cream → dark-red → vivid red.
-     The old near-neutral dark read as mud against the cream + red; this is the
-     dark end of the press red, so the whole lower page belongs to one family. */
-  --color-ground:      oklch(17%   0.060 27);
+  /* ground — the dark spreads (Experience, Writing) are printed in the same
+     warm ink-black as the body text: solid ink on the press, cream type and red
+     accents on top. The page runs cream → ink → press-red stock. */
+  --color-ground:      oklch(19%   0.015 60);
 
   /* the press red — stamps, string, links, emphasis */
   --color-red:         oklch(56%   0.214 27);
@@ -53,7 +52,7 @@
   --ink-soft:    oklch(38%   0.012 60);
   --ink-ghost:   oklch(58%   0.010 60);
 
-  --ground:      oklch(17%   0.060 27);  /* dark-red ink — the dark spreads */
+  --ground:      oklch(19%   0.015 60);  /* warm ink-black — the dark spreads */
 
   --red:         oklch(56%   0.214 27);
   --red-deep:    oklch(46%   0.190 28);

@@ -369,8 +369,8 @@ button.press-stamp {
 .seam--cream-ink .seam-tear { background: var(--ground); }
 /* dark-red → red: the upper stays the dark ground, the torn lower shape is the
    press red. Mirror the tear so the two seams aren't an obvious copy of each. */
-.seam--ink-red { background: var(--ground); }
-.seam--ink-red .seam-tear { background: var(--red); transform: scaleX(-1); }
+.seam--ink-red { background: transparent; }
+.seam--ink-red .seam-tear { background: var(--red-deep); transform: scaleX(-1); }
 
 /* ── The wire — newsroom crawl under the nameplate ────────────────────────────
  * A slim ink band that runs a slow dispatch crawl between Hero and About.
@@ -437,4 +437,208 @@ button.press-stamp {
   /* JS skips the ticker under reduced motion; pin the track so it reads as a
      static dispatch strip with no transform applied */
   .wire-track { transform: none; }
+}
+
+/* ── Running head + the index (Menu.jsx) ──────────────────────────────────────
+ * A slim running head over the pile, like the folio line along the top of a
+ * newspaper page: the current section on the left, MENU on the right, on a band
+ * of the stock beneath it (re-inked per ground) with a hairline under it, so
+ * text scrolling up never runs under the label. MENU lays the index — a fresh
+ * sheet — over everything; its section names are set in sort by sort. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sheet:focus { outline: none; }
+
+.running-head {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 2.4rem;
+  padding: 0 clamp(1rem, 4vw, 4rem);
+  pointer-events: none;
+  --rh-ink: var(--ink);
+  --rh-accent: var(--red);
+  --rh-stock: var(--paper);
+  color: var(--rh-ink);
+  background: var(--rh-stock);
+  box-shadow: 0 1px 0 color-mix(in oklch, var(--rh-ink) 14%, transparent);
+  transition: color 0.3s var(--ease-set), background-color 0.3s var(--ease-set);
+}
+.running-head[data-ground="ink"] { --rh-ink: var(--paper); --rh-accent: #fe433e; --rh-stock: var(--ground); }
+.running-head[data-ground="red"] { --rh-ink: var(--paper); --rh-accent: var(--paper); --rh-stock: var(--red-deep); }
+html.menu-open .running-head { --rh-ink: var(--ink); --rh-accent: var(--red); --rh-stock: var(--paper); }
+
+.rh-section {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  overflow: hidden;
+}
+.rh-no { color: var(--rh-accent); }
+.rh-rule { width: 1.6rem; height: 1px; background: currentColor; opacity: 0.5; }
+.rh-label {
+  display: inline-block;
+  animation: rh-roll 0.45s var(--ease-set);
+}
+@keyframes rh-roll {
+  from { transform: translateY(110%); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+html.menu-open .rh-section { opacity: 0; }
+
+.rh-menu {
+  pointer-events: auto;
+  position: relative;
+  padding: 0.35rem 0.1rem;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--rh-ink);
+  cursor: pointer;
+}
+.rh-menu::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0.26em;
+  bottom: 0.15rem;
+  height: 1.5px;
+  background: var(--rh-accent);
+  transform: scaleX(0);
+  transform-origin: 100% 50%;
+  transition: transform 0.35s var(--ease-set);
+}
+.rh-menu:hover::after,
+.rh-menu:focus-visible::after { transform: scaleX(1); transform-origin: 0 50%; }
+.rh-menu:focus-visible { outline: 2px solid var(--rh-accent); outline-offset: 4px; }
+/* MENU rolls up to CLOSE */
+.rh-menu-roll {
+  display: grid;
+  height: 1.2em;
+  line-height: 1.2em;
+  overflow: hidden;
+}
+.rh-menu-roll > span {
+  grid-area: 1 / 1;
+  transition: transform 0.45s var(--ease-set);
+}
+.rh-menu-roll > span + span { transform: translateY(110%); }
+.rh-menu.is-open .rh-menu-roll > span:first-child { transform: translateY(-110%); }
+.rh-menu.is-open .rh-menu-roll > span + span { transform: none; }
+
+.menu-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9080;
+  overflow-y: auto;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 30px 60px -30px oklch(20% 0.02 60 / 0.5);
+  will-change: transform;
+}
+.menu-sheet[hidden] { display: none; }
+.menu-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+.menu-inner {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(1280px, 92vw);
+  margin-inline: auto;
+  padding: 4.5rem 0 2.5rem;
+}
+.menu-kicker {
+  margin: 0 0 1.2rem;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 3px solid var(--ink);
+}
+.menu-item { border-bottom: 1px solid oklch(20% 0.018 60 / 0.2); }
+.menu-item button {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.8rem, 2vw, 1.6rem);
+  width: 100%;
+  padding: clamp(0.25rem, 0.9vh, 0.6rem) 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.mi-no {
+  flex: none;
+  width: 2.2rem;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+.mi-name {
+  font-family: var(--font-name);
+  font-weight: 900;
+  font-variation-settings: "opsz" 144;
+  font-size: clamp(2.1rem, 7.4vh, 5.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+.mi-sort { display: inline-block; }
+.mi-space { display: inline-block; width: 0.24em; }
+.menu-item button:hover .mi-name,
+.menu-item button:focus-visible .mi-name { color: var(--red); }
+.menu-item button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.menu-item.is-current .mi-name { color: var(--red); }
+.menu-item.is-current .mi-no { color: var(--red); }
+.menu-item.is-current .mi-no::before { content: "● "; }
+.menu-foot {
+  margin: 1.4rem 0 0;
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }

@@ -4,6 +4,60 @@
  * scaffolding lives at the top, then: loader · hero/masthead.
  * ──────────────────────────────────────────────────────────────────────── */
 
+/* ── The pile of sheets (src/life/sheets.js) ─────────────────────────────────
+ * Every section is printed on its own sheet. A sheet sticks once it has been
+ * read through (sheets.js sets each one's top so tall sheets stick by their
+ * bottom edge) and the next one slides up over it, casting a soft shadow from
+ * its top edge; the covered sheet settles back and darkens under .sheet-shade.
+ * main is its own stacking context, so every fixed layer sits above the pile. */
+main {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+.sheet {
+  position: sticky;
+  top: 0;
+  z-index: var(--z, 1);
+}
+/* the cream sheets carry their own stock and grain now — they must hide the
+   sheet beneath them */
+.sheet--paper { background: var(--paper); }
+.sheet--paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+/* a sheet laid on cream drops a soft shadow up onto it; on ink, an ink sheet
+   catches a hairline of light along its edge instead. Torn sheets have their
+   own deckle edge (the Seam). */
+.sheet + .sheet:not(.sheet--torn) {
+  box-shadow: 0 -1px 0 oklch(20% 0.02 60 / 0.08), 0 -20px 44px -24px oklch(20% 0.02 60 / 0.45);
+}
+.sheet--ink + .sheet--ink {
+  box-shadow: 0 -1px 0 oklch(95% 0.012 85 / 0.09), 0 -26px 52px -22px oklch(5% 0.01 60 / 0.7);
+}
+.sheet-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: oklch(14% 0.02 55);
+  opacity: 0;
+}
+/* while anything measures, the sheets sit where the flow puts them */
+html.measuring .sheet {
+  position: relative !important;
+  top: auto !important;
+  transform: none !important;
+}
+
 /* ── Shared scaffolding ──────────────────────────────────────────────────── */
 .press-container {
   width: 100%;
@@ -111,6 +165,8 @@ html.press-booting { overflow: hidden; }
   display: flex;
   flex-direction: column;
   padding-block: clamp(1.25rem, 3vw, 2.5rem);
+  /* room for the running head (Menu.jsx) above the nameplate */
+  padding-top: calc(2.4rem + clamp(0.75rem, 2vw, 1.5rem));
 }
 
 /* nameplate band */
@@ -515,15 +571,13 @@ html.press-booting { overflow: hidden; }
   box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
   transform: perspective(1100px) translateY(var(--lift, 0px))
     rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
-    transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
+  transition: transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
     border-color 0.3s var(--ease-set);
 }
 /* while the pointer is over the card, the tilt tracks it crisply (short, linear)
    — on leave the class drops and transform eases home over the longer 0.5s */
 .case-file.is-tilt {
-  transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
-    transform 0.1s linear, box-shadow 0.4s var(--ease-set),
+  transition: transform 0.1s linear, box-shadow 0.4s var(--ease-set),
     border-color 0.3s var(--ease-set);
 }
 /* lift the card's own content above the glow layer */
@@ -531,36 +585,41 @@ html.press-booting { overflow: hidden; }
 .cf-features .case-file { padding: clamp(1.6rem, 3vw, 2.6rem); }
 
 .case-file:hover {
-  background: var(--ink);
-  color: var(--paper);
-  --lift: -5px;
-  box-shadow: 7px 14px 0 oklch(20% 0.02 60 / 0.2),
-    0 22px 46px oklch(20% 0.02 60 / 0.28);
+  /* stays on paper: the card lifts, its border and title take the press red,
+     and a faint warm ink wash spreads from the cursor (.cf-glow) */
+  --lift: -6px;
+  border-color: var(--red);
+  box-shadow: 6px 10px 0 oklch(56% 0.2 27 / 0.16),
+    0 22px 44px oklch(20% 0.02 60 / 0.18);
   z-index: 3;
 }
+.case-file:hover .cf-name { color: var(--red); }
 .case-file.is-linked {
   border-color: var(--red);
   box-shadow: 0 0 0 2px var(--red), 4px 6px 0 oklch(56% 0.2 27 / 0.2);
 }
 
-/* the desk-lamp — a warm radial pool that follows the cursor (--mx/--my set on
-   pointermove). Screened over the inked card it reads as light falling on the
-   page; hidden until hover so the cream rest state stays clean. */
+/* the ink wash — a soft pool of press red that spreads out from wherever the
+   cursor entered and keeps under it (--mx/--my set on pointermove). Multiplied
+   onto the cream, so it reads as ink soaking into the stock. Transform and
+   opacity only. */
 .cf-glow {
   position: absolute;
-  inset: 0;
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
   z-index: 0;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
   pointer-events: none;
+  background: radial-gradient(closest-side, oklch(56% 0.214 27 / 0.12), oklch(56% 0.214 27 / 0.04) 55%, transparent);
+  mix-blend-mode: multiply;
   opacity: 0;
-  background: radial-gradient(
-    220px circle at var(--mx, 50%) var(--my, 50%),
-    oklch(88% 0.13 78 / 0.55),
-    transparent 65%
-  );
-  mix-blend-mode: screen;
-  transition: opacity 0.35s var(--ease-set);
+  transform: scale(0.15);
+  transition: opacity 0.35s var(--ease-set), transform 0.9s var(--ease-set);
 }
-.case-file:hover .cf-glow { opacity: 1; }
+.case-file:hover .cf-glow { opacity: 1; transform: scale(1); }
 
 @media (prefers-reduced-motion: reduce) {
   .case-file { transform: none; }
@@ -588,8 +647,6 @@ html.press-booting { overflow: hidden; }
 .cf-features .cf-name { font-size: clamp(1.9rem, 4vw, 3.4rem); }
 
 /* stamps must flip with the page — switch to a light screen on the inked card */
-.case-file:hover .press-stamp { mix-blend-mode: screen; }
-.case-file:hover .press-stamp--ink { color: var(--paper); }
 
 .cf-deck {
   font-family: var(--font-read);
@@ -599,7 +656,6 @@ html.press-booting { overflow: hidden; }
   margin: 0.9rem 0 0;
   color: var(--ink-soft);
 }
-.case-file:hover .cf-deck { color: oklch(88% 0.014 85); }
 
 /* An editor's scribble — my own hand on the one file I sink the most weekends
    into. Caveat in wet red, kicked off-axis so it reads as a margin note and not
@@ -653,7 +709,6 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--ink-ghost);
 }
-.case-file:hover .cf-metric-l { color: oklch(72% 0.012 70); }
 
 .cf-notes {
   font-family: var(--font-read);
@@ -663,7 +718,6 @@ html.press-booting { overflow: hidden; }
   margin: 1.3rem 0 0;
   color: var(--ink-soft);
 }
-.case-file:hover .cf-notes { color: oklch(86% 0.014 85); }
 
 .cf-foot {
   display: flex;
@@ -687,7 +741,6 @@ html.press-booting { overflow: hidden; }
   color: var(--ink-ghost);
   margin-right: 0.3rem;
 }
-.case-file:hover .cf-filed-label { color: oklch(70% 0.012 70); }
 .cf-tag {
   font-family: var(--font-data);
   font-size: 0.66rem;
@@ -711,7 +764,6 @@ html.press-booting { overflow: hidden; }
   transition: border-color 0.2s, color 0.2s;
 }
 .cf-link:hover { border-color: currentColor; }
-.case-file:hover .cf-link { color: var(--red-wet); }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Experience — The Ledger / On the Record (first ink spread)
@@ -719,13 +771,11 @@ html.press-booting { overflow: hidden; }
 .experience {
   position: relative;
   z-index: 1;
-  /* Owns its dark ground so the bright text is legible regardless of scroll —
-     no scrubbed fixed layer to desync. The seam above sells the cream→dark turn;
-     from here down the sheet is deep red-ink (--ground), the dark end of the
-     press red, so it belongs to the same family as the cream and the finale. */
+  /* Its own sheet of solid ink (--ground, the warm ink-black of the body text):
+     cream type, red accents. The torn edge above sells the cream→ink turn. */
   background: var(--ground);
   color: var(--paper);
-  /* on the dark-red ground, lift the red accents so kickers/marks stay vivid */
+  /* on the ink ground, lift the red accents so kickers and marks stay vivid */
   --red: oklch(66% 0.224 27);
   padding: clamp(9vh, 14vh, 16vh) 0 clamp(6rem, 12vh, 9rem);
 }
@@ -869,12 +919,9 @@ html.press-booting { overflow: hidden; }
 .opdesk {
   position: relative;
   z-index: 1;
-  /* Continues the dark sheet from Experience on the same deep red-ink ground, so
-     the lower page is one warm family (cream → dark-red → vivid red) instead of
-     turning to mud. Owns its ground so the cream clippings and light type read
-     regardless of scroll. NB: no blanket --red override here — the clippings are
-     cream cards whose interior reds must stay the true press red; only the kicker
-     (on the dark ground) is lifted, below. */
+  /* Another sheet of solid ink, laid on Experience. NB: no blanket --red
+     override here — the clippings are cream cards whose interior reds must stay
+     the true press red; only the kicker (on the ink) is lifted, below. */
   background: var(--ground);
   padding: clamp(7vh, 11vh, 13vh) 0 clamp(5rem, 9vh, 7rem);
   overflow: hidden;
@@ -889,7 +936,7 @@ html.press-booting { overflow: hidden; }
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  /* lifted off the dark-red ground (same hue as --ground at L56 would mute) */
+  /* lifted off the ink ground so it stays vivid */
   color: oklch(66% 0.224 27);
   margin-bottom: 0.9rem;
 }
@@ -1063,25 +1110,36 @@ html.press-booting { overflow: hidden; }
  * ──────────────────────────────────────────────────────────────────────── */
 .contact {
   position: relative;
-  background: var(--red);
+  /* printed red stock: the deeper press red, with the paper's grain over it */
+  background: var(--red-deep);
   color: var(--paper);
   padding: clamp(10vh, 15vh, 18vh) clamp(1.5rem, 5vw, 6rem) clamp(5rem, 9vh, 7rem);
   overflow: hidden;
 }
-/* Subtle newsprint grain on red gives the ink-print feel */
-.contact::before {
+/* The paper's grain shows through the ink: a coarse tooth (overlay, so it both
+   lifts and deepens the red) and the fine fibre from the cream sheets above */
+.contact::before,
+.contact::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 140px 140px;
-  opacity: 0.04;
-  mix-blend-mode: multiply;
   pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.contact::before {
+  background-size: 220px 220px;
+  opacity: 0.42;
+  mix-blend-mode: overlay;
+}
+.contact::after {
+  background-size: 120px 120px;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
 }
 
 .contact-inner {
   position: relative;
+  z-index: 1;
   max-width: 860px;
 }
 
@@ -1220,7 +1278,7 @@ html.press-booting { overflow: hidden; }
  * boundary was a fake seam on continuous paper — it read as an unfinished smudge.
  * Cohesion across the cream run comes from shared rhythm (kicker + kinetic head +
  * the registration cursor), not a drawn divider. The only real turns left are
- * cream→dark-red and dark-red→red, and those are torn deckle edges (below). */
+ * cream→ink and ink→red, and those are torn deckle edges (below). */
 
 /* Op-Ed Desk hint — use paper-at-opacity on ink ground so it reads */
 .opdesk-hint {

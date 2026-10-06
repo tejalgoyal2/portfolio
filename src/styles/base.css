@@ -25,7 +25,9 @@ html, body {
   font-family: var(--font-read);
   font-weight: 400;
   line-height: 1.6;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden would make body a scroll container and break the
+     sticky sheet pile */
+  overflow-x: clip;
 }
 
 /* OS cursor hiding is scoped to html.cursor-hidden (set by PressCursor only on
