@@ -3,7 +3,6 @@ import { gsap } from 'gsap';
 import { pointer } from '../life/pointer';
 import { prefs } from '../life/prefs';
 import { onLayout } from '../life/layout';
-import { naturalLayout } from '../life/sheets';
 import { Spring, smoothstep } from '../life/spring';
 
 /**
@@ -68,13 +67,13 @@ export default function Nameplate({ text }) {
       awake = true;
       reach = Math.max(90, pr.height * 0.95);
     };
-    naturalLayout(measure);
+    measure();
     const offLayout = onLayout(measure);
 
     const tick = (time, deltaMs) => {
       if (prefs.reduced) return;
       const dt = Math.min(0.05, deltaMs / 1000);
-      // the plate rides a sheet that sticks and settles, so read where it is now
+      // read where the plate is now (cheap: one rect, only while a pointer is about)
       const live = pointer.active ? plate.getBoundingClientRect() : null;
       const k = live ? live.width / (box.w || 1) : 1;
       const near =
@@ -118,7 +117,7 @@ export default function Nameplate({ text }) {
   }, [text]);
 
   return (
-    <span ref={ref} className="np" aria-hidden="true">
+    <span ref={ref} className="np" aria-hidden="true" data-depart-items="distribute">
       {[...text].map((ch, i) =>
         ch === ' ' ? (
           <span className="np-space" key={i}>

@@ -2,7 +2,6 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { prefs } from './prefs';
-import { stickScroll } from './sheets';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -16,8 +15,6 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
  * The ghost is never faint enough to fail a reader: each paragraph starts at
  * the lowest opacity that still keeps its own colour at 4.6:1 against its own
  * background (ink on cream ≈ 0.6, the softer greys higher, cream on ink ≈ 0.55).
- * And a paragraph is always fully inked by the time its sheet sticks and the
- * next sheet starts sliding over it.
  *
  * Mark a paragraph with data-ink to opt it in. Use data-ink="block" for a
  * short item with live React children (a redaction, a counter), or one with a
@@ -62,33 +59,19 @@ function ghostFor(el) {
   return 1;
 }
 
-// ---- scroll range, in the flow, ending no later than the sheet sticks
-function range(el) {
-  const vh = window.innerHeight;
-  const r = el.getBoundingClientRect();
-  const top = r.top + window.scrollY;
-  const end = Math.min(top + r.height - TO * vh, stickScroll(el));
-  return { start: Math.min(top - FROM * vh, end - 1), end };
-}
-
 export function startInkLines(root = document) {
   if (prefs.reduced) return () => {};
   const els = [...root.querySelectorAll('[data-ink]')];
-  const trigger = (el) => {
-    let r = null;
-    return {
-      trigger: el,
-      start: () => (r = range(el)).start,
-      end: () => (r || range(el)).end,
-      scrub: true,
-      invalidateOnRefresh: true,
-    };
-  };
+  const trigger = (el) => ({ trigger: el, start: `top ${FROM * 100}%`, end: `bottom ${TO * 100}%`, scrub: true });
 
   const blocks = els
     .filter((el) => el.dataset.ink === 'block')
     .map((el) =>
-      gsap.fromTo(el, { opacity: ghostFor(el) }, { opacity: 1, ease: 'none', scrollTrigger: trigger(el) })
+      gsap.fromTo(
+        el,
+        { opacity: ghostFor(el) },
+        { opacity: 1, ease: 'none', scrollTrigger: { trigger: el, start: `top ${FROM * 100}%`, end: `top ${TO * 100}%`, scrub: true } }
+      )
     );
 
   const splits = els

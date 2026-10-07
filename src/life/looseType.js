@@ -2,7 +2,6 @@ import { gsap } from 'gsap';
 import { pointer } from './pointer';
 import { prefs } from './prefs';
 import { onLayout } from './layout';
-import { naturalLayout } from './sheets';
 import { Spring, clamp, smoothstep } from './spring';
 
 /**
@@ -35,7 +34,7 @@ function tick(time, deltaMs) {
   for (const h of heads) {
     if (!h.visible) continue;
     if (!pointer.active && !h.awake) continue;
-    // headlines ride sheets that stick and settle, so read where this one is now
+    // where this headline is now (one rect, only while a pointer is about)
     const live = h.root.getBoundingClientRect();
     const k = live.width / h.w;
     const reach = h.fs * 1.15 * k;
@@ -104,7 +103,7 @@ export function looseType(root) {
     awake: false,
     visible: false,
   };
-  naturalLayout(() => measure(h));
+  measure(h);
   heads.add(h);
   io.observe(root);
   return () => {

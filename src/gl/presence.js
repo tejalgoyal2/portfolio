@@ -1,6 +1,5 @@
 // Where the cube is and how it behaves (docs/REVAMP.md §2, docs/cube/CUBE.md):
-// - big in the hero's slot, riding the front-page sheet (stuck and settling
-//   with it); as the next sheet slides up over the slot it travels down to a
+// - big in the hero's slot; as the hero scrolls away it travels down to a
 //   margin corner, sized to the margin, choosing a corner with no text in it
 //   and tucking away when a full-width band (the wire, the filmstrip) passes;
 // - it never follows the cursor: it only turns slowly (~0.15 rad/s), slows
@@ -14,7 +13,6 @@ import { prefs } from '../life/prefs';
 import { groundAt } from '../life/ground';
 import { measureMask } from '../life/paper';
 import { onLayout } from '../life/layout';
-import { sheets, sheetAt, sheetOfDocY, toScreen, coveredFrom, naturalLayout } from '../life/sheets';
 import { bus } from '../life/bus';
 import { Spring, clamp, lerp, smoothstep } from '../life/spring';
 import { CUBE_REACH } from './cube-view';
@@ -27,24 +25,20 @@ export function createPresence(view, hitBtn) {
   const slotEl = document.querySelector('[data-cube-home="hero"]');
   const containerEl = document.querySelector('.press-container');
 
-  // the slot and the page's text, in sheet-local coordinates
-  let slot = null; // { sheet, x, y, w, h }
+  // the slot and the page's text, in document coordinates
+  let slot = null; // { x, y, w, h }
   let containerW = window.innerWidth * 0.92;
-  let mask = []; // { sheet, x, y, w, h }
+  let mask = []; // { x, y, w, h }
   const measure = () => {
     const sy = window.scrollY;
     if (slotEl) {
       const r = slotEl.getBoundingClientRect();
-      const i = sheetOfDocY(r.top + sy);
-      slot = { sheet: i, x: r.left, y: r.top + sy - (sheets[i]?.top ?? 0), w: r.width, h: r.height };
+      slot = { x: r.left, y: r.top + sy, w: r.width, h: r.height };
     }
     if (containerEl) containerW = containerEl.getBoundingClientRect().width;
-    mask = measureMask(4, false).map((b) => {
-      const i = sheetOfDocY(b.y);
-      return { sheet: i, x: b.x, y: b.y - (sheets[i]?.top ?? 0), w: b.w, h: b.h };
-    });
+    mask = measureMask(4, false);
   };
-  naturalLayout(measure);
+  measure();
   const offLayout = onLayout(measure);
 
   const vw = () => document.documentElement.clientWidth;
@@ -64,19 +58,15 @@ export function createPresence(view, hitBtn) {
     };
   }
 
-  /** How much text (on the sheet showing there) a circle at (cx, cy) would cover. */
+  /** How much text a circle at (cx, cy) would cover. */
   function overlap(cx, cy, r) {
-    const k = sheetAt(cy);
-    if (k < 0) return 0;
+    const sy = window.scrollY;
     let s = 0;
     for (const b of mask) {
-      if (b.sheet !== k) continue;
-      const tl = toScreen(k, b.x, b.y);
-      const w = b.w * tl.s;
-      const h = b.h * tl.s;
-      if (tl.y > cy + r || tl.y + h < cy - r) continue;
-      const ox = Math.max(0, Math.min(cx + r, tl.x + w) - Math.max(cx - r, tl.x));
-      const oy = Math.max(0, Math.min(cy + r, tl.y + h) - Math.max(cy - r, tl.y));
+      const top = b.y - sy;
+      if (top > cy + r || top + b.h < cy - r) continue;
+      const ox = Math.max(0, Math.min(cx + r, b.x + b.w) - Math.max(cx - r, b.x));
+      const oy = Math.max(0, Math.min(cy + r, top + b.h) - Math.max(cy - r, top));
       s += ox * oy;
     }
     return s;
@@ -138,16 +128,11 @@ export function createPresence(view, hitBtn) {
     let sy = cp.y;
     let ss = ds;
     let t = 1;
-    if (slot && sheets[slot.sheet]) {
-      const tl = toScreen(slot.sheet, slot.x, slot.y);
-      ss = slot.w * tl.s;
-      sx = tl.x + ss / 2;
-      sy = tl.y + (slot.h * tl.s) / 2;
-      // it leaves as the next sheet slides up over the slot (or the slot scrolls away)
-      const cover = coveredFrom(slot.sheet);
-      const fromCover = smoothstep(sy + ss * 0.5 + 90, sy - ss * 0.2, cover);
-      const fromScroll = smoothstep(H * 0.42, -H * 0.04, sy);
-      t = Math.max(fromCover, fromScroll);
+    if (slot) {
+      sx = slot.x + slot.w / 2;
+      sy = slot.y + slot.h / 2 - window.scrollY;
+      ss = slot.w;
+      t = smoothstep(H * 0.42, -H * 0.04, sy);
     }
     if (first || reduced) {
       dockX.snap(dockX.target);

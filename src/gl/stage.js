@@ -13,7 +13,6 @@ import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
 import { onLayout } from '../life/layout';
 import { groundAt } from '../life/ground';
-import { naturalLayout } from '../life/sheets';
 import { fireImpact } from '../press/PressImpacts';
 import { createCubeView } from './cube-view';
 import { createPresence } from './presence';
@@ -64,7 +63,7 @@ export async function startStage(canvas, hitBtn) {
     }
     spans = next;
   };
-  naturalLayout(measureSpans);
+  measureSpans();
   const offLayout = onLayout(measureSpans);
 
   let w = 0;
