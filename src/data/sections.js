@@ -1,2 +1,11 @@
-// What each sheet on the pile is called — by the running head, and in the index.
-export const SECTIONS = ['Front page', 'Profile', 'Skills', 'Work', 'Experience', 'Writing', 'Contact'];
+// The page's sections in reading order: the [data-section] each one carries,
+// and what the running head calls it.
+export const SECTIONS = [
+  { key: 'hero', label: 'Front page' },
+  { key: 'about', label: 'Profile' },
+  { key: 'skills', label: 'Skills' },
+  { key: 'projects', label: 'Work' },
+  { key: 'experience', label: 'Experience' },
+  { key: 'writing', label: 'Writing' },
+  { key: 'contact', label: 'Contact' },
+];
