@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
 import { startPointer, pointer } from './pointer';
 import { startScroll } from './scroll';
-import { startSheets, sheets, sheetAt, toLocal } from './sheets';
 import { startGround, groundAt } from './ground';
 import { startPaperPress, isEmptyPaper, HOLD_SECONDS } from './paper';
+import { startWater } from './water';
 import { startIconDrift } from './iconDrift';
 import { startIconBurst } from './iconBurst';
 import { prefs } from './prefs';
@@ -13,23 +13,23 @@ import { afterPrint } from './idle';
 
 /**
  * The life layer's persistent pieces, mounted once beside the press layers:
- * the drifting pencil icons and their ripples, the registration marks a click
- * leaves on bare paper, the press-and-hold ink ring and its burst of icons,
- * the one-time "hold" hint, and the ink roller that fills along the top edge
- * with page progress. The shared pointer / scroll / sheet / ground trackers
- * and the one paper-press listener start here too.
+ * the water a click disturbs, the pencil icons drifting on it, the
+ * registration marks a click leaves on bare paper, the press-and-hold ink ring
+ * and its burst of icons, the one-time "hold" hint, and the ink roller that
+ * fills along the top edge with page progress. The shared pointer / scroll /
+ * ground trackers and the one paper-press listener start here too.
  */
 export default function Life() {
   useEffect(() => {
     startPointer();
     startScroll();
-    startSheets();
     startGround();
     startPaperPress();
   }, []);
 
   return (
     <>
+      <WaterCanvas />
       <DriftCanvas />
       <RegistrationMarks />
       <BurstCanvas />
@@ -38,6 +38,12 @@ export default function Life() {
       <InkRoller />
     </>
   );
+}
+
+function WaterCanvas() {
+  const ref = useRef(null);
+  useEffect(() => afterPrint(() => startWater(ref.current)), []);
+  return <canvas ref={ref} className="water" aria-hidden="true" />;
 }
 
 function DriftCanvas() {
@@ -54,10 +60,9 @@ function BurstCanvas() {
 
 /**
  * A click on bare paper prints a small registration mark where it landed. The
- * mark is printed on that sheet (portalled into it, so it scrolls, sticks and
- * settles with it and goes under the next sheet), fades over ~2 s, and at most
- * six are wet at once. Red on the cream, the brighter spread red on the ink
- * ground, paper on the red finale.
+ * marks are printed on the sheet (document coordinates, so they scroll with
+ * it), fade over ~2 s, and at most six are wet at once. Red on the cream, the
+ * brighter spread red on the ink ground, paper on the red finale.
  */
 const MAX_MARKS = 6;
 const MARK_LIFE = 2100;
@@ -79,12 +84,9 @@ function RegistrationMarks() {
     const timers = new Set();
     const onPress = (e) => {
       const { x, y, ground } = e.detail;
-      const i = sheetAt(y);
-      if (i < 0) return;
-      const p = toLocal(i, x, y);
       const id = ++markId;
       const rot = Math.round(Math.random() * 30 - 15);
-      setMarks((list) => [...list, { id, i, x: p.x, y: p.y, ground, rot }].slice(-MAX_MARKS));
+      setMarks((list) => [...list, { id, x, y: y + window.scrollY, ground, rot }].slice(-MAX_MARKS));
       const t = setTimeout(() => {
         timers.delete(t);
         setMarks((list) => list.filter((m) => m.id !== id));
@@ -98,34 +100,25 @@ function RegistrationMarks() {
     };
   }, []);
 
-  const bySheet = new Map();
-  for (const m of marks) {
-    if (!bySheet.has(m.i)) bySheet.set(m.i, []);
-    bySheet.get(m.i).push(m);
-  }
-  return [...bySheet].map(([i, list]) =>
-    sheets[i]
-      ? createPortal(
-          list.map((m) => (
-            <svg
-              key={m.id}
-              ref={fadeIfStill}
-              className={`reg-mark reg-mark--${m.ground}`}
-              style={{ left: m.x, top: m.y, '--rot': `${m.rot}deg` }}
-              viewBox="0 0 32 32"
-              width="32"
-              height="32"
-              aria-hidden="true"
-            >
-              <circle cx="16" cy="16" r="7.5" />
-              <circle cx="16" cy="16" r="2.2" className="reg-dot" />
-              <path d="M16 1.5v29M1.5 16h29" />
-            </svg>
-          )),
-          sheets[i].el,
-          `marks-${i}`
-        )
-      : null
+  return createPortal(
+    <div className="reg-layer" aria-hidden="true">
+      {marks.map((m) => (
+        <svg
+          key={m.id}
+          ref={fadeIfStill}
+          className={`reg-mark reg-mark--${m.ground}`}
+          style={{ left: m.x, top: m.y, '--rot': `${m.rot}deg` }}
+          viewBox="0 0 32 32"
+          width="32"
+          height="32"
+        >
+          <circle cx="16" cy="16" r="7.5" />
+          <circle cx="16" cy="16" r="2.2" className="reg-dot" />
+          <path d="M16 1.5v29M1.5 16h29" />
+        </svg>
+      ))}
+    </div>,
+    document.body
   );
 }
 
@@ -236,7 +229,7 @@ function HoldHint() {
       }
       if (!pointer.active || pointer.rest < 3 || frame % 10) return;
       const html = document.documentElement;
-      if (html.classList.contains('menu-open') || html.classList.contains('is-holding')) return;
+      if (html.classList.contains('is-holding')) return;
       if (!isEmptyPaper(document.elementFromPoint(pointer.x, pointer.y))) return;
       visible = true;
       shown = true;

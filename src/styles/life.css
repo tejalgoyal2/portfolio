@@ -1,13 +1,20 @@
 /* ──────────────────────────────────────────────────────────────────────────
  * The life layer — everything that answers the visitor (src/life, src/gl).
- * Stacking, bottom to top: the paper → the pile of sheets (main, its own
- * stacking context; registration marks are printed inside their sheet) →
- * drifting icons → the WebGL stage (cube) → the icon burst → the hold ring →
- * the ink roller, section label and menu → impacts → cursor → loader. Every
- * canvas ignores the pointer.
+ * Stacking, bottom to top: the paper → sections → water → drifting icons →
+ * registration marks → the WebGL stage (cube) → the icon burst → the hold
+ * ring → the ink roller and the running head → impacts → cursor → loader.
+ * Every canvas ignores the pointer.
  * ──────────────────────────────────────────────────────────────────────── */
 
-/* ── Drifting icons and their ripples ────────────────────────────────────── */
+/* ── Water and the icons drifting on it ──────────────────────────────────── */
+.water {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
 .icon-drift {
   position: fixed;
   inset: 0;
@@ -20,10 +27,18 @@
 }
 .icon-drift.is-ready { opacity: 1; }
 
-/* ── Registration marks — printed on the sheet where you click bare paper ── */
+/* ── Registration marks — printed on the paper where you click ─────────────── */
+.reg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  z-index: 5;
+  pointer-events: none;
+}
 .reg-mark {
   position: absolute;
-  z-index: 40;
   pointer-events: none;
   overflow: visible;
   fill: none;

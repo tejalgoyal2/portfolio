@@ -94,7 +94,7 @@ export function startPaperPress() {
   };
 
   window.addEventListener('pointerdown', (e) => {
-    if (html.classList.contains('press-booting') || html.classList.contains('menu-open')) return;
+    if (html.classList.contains('press-booting')) return;
     const touch = e.pointerType === 'touch';
     if (!touch && e.button !== 0) return;
     const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
