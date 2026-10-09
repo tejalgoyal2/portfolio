@@ -2,9 +2,10 @@
 // caller feeds it time with tick(dt) and reads `active` to animate.
 //
 // Rules (docs/cube/CUBE.md):
-// - scroll sets a target solve-move count; moves play one at a time, faster when queued, never skipped;
+// - scroll sets a target solve-move count; moves play one at a time, never skipped — a long queue
+//   (a fast scroll) speeds them up only a little, so the cube always takes its time;
 // - scrolling back plays inverse moves;
-// - visitor clicks twist a face clockwise and go on a stack; a click mid-twist waits, never dropped;
+// - visitor clicks twist a face (either way) and go on a stack; a click mid-twist waits, never dropped;
 // - after ~4 s without clicks the stack is undone one by one;
 // - if scroll asks for a solve move while the stack is not empty, the stack is undone quickly first;
 // - reduced motion: everything applies instantly.
@@ -33,9 +34,9 @@ export class Director {
     this.instant = opts.instant ?? false;
 
     this.solve = solve;
-    this.base = opts.baseDuration ?? 0.18;
-    this.min = opts.minDuration ?? 0.045;
-    this.flushDur = opts.flushDuration ?? 0.08;
+    this.base = opts.baseDuration ?? 0.5;
+    this.min = opts.minDuration ?? 0.26;
+    this.flushDur = opts.flushDuration ?? 0.22;
     this.undoDelay = opts.undoDelay ?? 4;
   }
 
@@ -47,8 +48,9 @@ export class Director {
     this.target = Math.max(0, Math.min(this.solve.length, Math.round(k)));
   }
 
-  click(face) {
-    this.clicks.push(face);
+  /** Queue a visitor twist: turns 1 = clockwise, 3 = anticlockwise. */
+  click(face, turns = 1) {
+    this.clicks.push({ face, turns });
     this.sinceClick = 0;
   }
 
@@ -101,12 +103,12 @@ export class Director {
   duration(base) {
     if (this.instant) return 0;
     const backlog = Math.max(1, this.backlog);
-    return Math.max(this.min, base / (1 + 0.55 * (backlog - 1)));
+    return Math.max(this.min, base / (1 + 0.12 * (backlog - 1)));
   }
 
   next() {
-    const face = this.clicks.shift();
-    if (face) return { move: { face, turns: 1 }, kind: 'visitor', duration: this.duration(this.base), elapsed: 0 };
+    const click = this.clicks.shift();
+    if (click) return { move: { face: click.face, turns: click.turns }, kind: 'visitor', duration: this.duration(this.base), elapsed: 0 };
 
     if (this.target !== this.k) {
       const top = this.visitor[this.visitor.length - 1];

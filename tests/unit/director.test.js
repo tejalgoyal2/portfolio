@@ -18,21 +18,21 @@ describe('Director', () => {
     expect(d.idle).toBe(true);
   });
 
-  it('plays one quarter turn in about 180 ms', () => {
+  it('takes its time: one quarter turn in about half a second', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.setTarget(1);
-    expect(run(d, 0.15)).toEqual([]);
+    expect(run(d, 0.45)).toEqual([]);
     expect(d.active?.kind).toBe('solve');
-    expect(run(d, 0.05).length).toBe(1);
+    expect(run(d, 0.07).length).toBe(1);
     expect(d.k).toBe(1);
   });
 
-  it('fast scroll queues every move and plays them faster, never skipping a state', () => {
+  it('fast scroll queues every move and plays them a little faster, never skipping a state', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.setTarget(33);
     const seen = [];
     let elapsed = 0;
-    while (d.k < 33 && elapsed < 10) {
+    while (d.k < 33 && elapsed < 30) {
       for (const c of d.tick(1 / 60)) {
         expect(c.kind).toBe('solve');
         seen.push(d.state.clone());
@@ -41,7 +41,8 @@ describe('Director', () => {
     }
     expect(seen.length).toBe(33);
     seen.forEach((s, i) => expect(s.equals(expected(i + 1)), `state ${i + 1}`).toBe(true));
-    expect(elapsed).toBeLessThan(33 * 0.18 * 0.6); // clearly faster than one by one
+    expect(elapsed).toBeLessThan(33 * 0.5); // faster than one by one…
+    expect(elapsed).toBeGreaterThan(33 * 0.26 - 0.1); // …but never a blur
   });
 
   it('scrolling back plays the inverse moves', () => {
@@ -56,10 +57,10 @@ describe('Director', () => {
     expect(d.state.equals(expected(7))).toBe(true);
   });
 
-  it('a click turns that face clockwise and goes on the stack', () => {
+  it('a click turns that face and goes on the stack', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
-    run(d, 0.3);
+    run(d, 0.6);
     expect(d.visitor).toEqual(parseMoves('R'));
     expect(d.state.equals(expected(0).applyAll(parseMoves('R')))).toBe(true);
   });
@@ -71,21 +72,21 @@ describe('Director', () => {
     d.click('F');
     d.click('F');
     d.tick(0.01);
-    d.click('L');
-    run(d, 1.5);
-    expect(d.visitor).toEqual(parseMoves('U F F L'));
+    d.click('L', 3);
+    run(d, 2.5);
+    expect(d.visitor).toEqual(parseMoves("U F F L'"));
   });
 
   it("undoes the visitor's twists after ~4 s without clicks, one by one", () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
     d.click('U');
-    run(d, 1);
+    run(d, 1.2);
     expect(d.visitor.length).toBe(2);
     expect(d.undoing).toBe(false);
-    run(d, 2.5); // 3.5 s since the last click
+    run(d, 2.3); // 3.5 s since the last click
     expect(d.visitor.length).toBe(2);
-    const undone = run(d, 1.5);
+    const undone = run(d, 2.1);
     expect(d.undoing || d.visitor.length === 0).toBe(true);
     expect(undone.map((c) => c.kind)).toEqual(['undo', 'undo']);
     expect(undone.map((c) => c.move)).toEqual(parseMoves("U' R'"));
@@ -110,9 +111,9 @@ describe('Director', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('B');
     d.click('D');
-    run(d, 0.6);
+    run(d, 1.2);
     d.setTarget(1);
-    const out = run(d, 0.6);
+    const out = run(d, 1.2);
     expect(out.map((c) => c.kind)).toEqual(['flush', 'flush', 'solve']);
     expect(d.state.equals(expected(1))).toBe(true);
   });
@@ -126,7 +127,7 @@ describe('Director', () => {
       run(d, 0.13);
     }
     d.setTarget(62);
-    run(d, 14);
+    run(d, 40);
     expect(d.visitor.length).toBe(0);
     expect(d.k).toBe(62);
     expect(d.state.isSolved()).toBe(true);
