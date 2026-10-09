@@ -12,6 +12,7 @@ import { useEffect, useRef } from 'react';
 export default function CubeStage() {
   const canvasRef = useRef(null);
   const hitRef = useRef(null);
+  const notesRef = useRef(null);
 
   useEffect(() => {
     let stopped = false;
@@ -22,7 +23,7 @@ export default function CubeStage() {
       if (stopped) return;
       const { startStage } = await import('./stage');
       if (stopped) return;
-      stage = await startStage(canvasRef.current, hitRef.current);
+      stage = await startStage(canvasRef.current, hitRef.current, notesRef.current);
       if (stopped) stage?.stop();
     };
     const boot = () => {
@@ -44,6 +45,7 @@ export default function CubeStage() {
   return (
     <>
       <canvas ref={canvasRef} className="stage-canvas" aria-hidden="true" />
+      <div ref={notesRef} className="cube-notes" aria-live="polite" />
       <button
         ref={hitRef}
         type="button"
