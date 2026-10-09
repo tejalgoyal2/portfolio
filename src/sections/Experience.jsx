@@ -4,7 +4,6 @@ import { EXPERIENCE } from '../data/experience';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
 import CountUp from '../press/CountUp';
-import { stickScroll } from '../life/sheets';
 
 /**
  * Experience — the working history on the first dark spread. The section owns
@@ -15,8 +14,9 @@ import { stickScroll } from '../life/sheets';
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red rule draws itself down the left margin
- * (scaleY, scrubbed) and the headline numbers — marked {{like this}} in the
- * data — count up as they arrive.
+ * (scaleY, scrubbed), each row is pasted in from the margin and slides off the
+ * galley on the way out (src/life/arrive.js), and the headline numbers —
+ * marked {{like this}} in the data — count up as they arrive.
  */
 const REDACT = 'C2';
 
@@ -52,33 +52,13 @@ export default function Experience() {
     if (isReduced) return;
 
     const ctx = gsap.context(() => {
-      gsap.from('.led-entry', {
-        y: 36,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.ledger', start: 'top 78%', once: true },
-      });
-
       gsap.fromTo(
         '.led-rule',
         { scaleY: 0 },
         {
           scaleY: 1,
           ease: 'none',
-          scrollTrigger: {
-            trigger: '.ledger',
-            start: 'top 70%',
-            // done drawing by the time this sheet sticks and Writing slides over it
-            end: () => {
-              const ledger = root.querySelector('.ledger');
-              const r = ledger.getBoundingClientRect();
-              return Math.min(r.bottom + window.scrollY - window.innerHeight * 0.7, stickScroll(ledger));
-            },
-            scrub: true,
-            invalidateOnRefresh: true,
-          },
+          scrollTrigger: { trigger: '.ledger', start: 'top 70%', end: 'bottom 70%', scrub: true },
         }
       );
     }, root);
@@ -89,7 +69,7 @@ export default function Experience() {
   return (
     <section ref={rootRef} className="experience" id="experience" aria-label="Experience" data-ground="ink" data-section="experience">
       <div className="press-container">
-        <header className="led-head">
+        <header className="led-head" data-depart="lift">
           <span className="kicker">Experience</span>
           <KineticHeadline as="h2" font="name" className="led-headline">
             Where I&rsquo;ve worked
@@ -102,6 +82,8 @@ export default function Experience() {
             <article
               key={`${entry.org}-${entry.period}`}
               className={`led-entry${reduced ? ' is-open' : ''}`}
+              data-arrive="paste"
+              data-depart="slide"
             >
               <div className="led-period">{entry.period}</div>
 

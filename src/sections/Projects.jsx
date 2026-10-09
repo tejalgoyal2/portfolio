@@ -76,6 +76,9 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
     <article
       ref={elRef}
       className={`case-file case-file--${variant}${linked ? ' is-linked' : ''}`}
+      // features are laid down from below; the index is dealt in from alternate sides
+      data-arrive={feature ? 'rise' : index % 2 ? 'deal-l' : 'deal-r'}
+      data-depart="file"
       data-name={name}
       onPointerEnter={handleEnter}
       onPointerMove={onPointerMove}
@@ -167,7 +170,7 @@ export default function Projects() {
   return (
     <section className="projects" id="work" aria-label="Work — projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
-        <header className="cf-head">
+        <header className="cf-head" data-depart="lift">
           <span className="kicker">Work</span>
           <KineticHeadline as="h2" font="impact" className="cf-headline">
             Eleven things built. Some broke.

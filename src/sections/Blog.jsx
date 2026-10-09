@@ -229,7 +229,7 @@ export default function Blog() {
 
   return (
     <section className="opdesk" id="blog" data-ground="ink" data-section="writing">
-      <header className="opdesk-header">
+      <header className="opdesk-header" data-depart="lift">
         <p className="opdesk-kicker">Writing</p>
         <KineticHeadline as="h2" font="impact" className="opdesk-title">
           THINGS I WROTE DOWN
@@ -252,7 +252,7 @@ export default function Blog() {
         onPointerLeave={reduced ? undefined : onPointerUp}
         onClickCapture={reduced ? undefined : onClickCapture}
       >
-        <div ref={stripRef} className="opdesk-strip">
+        <div ref={stripRef} className="opdesk-strip" data-arrive-items="drop">
           {displayPosts.map((post, i) => (
             <a
               key={`${post.title}-${i}`}

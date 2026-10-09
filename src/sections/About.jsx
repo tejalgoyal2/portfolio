@@ -6,8 +6,10 @@ import Redacted from '../press/Redacted';
 /**
  * The Feature Story — a broadsheet profile in three columns: a drop-cap lead
  * with a red pull-quote, the continued prose, and a stats/marginalia rail.
- * Columns rise on enter; the pull-quote rides off-register and snaps home;
- * the rail's hard numbers come in redacted and declassify on scroll.
+ * The columns are laid on the desk as you scroll (src/life/arrive.js): the
+ * lead from the left, the body from below, the rail's rows pasted in and its
+ * notes pinned on; the pull-quote rides off-register and snaps home; the
+ * rail's hard numbers come in redacted and declassify on scroll.
  */
 export default function About() {
   const rootRef = useRef(null);
@@ -18,15 +20,6 @@ export default function About() {
 
     const ctx = gsap.context(() => {
       if (reduced) return;
-
-      gsap.from('.about-col', {
-        y: 40,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: root, start: 'top 72%', once: true },
-      });
 
       gsap.fromTo(
         '.about-pq-ghost',
@@ -50,7 +43,7 @@ export default function About() {
   return (
     <section ref={rootRef} className="about" aria-label="Profile" data-ground="paper" data-section="about">
       <div className="press-container">
-        <header className="about-head">
+        <header className="about-head" data-depart="lift">
           <span className="kicker">Profile</span>
           <KineticHeadline as="h2" font="name" className="about-headline">
             I treat my own code as a suspect
@@ -59,7 +52,7 @@ export default function About() {
 
         <div className="about-grid">
           {/* Column 1 — lead + pull-quote */}
-          <div className="about-col about-col--lead">
+          <div className="about-col about-col--lead" data-arrive="deal-l" data-depart="part-l">
             <p className="about-lead" data-ink="block">
               I started in electronics engineering, detoured through a
               federated-learning lab where I scaled experiments from 50 to a
@@ -71,14 +64,14 @@ export default function About() {
               understand them, then build the better version.
             </p>
 
-            <blockquote className="about-pq">
+            <blockquote className="about-pq" data-arrive="pin">
               <span className="about-pq-ghost" aria-hidden="true">{PQ}</span>
               {PQ}
             </blockquote>
           </div>
 
           {/* Column 2 — continued */}
-          <div className="about-col about-col--body">
+          <div className="about-col about-col--body" data-arrive="rise" data-depart="lift">
             <p data-ink>
               The lab taught me that a result you can&rsquo;t reproduce at scale
               isn&rsquo;t a result. So I kept rebuilding the harness until a
@@ -99,8 +92,8 @@ export default function About() {
           </div>
 
           {/* Column 3 — stats + marginalia */}
-          <aside className="about-col about-col--rail" aria-label="By the numbers">
-            <dl className="about-stats">
+          <aside className="about-col about-col--rail" aria-label="By the numbers" data-depart="part-r">
+            <dl className="about-stats" data-arrive-items="paste">
               <div className="about-stat">
                 <dt>Based in</dt>
                 <dd>Victoria, BC</dd>
@@ -127,7 +120,7 @@ export default function About() {
               </div>
             </dl>
 
-            <ul className="about-margin" aria-label="Off the clock">
+            <ul className="about-margin" aria-label="Off the clock" data-arrive-items="pin">
               <li>F1 on weekends.</li>
               <li>Co-founded an NGO with my brother — 1,000+ trees in.</li>
               <li>State-level badminton, once.</li>

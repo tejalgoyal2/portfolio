@@ -60,7 +60,7 @@ export default function Contact() {
             <Stamp label="APPROVED" tone="ink" rotate={-6} interactive />
           </div>
 
-          <ul className="contact-classified">
+          <ul className="contact-classified" data-arrive-items="paste">
             <li className="contact-line">
               <span className="contact-line-label">EMAIL&nbsp;→</span>
               <a
