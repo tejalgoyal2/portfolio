@@ -4,7 +4,8 @@
 //   and tucking away when a full-width band (the wire, the filmstrip) passes;
 // - it never follows the cursor: it only turns slowly (~0.15 rad/s), slows
 //   down while the cursor is near so a face is easy to hit, and lights the face
-//   under the cursor; a click twists that face;
+//   under the cursor; a click twists that face; hold and drag to turn the whole
+//   cube and look at it from any side (it keeps the view, with a little glide);
 // - touch: a tap twists a face. Reduced motion: no turn.
 import { Euler, Quaternion, Vector3 } from 'three';
 import { gsap } from 'gsap';
@@ -98,6 +99,27 @@ export function createPresence(view, hitBtn) {
   let frame = 0;
   let first = true;
   const spin = { v: 0 };
+  // the visitor's own view of the cube: a drag turns it, and it glides to rest
+  const orbitQ = new Quaternion();
+  const dragQ = new Quaternion();
+  const axisX = new Vector3(1, 0, 0);
+  let dragging = false;
+  let glideX = 0;
+  let glideY = 0;
+  const ORBIT = 0.0085; // rad per px dragged
+  function orbit(dx, dy) {
+    dragging = true;
+    glideX = glideY = 0;
+    dragQ.setFromAxisAngle(upAxis, dx * ORBIT);
+    orbitQ.premultiply(dragQ);
+    dragQ.setFromAxisAngle(axisX, dy * ORBIT);
+    orbitQ.premultiply(dragQ);
+  }
+  function release(vx, vy) {
+    dragging = false;
+    glideX = Math.max(-1600, Math.min(1600, vx));
+    glideY = Math.max(-1600, Math.min(1600, vy));
+  }
   const state = { x: 0, y: 0, r: 0 };
 
   const q = new Quaternion();
@@ -155,7 +177,17 @@ export function createPresence(view, hitBtn) {
     const near = prefs.fine && dc < NEAR;
     const face = pointer.active && prefs.fine && rad > 8 ? view.pick(pointer.x, pointer.y) : null;
     bus.cursorHint = face ? 'twist' : null;
-    turnRate.target = reduced ? 0 : near ? 0.15 : 1;
+    turnRate.target = reduced || dragging ? 0 : near ? 0.15 : 1;
+    // a released drag glides a moment, then stops
+    if (!dragging && (Math.abs(glideX) > 1 || Math.abs(glideY) > 1)) {
+      const f = Math.exp(-4 * dt);
+      dragQ.setFromAxisAngle(upAxis, glideX * dt * ORBIT);
+      orbitQ.premultiply(dragQ);
+      dragQ.setFromAxisAngle(axisX, glideY * dt * ORBIT);
+      orbitQ.premultiply(dragQ);
+      glideX *= f;
+      glideY *= f;
+    }
     turnRate.step(dt);
     turn += dt * TURN_RATE * turnRate.value;
     hover.target = face ? 1 : 0;
@@ -171,7 +203,7 @@ export function createPresence(view, hitBtn) {
     g.scale.setScalar(Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show)));
     turnQ.setFromAxisAngle(turnAxis, reduced ? TURN_REST : turn);
     qSpin.setFromAxisAngle(upAxis, spin.v);
-    q.copy(qSpin).multiply(baseQ).multiply(turnQ);
+    q.copy(orbitQ).multiply(qSpin).multiply(baseQ).multiply(turnQ);
     g.quaternion.copy(q);
     first = false;
 
@@ -209,5 +241,5 @@ export function createPresence(view, hitBtn) {
     bus.cursorHint = null;
   }
 
-  return { update, celebrate, reveal, dispose, state };
+  return { update, celebrate, reveal, dispose, orbit, release, state };
 }

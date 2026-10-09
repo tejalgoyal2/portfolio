@@ -7,19 +7,18 @@ import { WebGLRenderer } from 'three';
 import { gsap } from 'gsap';
 import { Director } from '../cube/director';
 import { targetAt } from '../cube/schedule';
-import { SCRAMBLE, SOLVE, SECTION_MOVES, SECTION_ORDER } from '../cube/solve';
+import { SCRAMBLE, SOLVE, STAGES, SECTION_MOVES, SECTION_ORDER } from '../cube/solve';
 import { FACES } from '../cube/model';
 import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
 import { onLayout } from '../life/layout';
-import { groundAt } from '../life/ground';
-import { fireImpact } from '../press/PressImpacts';
 import { createCubeView } from './cube-view';
 import { createPresence } from './presence';
+import { createNotes } from './notes';
 
 const LINE = 0.6; // a section's moves play while it scrolls past 60% of the viewport
 
-export async function startStage(canvas, hitBtn) {
+export async function startStage(canvas, hitBtn, noteHost) {
   let renderer;
   try {
     renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance', stencil: false });
@@ -71,7 +70,12 @@ export async function startStage(canvas, hitBtn) {
   const resize = () => {
     w = document.documentElement.clientWidth;
     h = window.innerHeight;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // A 1× display (most external monitors) stair-steps the hairline gaps
+    // between cubies even with MSAA, so render those at 2× and let the browser
+    // downsample — supersampling, within a pixel budget for very large screens.
+    const dpr = window.devicePixelRatio || 1;
+    const ss = dpr < 1.5 ? Math.min(2, Math.sqrt(9e6 / Math.max(1, w * h))) : 1;
+    renderer.setPixelRatio(Math.min(Math.max(dpr, ss * dpr), 2));
     renderer.setSize(w, h, false);
     view.resize(w, h);
   };
@@ -80,7 +84,15 @@ export async function startStage(canvas, hitBtn) {
 
   // ---- input: the paper-press listener asks us first (src/life/paper.js)
   bus.cubeAt = (x, y) => view.pick(x, y);
-  bus.twist = (face) => director.click(face);
+  // a click twists the face under it — clockwise or anticlockwise, at random
+  bus.twist = (face) => {
+    const turns = Math.random() < 0.5 ? 1 : 3;
+    director.click(face, turns);
+    return turns;
+  };
+  bus.orbit = (dx, dy) => presence.orbit(dx, dy);
+  bus.release = (vx, vy) => presence.release(vx, vy);
+  const notes = createNotes(noteHost);
 
   // keyboard: focus the cube's handle, then U D F B R L twist that face
   const onKey = (e) => {
@@ -106,14 +118,17 @@ export async function startStage(canvas, hitBtn) {
     if (document.hidden) return;
     const dt = Math.min(deltaMs / 1000, 0.1);
     director.setTarget(targetAt(window.scrollY, spans));
-    const wasSolved = director.k === director.total;
+    const before = director.k;
     const done = director.tick(dt);
     presence.update(dt);
-    if (!wasSolved && director.k === director.total && done.some((c) => c.kind === 'solve')) {
-      presence.celebrate();
-      const { x, y, r } = presence.state;
-      const tone = groundAt(y) === 'red' ? 'ink' : 'red';
-      fireImpact('SOLVED', x, Math.max(60, y - r - 24), tone);
+    notes.follow(presence.state);
+    // milestones, on the way forward only: two layers done, and the solve
+    if (done.some((c) => c.kind === 'solve')) {
+      if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
+      if (before < director.total && director.k === director.total) {
+        presence.celebrate();
+        notes.show('solved', presence.state);
+      }
     }
     view.update();
     renderer.render(view.scene, view.camera);
@@ -154,6 +169,9 @@ export async function startStage(canvas, hitBtn) {
       renderer.dispose();
       bus.cubeAt = null;
       bus.twist = null;
+      bus.orbit = null;
+      bus.release = null;
+      notes.dispose();
       delete window.__cube;
       canvas.classList.remove('is-ready');
     },

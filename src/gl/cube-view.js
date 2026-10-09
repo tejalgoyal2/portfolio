@@ -7,12 +7,17 @@
 // colour on a face that's on the outside of the solved cube, a soft warm core
 // colour on the faces that only show inside a turn — picked per fragment from
 // the face's own normal, so the colour seams fall exactly on the middle of each
-// rounded edge, like moulded tiles. A hairline gap between cubies keeps every
+// rounded edge, like moulded tiles. Each of the six centre pieces carries one
+// of the site's pencil icons debossed into its face — pencil on white, bulb on
+// yellow, code on green, database on blue, sparkles on red, rocket on orange —
+// the way a speedcube's centre cap carries its logo; they turn with their face.
+// A hairline gap between cubies keeps every
 // twist legible. Matte plastic under soft light: MeshStandardMaterial, no
 // environment map, no clearcoat, fully opaque. Over the dark grounds a warm
 // edge light fades up so the silhouette never sinks into the ink.
 import {
   Box3,
+  CanvasTexture,
   Color,
   DataTexture,
   DirectionalLight,
@@ -21,6 +26,7 @@ import {
   Group,
   HemisphereLight,
   InstancedMesh,
+  LinearFilter,
   Matrix4,
   MeshStandardMaterial,
   NearestFilter,
@@ -33,6 +39,7 @@ import {
 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { FACE_AXIS, moveQuarterTurns, faceOfNormal } from '../cube/model';
+import { ICON } from '../life/icons';
 
 const SPACING = 1.03; // cubie pitch: a 1.0 cubie leaves a hairline gap
 /** Half the cube's outer size in model units. */
@@ -56,6 +63,39 @@ const EDGE = '#f4e7d2';
 // face slots in the table, in the order the shader picks them: +X −X +Y −Y +Z −Z
 const SLOTS = ['R', 'L', 'U', 'D', 'F', 'B'];
 const HOME_COLOUR = { R: 'R', L: 'O', U: 'Y', D: 'W', F: 'G', B: 'B' };
+// the icon each colour's centre carries, in atlas order
+const CENTRE_ICON = ['pencil', 'lightbulb', 'code', 'database', 'sparkles', 'rocket'];
+const ICON_FOR = { W: 0, Y: 1, G: 2, B: 3, R: 4, O: 5 };
+const ICON_PX = 160;
+
+/** The six centre icons as one white-on-clear atlas strip. */
+async function iconAtlas() {
+  const canvas = document.createElement('canvas');
+  canvas.width = ICON_PX * CENTRE_ICON.length;
+  canvas.height = ICON_PX;
+  const g = canvas.getContext('2d');
+  await Promise.all(
+    CENTRE_ICON.map(
+      (name, i) =>
+        new Promise((resolve) => {
+          const svg = (ICON[name] || '')
+            .replace(/stroke="currentColor"/g, 'stroke="#ffffff"')
+            .replace(/width="24" height="24"/, `width="${ICON_PX}" height="${ICON_PX}"`);
+          const img = new Image();
+          img.onload = () => {
+            g.drawImage(img, i * ICON_PX, 0, ICON_PX, ICON_PX);
+            resolve();
+          };
+          img.onerror = resolve;
+          img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+        })
+    )
+  );
+  const tex = new CanvasTexture(canvas);
+  tex.minFilter = LinearFilter;
+  tex.generateMipmaps = false;
+  return tex;
+}
 
 /** 6 × 27 colour table: for each cubie, each face's plastic in linear RGB. */
 function faceTable() {
@@ -66,14 +106,17 @@ function faceTable() {
     for (const y of [-1, 0, 1])
       for (const z of [-1, 0, 1]) {
         const home = [x, y, z];
+        const centre = home.filter((v) => v !== 0).length === 1;
         SLOTS.forEach((face, slot) => {
           const { axis, side } = FACE_AXIS[face];
-          c.set(home[axis] === side ? PLASTIC[HOME_COLOUR[face]] : CORE);
+          const outer = home[axis] === side;
+          c.set(outer ? PLASTIC[HOME_COLOUR[face]] : CORE);
           const o = (id * 6 + slot) * 4;
           data[o] = c.r;
           data[o + 1] = c.g;
           data[o + 2] = c.b;
-          data[o + 3] = 1;
+          // alpha: which icon this face carries (1–6), 0 for none
+          data[o + 3] = outer && centre ? ICON_FOR[HOME_COLOUR[face]] + 1 : 0;
         });
         id++;
       }
@@ -93,6 +136,7 @@ function stickerless(material, uniforms) {
         `#include <common>
 flat out int vCubie;
 out vec3 vObjN;
+out vec3 vObjP;
 out vec3 vCubeN;
 out vec3 vCubiePos;`
       )
@@ -101,6 +145,7 @@ out vec3 vCubiePos;`
         `#include <begin_vertex>
 vCubie = gl_InstanceID;
 vObjN = normal;
+vObjP = position;
 vCubeN = mat3(instanceMatrix) * normal;
 vCubiePos = instanceMatrix[3].xyz;`
       );
@@ -109,12 +154,14 @@ vCubiePos = instanceMatrix[3].xyz;`
         '#include <common>',
         `#include <common>
 uniform sampler2D uFaces;
+uniform sampler2D uIcons;
 uniform float uEdge;
 uniform vec3 uEdgeCol;
 uniform float uHover;
 uniform vec3 uHoverN;
 flat in int vCubie;
 in vec3 vObjN;
+in vec3 vObjP;
 in vec3 vCubeN;
 in vec3 vCubiePos;`
       )
@@ -124,7 +171,18 @@ in vec3 vCubiePos;`
 int slot = an.x >= an.y && an.x >= an.z ? (vObjN.x > 0.0 ? 0 : 1)
          : an.y >= an.z ? (vObjN.y > 0.0 ? 2 : 3)
          : (vObjN.z > 0.0 ? 4 : 5);
-vec3 plastic = texelFetch(uFaces, ivec2(slot, vCubie), 0).rgb;
+vec4 face = texelFetch(uFaces, ivec2(slot, vCubie), 0);
+vec3 plastic = face.rgb;
+// a centre piece's icon, debossed: the face seen from outside, right and up
+if (face.a > 0.5) {
+  vec3 R = slot == 0 ? vec3(0.,0.,-1.) : slot == 1 ? vec3(0.,0.,1.) : slot == 5 ? vec3(-1.,0.,0.) : vec3(1.,0.,0.);
+  vec3 U = slot == 2 ? vec3(0.,0.,-1.) : slot == 3 ? vec3(0.,0.,1.) : vec3(0.,1.,0.);
+  vec2 uv = vec2(dot(vObjP, R), dot(vObjP, U)) / 0.6 + 0.5;
+  if (uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0) {
+    float ink = texture(uIcons, vec2((uv.x + face.a - 1.0) / 6.0, 1.0 - uv.y)).a;
+    plastic = mix(plastic, plastic * 0.62, ink * 0.9);
+  }
+}
 // the face under the cursor: this cubie is in that layer, and this side faces out of it
 float lit = step(0.72, dot(normalize(vCubeN), uHoverN)) * step(0.5, dot(vCubiePos, uHoverN));
 plastic = mix(plastic, plastic * 1.12 + 0.035, lit * uHover);
@@ -143,13 +201,11 @@ outgoingLight += uEdgeCol * edgeF * uEdge * 0.5;
 const m4 = (r, p) =>
   new Matrix4().set(r[0], r[1], r[2], p[0] * SPACING, r[3], r[4], r[5], p[1] * SPACING, r[6], r[7], r[8], p[2] * SPACING, 0, 0, 0, 1);
 
-/** Turn progress shaped like a lightly under-damped spring (ζ ≈ 0.72), settled at p = 1. */
+/** Turn progress: eases in and out (quintic smootherstep), so turns never snap or rattle. */
 export function turnCurve(p) {
   if (p >= 1) return 1;
-  const z = 0.72;
-  const w = 9.2;
-  const wd = w * Math.sqrt(1 - z * z);
-  return 1 - Math.exp(-z * w * p) * (Math.cos(wd * p) + (z / Math.sqrt(1 - z * z)) * Math.sin(wd * p));
+  if (p <= 0) return 0;
+  return p * p * p * (p * (p * 6 - 15) + 10);
 }
 
 export async function createCubeView(director) {
@@ -161,6 +217,7 @@ export async function createCubeView(director) {
 
   const uniforms = {
     uFaces: { value: faceTable() },
+    uIcons: { value: await iconAtlas() },
     uEdge: { value: 0 },
     uEdgeCol: { value: new Color(EDGE) },
     uHover: { value: 0 },
@@ -256,6 +313,7 @@ export async function createCubeView(director) {
       material.dispose();
       geo.dispose();
       uniforms.uFaces.value.dispose();
+      uniforms.uIcons.value.dispose();
     },
   };
 }

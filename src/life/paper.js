@@ -53,7 +53,9 @@ export function measureMask(pad = 10, decor = true) {
 /**
  * The one paper-press listener, and the difference between a click and a hold.
  *
- * - A press on the cube twists it (mice and pens at once; touch on a tap).
+ * - On the cube: a click twists the face under it (either way, at random);
+ *   holding and dragging turns the whole cube to see its other sides (mice
+ *   and pens — on touch a drag scrolls the page, so a tap twists).
  * - A quick click on bare paper dispatches `life:press` {x, y, ground}: the
  *   registration mark and the water ripple.
  * - Holding past ~¼ s (a long-press on touch) starts printing instead:
@@ -80,7 +82,7 @@ export function startPaperPress() {
     if (!press) return;
     clearTimeout(press.timer);
     if (press.holding) emit('life:hold', { phase: 'end' });
-    html.classList.remove('is-holding');
+    html.classList.remove('is-holding', 'is-orbiting');
     press = null;
   };
 
@@ -98,10 +100,6 @@ export function startPaperPress() {
     const touch = e.pointerType === 'touch';
     if (!touch && e.button !== 0) return;
     const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
-    if (face && !touch) {
-      bus.twist?.(face);
-      return;
-    }
     if (!face && !isEmptyPaper(e.target)) return;
     end();
     press = {
@@ -113,15 +111,37 @@ export function startPaperPress() {
       y0: e.clientY,
       face,
       holding: false,
+      orbiting: false,
+      t: performance.now(),
+      vx: 0,
+      vy: 0,
     };
     if (!face) press.timer = setTimeout(startHold, HOLD_DELAY[press.kind]);
   });
 
   window.addEventListener('pointermove', (e) => {
     if (!press || e.pointerId !== press.id) return;
+    const dx = e.clientX - press.x;
+    const dy = e.clientY - press.y;
     press.x = e.clientX;
     press.y = e.clientY;
-    if (!press.holding && Math.hypot(press.x - press.x0, press.y - press.y0) > SLOP[press.kind]) end();
+    const far = Math.hypot(press.x - press.x0, press.y - press.y0) > SLOP[press.kind];
+    // a drag that starts on the cube turns the cube
+    if (press.face && press.kind === 'mouse' && (press.orbiting || far)) {
+      if (!press.orbiting) {
+        press.orbiting = true;
+        html.classList.add('is-orbiting');
+        window.getSelection?.()?.removeAllRanges();
+      }
+      const now = performance.now();
+      const dt = Math.max(1, now - press.t) / 1000;
+      press.vx = press.vx * 0.6 + (dx / dt) * 0.4;
+      press.vy = press.vy * 0.6 + (dy / dt) * 0.4;
+      press.t = now;
+      bus.orbit?.(dx, dy);
+      return;
+    }
+    if (!press.holding && far) end();
   });
 
   window.addEventListener('pointerup', (e) => {
@@ -130,8 +150,14 @@ export function startPaperPress() {
     if (p.holding) {
       const held = (performance.now() - p.holdT0) / 1000;
       emit('life:burst', { x: p.x, y: p.y, ground: groundAt(p.y), amount: Math.min(1, held / HOLD_FULL) });
-    } else if (p.face) bus.twist?.(p.face);
-    else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+    } else if (p.orbiting) {
+      // a flick lets it glide; a slow drag lets it stop where it is
+      const still = performance.now() - p.t > 80;
+      bus.release?.(still ? 0 : p.vx, still ? 0 : p.vy);
+    } else if (p.face) {
+      const turns = bus.twist?.(p.face);
+      emit('life:twist', { x: p.x0, y: p.y0, turns });
+    } else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
     end();
   });
 
