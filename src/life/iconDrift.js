@@ -3,7 +3,6 @@ import { prefs } from './prefs';
 import { onLayout } from './layout';
 import { measureMask } from './paper';
 import { groundAtDoc } from './ground';
-import { water } from './water';
 import { loadSprites, INKS_FOR } from './sprites';
 
 /**
@@ -14,17 +13,22 @@ import { loadSprites, INKS_FOR } from './sprites';
  * keeps out of the page's text boxes, padded, and turns away before it
  * reaches one.
  *
- * They float on the water (src/life/water.js): where a ripple passes, an icon
- * is lifted and shoved along the slope of the wave, tips with it, and then
- * settles back into its drift as the water calms.
+ * A press on bare paper (`life:press`) drops a stone in the water: a damped
+ * wave rings out from the point — four wavering crests in press red, the first
+ * bold, a quick dent where it landed — and dies out within ~420 px. As the
+ * packet passes, nearby icons are shoved outward and rock, then settle back
+ * into their drift. Ripples overlap freely.
  *
- * One fixed canvas, redrawn each frame (a dozen sprites). Paused while the tab
- * is hidden. Reduced motion: the icons sit still.
+ * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
+ * Paused while the tab is hidden. Reduced motion: the icons sit still and
+ * there are no ripples.
  */
 
 const PX = 40; // css px the sprites are rasterised at
 const PAD = 12; // clearance kept from text, on top of the icon's radius
 const SPACING = 150; // icons keep at least this far apart
+const RIPPLE = { speed: 330, wave: 40, reach: 420, amp: 16, crests: 4 };
+const RING_INK = { paper: [213, 30, 34], ink: [254, 67, 62], red: [244, 240, 230] };
 
 export function startIconDrift(canvas) {
   const ctx = canvas.getContext('2d');
@@ -36,6 +40,8 @@ export function startIconDrift(canvas) {
   let mask = []; // text boxes in document coordinates, sorted by y
   let docH = 0;
   const icons = [];
+  const ripples = [];
+  let clock = 0;
   let lastDrawKey = '';
 
   const resize = () => {
@@ -92,8 +98,9 @@ export function startIconDrift(canvas) {
         av: 0,
         vx: 0,
         vy: 0,
-        lift: 0,
-        tip: 0,
+        ox: 0,
+        oy: 0,
+        rock: 0,
         alpha: fadeIn ? 0 : 1,
         peak: 0.16 + Math.random() * 0.1,
         dying: false,
@@ -106,21 +113,36 @@ export function startIconDrift(canvas) {
   function step(dt) {
     const still = prefs.reduced;
     const sy0 = window.scrollY;
+    for (let k = ripples.length - 1; k >= 0; k--) {
+      const rp = ripples[k];
+      rp.prev = rp.R;
+      rp.R = (clock - rp.t0) * RIPPLE.speed;
+      if (rp.R - RIPPLE.wave * RIPPLE.crests > RIPPLE.reach) ripples.splice(k, 1);
+    }
     for (const ic of icons) {
       ic.alpha = ic.dying ? ic.alpha - dt * 1.4 : Math.min(1, ic.alpha + dt * 0.8);
       if (still) continue;
 
-      // ride the water: shoved down the slope, lifted on a crest, tipped with it
-      const w = water.active ? water.sample(ic.x, ic.y - sy0) : null;
-      if (w) {
-        ic.vx -= w.gx * 5200 * dt;
-        ic.vy -= w.gy * 5200 * dt;
-        ic.av += w.gx * 26 * dt;
-        ic.lift += (w.h - ic.lift) * Math.min(1, dt * 14);
-        ic.tip += (w.gx * 6 - ic.tip) * Math.min(1, dt * 10);
-      } else {
-        ic.lift *= Math.exp(-6 * dt);
-        ic.tip *= Math.exp(-6 * dt);
+      // the water: displaced while a packet passes, shoved as its front does
+      ic.ox = ic.oy = ic.rock = 0;
+      for (const rp of ripples) {
+        const dx = ic.x - rp.x;
+        const dy = ic.y - rp.y;
+        const d = Math.hypot(dx, dy) || 1;
+        if (d > RIPPLE.reach) continue;
+        const env = Math.exp(-d / 210) * (1 - d / RIPPLE.reach);
+        const behind = rp.R - d;
+        if (behind > 0 && behind < RIPPLE.wave * RIPPLE.crests) {
+          const u = RIPPLE.amp * env * Math.sin((2 * Math.PI * behind) / RIPPLE.wave) * Math.exp(-behind / (1.6 * RIPPLE.wave));
+          ic.ox += (dx / d) * u;
+          ic.oy += (dy / d) * u;
+          ic.rock += u * 0.05;
+        }
+        if (rp.prev < d && rp.R >= d) {
+          ic.vx += (dx / d) * 150 * env;
+          ic.vy += (dy / d) * 150 * env;
+          ic.av += (Math.random() < 0.5 ? -1 : 1) * 2.4 * env;
+        }
       }
 
       // a slow random walk, turning away from text before it gets there
@@ -156,21 +178,59 @@ export function startIconDrift(canvas) {
     while (alive < target() && spawns-- > 0 && spawn(!still)) alive++;
   }
 
+  function drawRipples(sy0) {
+    for (const rp of ripples) {
+      const cx = rp.x;
+      const cy = rp.y - sy0;
+      const age = clock - rp.t0;
+      const [r, g, b] = RING_INK[rp.ground] || RING_INK.paper;
+      // the dent where the stone went in
+      if (age < 0.35) {
+        const k = 1 - age / 0.35;
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 34 + age * 120);
+        grad.addColorStop(0, `rgba(${r},${g},${b},${(0.22 * k).toFixed(3)})`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 34 + age * 120, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (let j = 0; j < RIPPLE.crests; j++) {
+        const rj = rp.R - j * RIPPLE.wave;
+        if (rj <= 2 || rj > RIPPLE.reach) continue;
+        const fade = (1 - rj / RIPPLE.reach) ** 1.4;
+        const alpha = 0.62 * fade * (1 - j * 0.22) * Math.min(1, age / 0.06);
+        if (alpha < 0.01) continue;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+        ctx.lineWidth = (j === 0 ? 2.6 : 1.6) * (0.6 + 0.4 * fade);
+        ctx.beginPath();
+        const n = Math.max(56, Math.round(rj * 0.6));
+        for (let q = 0; q <= n; q++) {
+          const th = (q / n) * Math.PI * 2;
+          const rr = rj + Math.sin(th * 7 + j * 1.3 + age * 5) * 2 * fade + Math.sin(th * 3 - age * 3) * 1.4;
+          const px = cx + Math.cos(th) * rr;
+          const py = cy + Math.sin(th) * rr;
+          if (q === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+    }
+  }
+
   function draw() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const sy0 = window.scrollY;
+    drawRipples(sy0);
     for (const ic of icons) {
       const inks = INKS_FOR[groundAtDoc(ic.y)] || INKS_FOR.paper;
       const img = sprites[ic.sprite][inks[ic.accent ? 1 : 0]];
-      // lifted on a crest it rides a touch larger and darker
-      const lift = Math.max(-1, Math.min(1, ic.lift / 3));
-      const size = ic.size * (1 + lift * 0.18);
-      ctx.globalAlpha = Math.max(0, ic.alpha) * Math.min(0.75, ic.peak * (1 + Math.abs(lift) * 1.2));
+      ctx.globalAlpha = Math.max(0, ic.alpha) * ic.peak;
       ctx.save();
-      ctx.translate(ic.x, ic.y - sy0);
-      ctx.rotate(ic.a + ic.tip);
-      ctx.drawImage(img, -size / 2, -size / 2, size, size);
+      ctx.translate(ic.x + ic.ox, ic.y + ic.oy - sy0);
+      ctx.rotate(ic.a + ic.rock);
+      ctx.drawImage(img, -ic.size / 2, -ic.size / 2, ic.size, ic.size);
       ctx.restore();
     }
     ctx.globalAlpha = 1;
@@ -179,6 +239,7 @@ export function startIconDrift(canvas) {
   const tick = (time, deltaMs) => {
     if (!sprites || document.hidden) return;
     const dt = Math.min(0.05, deltaMs / 1000);
+    clock += dt;
     step(dt);
     if (prefs.reduced) {
       // still icons: repaint only when the page has moved
@@ -188,6 +249,14 @@ export function startIconDrift(canvas) {
     }
     draw();
   };
+
+  const onPress = (e) => {
+    if (prefs.reduced) return;
+    const { x, y, ground } = e.detail;
+    ripples.push({ x, y: y + window.scrollY, t0: clock, ground, R: 0, prev: 0 });
+    if (ripples.length > 10) ripples.shift();
+  };
+  window.addEventListener('life:press', onPress);
 
   let cancelled = false;
   const offLayout = onLayout(measure);
@@ -204,6 +273,7 @@ export function startIconDrift(canvas) {
   return () => {
     cancelled = true;
     gsap.ticker.remove(tick);
+    window.removeEventListener('life:press', onPress);
     window.removeEventListener('resize', resize);
     offLayout();
   };

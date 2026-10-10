@@ -5,7 +5,6 @@ import { startPointer, pointer } from './pointer';
 import { startScroll } from './scroll';
 import { startGround, groundAt } from './ground';
 import { startPaperPress, isEmptyPaper, HOLD_SECONDS } from './paper';
-import { startWater } from './water';
 import { startIconDrift } from './iconDrift';
 import { startIconBurst } from './iconBurst';
 import { prefs } from './prefs';
@@ -13,7 +12,7 @@ import { afterPrint } from './idle';
 
 /**
  * The life layer's persistent pieces, mounted once beside the press layers:
- * the water a click disturbs, the pencil icons drifting on it, the
+ * the pencil icons drifting on the paper and the ripples a click sends, the
  * registration marks a click leaves on bare paper, the press-and-hold ink ring
  * and its burst of icons, the one-time "hold" hint, and the ink roller that
  * fills along the top edge with page progress. The shared pointer / scroll /
@@ -29,7 +28,6 @@ export default function Life() {
 
   return (
     <>
-      <WaterCanvas />
       <DriftCanvas />
       <RegistrationMarks />
       <BurstCanvas />
@@ -38,12 +36,6 @@ export default function Life() {
       <InkRoller />
     </>
   );
-}
-
-function WaterCanvas() {
-  const ref = useRef(null);
-  useEffect(() => afterPrint(() => startWater(ref.current)), []);
-  return <canvas ref={ref} className="water" aria-hidden="true" />;
 }
 
 function DriftCanvas() {
