@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { prefs } from './prefs';
+import { SECTIONS } from '../data/sections';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -22,6 +23,11 @@ gsap.registerPlugin(ScrollTrigger);
  * through CSS variables (--ax/--ay/--ar/--as/--ao in, --dx/--dy/--dr/--ds/--do
  * out, composed in press.css), so they never fight a block's own hover
  * transform. Reduced motion: nothing moves; everything is simply there.
+ *
+ * Between sections, each one's name is set as a huge outlined banner behind
+ * its header — PROFILE, SKILLS, WORK — that slides across as the section
+ * comes up the page, like the section flag of a broadsheet passing under the
+ * press roller. Decorative only (aria-hidden), faint, and behind the text.
  *
  * Markup: data-arrive="deal-l | deal-r | rise | paste | pin | drop" and
  * data-depart="file | lift | slide | part-l | part-r" on a block;
@@ -63,9 +69,30 @@ function scrubbed(trigger, range, build) {
   return tl;
 }
 
+/** The banners: one outlined section name per section after the front page. */
+function banners(root, made) {
+  for (const { key, label } of SECTIONS.slice(1)) {
+    const section = root.querySelector(`[data-section="${key}"]`);
+    if (!section) continue;
+    const el = document.createElement('span');
+    el.className = 'folio';
+    el.setAttribute('aria-hidden', 'true');
+    el.textContent = label;
+    section.prepend(el);
+    if (prefs.reduced) {
+      made.push({ revert: () => el.remove() });
+      continue;
+    }
+    const tl = gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'top -60%', scrub: true } });
+    tl.fromTo(el, { xPercent: 18 }, { xPercent: -42, ease: 'none' });
+    made.push({ revert: () => (tl.revert(), el.remove()) });
+  }
+}
+
 export function startArrivals(root = document) {
-  if (prefs.reduced) return () => {};
   const made = [];
+  banners(root, made);
+  if (prefs.reduced) return () => made.forEach((t) => t.revert());
 
   for (const el of root.querySelectorAll('[data-arrive]')) {
     const fx = ARRIVE[el.dataset.arrive];

@@ -20,7 +20,10 @@
   mix-blend-mode: overlay;
 }
 
-/* ── Registration cursor ─────────────────────────────────────────────────── */
+/* ── The pen cursor (PressCursor.jsx) ─────────────────────────────────────────
+ * A press-red point at the exact position, the visitor's pencil icon riding
+ * beside it, and a ring that only appears for links and marks. Paper white under
+ * difference blending, so the pen re-inks itself over every ground. */
 html.cursor-hidden,
 html.cursor-hidden * {
   cursor: none;
@@ -31,60 +34,72 @@ html.cursor-hidden select {
   cursor: text;
 }
 .press-cursor-dot,
-.press-cursor-ring {
+.press-cursor-ring,
+.press-pen,
+.cursor-flick {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 9999;
   pointer-events: none;
-  mix-blend-mode: difference;
   will-change: transform;
 }
 .press-cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  background: var(--paper);
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
   border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 1.5px var(--paper);
+  transition: scale 0.2s var(--ease-stamp), opacity 0.2s;
 }
+html.cursor-down .press-cursor-dot { scale: 0.6; }
+html.cursor-over-link .press-cursor-dot,
+html.cursor-has-mark .press-cursor-dot { scale: 0.55; }
+
+.press-pen {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  mix-blend-mode: difference;
+  transform-origin: 0 0;
+}
+.press-pen-icon {
+  width: 100%;
+  height: 100%;
+  transition: scale 0.3s var(--ease-stamp), opacity 0.25s var(--ease-set);
+}
+.press-pen-icon svg { width: 100%; height: 100%; overflow: visible; }
+/* over a link the pen lifts off the paper a little */
+html.cursor-over-link .press-pen-icon { scale: 1.3; }
+/* while a mark is showing, the pen steps out of its way */
+html.cursor-has-mark .press-pen-icon { opacity: 0; scale: 0.6; }
+
 .press-cursor-ring {
-  width: 38px;
-  height: 38px;
-  margin: -19px 0 0 -19px;
-  transition: width 0.2s var(--ease-set), height 0.2s var(--ease-set),
-    margin 0.2s var(--ease-set);
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 1.5px solid var(--paper);
+  mix-blend-mode: difference;
+  opacity: 0;
+  scale: 0.5;
+  transition: opacity 0.2s var(--ease-set), scale 0.3s var(--ease-stamp), width 0.25s var(--ease-set),
+    height 0.25s var(--ease-set), margin 0.25s var(--ease-set), border-color 0.2s;
 }
-.press-cross {
-  position: absolute;
-  background: var(--paper);
-}
-.press-cross--h {
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  margin-top: -0.5px;
-}
-.press-cross--v {
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  margin-left: -0.5px;
-}
-.press-cursor-ring.is-locked {
+html.cursor-over-link .press-cursor-ring { opacity: 1; scale: 1; }
+html.cursor-down .press-cursor-ring { scale: 0.85; }
+.press-cursor-ring[data-state] {
+  opacity: 1;
+  scale: 1;
   width: 56px;
   height: 56px;
   margin: -28px 0 0 -28px;
-}
-.press-cursor-ring.is-down {
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
+  border-color: transparent;
 }
 
-/* per-target states: the crosshair gives way to a drawn mark (PressCursor.jsx).
-   Same paper stroke under difference blending, so each reads on every ground. */
+/* per-target marks: a twist arc for the cube, orbit while turning it, a
+   steering wheel for the car, a pen nib for the gratitude input */
 .cursor-mark {
   position: absolute;
   inset: 0;
@@ -100,14 +115,8 @@ html.cursor-hidden select {
   transform: scale(0.6) rotate(-40deg);
   transition: opacity 0.18s var(--ease-set), transform 0.3s var(--ease-stamp);
 }
-.press-cross { transition: opacity 0.15s var(--ease-set); }
-.press-cursor-ring[data-state] {
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-}
-.press-cursor-ring[data-state] .press-cross { opacity: 0; }
 .press-cursor-ring[data-state="twist"] .cursor-mark--twist,
+.press-cursor-ring[data-state="orbit"] .cursor-mark--orbit,
 .press-cursor-ring[data-state="wheel"] .cursor-mark--wheel,
 .press-cursor-ring[data-state="nib"] .cursor-mark--nib {
   opacity: 1;
@@ -117,10 +126,6 @@ html.cursor-hidden select {
 .press-cursor-ring[data-state="twist"] .cursor-mark--twist {
   animation: cursor-twist 4.8s var(--ease-set) infinite;
 }
-.press-cursor-ring[data-state="twist"].is-down .cursor-mark--twist {
-  animation: none;
-  transform: rotate(90deg);
-}
 /* four quarter turns, a beat between each — like a face being turned */
 @keyframes cursor-twist {
   0%, 14% { transform: rotate(0deg); }
@@ -129,8 +134,24 @@ html.cursor-hidden select {
   75%, 89% { transform: rotate(270deg); }
   100% { transform: rotate(360deg); }
 }
+.press-cursor-ring[data-state="orbit"] .cursor-mark--orbit { animation: cursor-orbit 2.4s linear infinite; }
+@keyframes cursor-orbit { to { transform: rotate(360deg); } }
+
+/* the flick: an arrow sweeping round the point the way a face just turned */
+.cursor-flick {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  overflow: visible;
+}
 @media (prefers-reduced-motion: reduce) {
-  .press-cursor-ring[data-state="twist"] .cursor-mark--twist { animation: none; }
+  .press-cursor-ring[data-state] .cursor-mark { animation: none; }
 }
 
 /* ── Onomatopoeia impacts ────────────────────────────────────────────────── */
@@ -440,11 +461,10 @@ button.press-stamp {
 }
 
 /* ── Running head (Contents.jsx) ──────────────────────────────────────────────
- * The section flag along the top, like a newspaper's masthead strip: every
- * section in view, the current one inked red with a hairline that fills as you
- * read through it. A band of the stock beneath (re-inked per ground) with a
- * hairline under it, so text scrolling up never runs under the labels. Narrow
- * screens get "03 / 07 Skills" and a Contents button that drops a small list. */
+ * A floating capsule of liquid glass: the page blurred and brightened through
+ * it, a lit rim along its top edge, every section inside, the current one on a
+ * sliding press-red pill. It re-inks for the stock beneath, fading over half a
+ * second. Narrow screens: the current section, Contents, and a small list. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -460,54 +480,60 @@ button.press-stamp {
 
 .running-head {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 12px;
+  left: 50%;
   z-index: 9100;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  height: 38px;
-  padding: 0 clamp(1rem, 4vw, 4rem);
+  gap: 0.35rem;
+  height: 42px;
+  padding: 0 5px 0 6px;
+  translate: -50% 0;
+  border-radius: 999px;
   --rh-ink: var(--ink);
-  --rh-soft: var(--ink-soft);
-  --rh-accent: var(--red);
-  --rh-stock: var(--paper);
+  --rh-glass: oklch(98% 0.01 85 / 0.42);
+  --rh-rim: oklch(100% 0 0 / 0.7);
+  --rh-edge: oklch(20% 0.02 60 / 0.12);
   color: var(--rh-ink);
-  background: var(--rh-stock);
-  box-shadow: 0 1px 0 color-mix(in oklch, var(--rh-ink) 14%, transparent);
-  transition: color 0.3s var(--ease-set), background-color 0.3s var(--ease-set);
+  background: var(--rh-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.7) brightness(1.04);
+  backdrop-filter: blur(14px) saturate(1.7) brightness(1.04);
+  box-shadow: inset 0 1px 0 var(--rh-rim), inset 0 -1px 0 oklch(100% 0 0 / 0.12), 0 0 0 1px var(--rh-edge),
+    0 10px 30px -10px oklch(20% 0.02 60 / 0.3);
+  transition: color 0.6s var(--ease-set), background-color 0.6s var(--ease-set), box-shadow 0.6s var(--ease-set);
   font-family: var(--font-data);
   font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+/* the glass catches light along its top: a soft sheen, not a flat tint */
+.running-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.32), oklch(100% 0 0 / 0) 55%);
+  opacity: 0.8;
+  transition: opacity 0.6s var(--ease-set);
 }
 .running-head[data-ground="ink"] {
   --rh-ink: var(--paper);
-  --rh-soft: oklch(80% 0.012 80);
-  --rh-accent: #fe433e;
-  --rh-stock: var(--ground);
+  --rh-glass: oklch(26% 0.015 60 / 0.5);
+  --rh-rim: oklch(100% 0 0 / 0.22);
+  --rh-edge: oklch(100% 0 0 / 0.1);
 }
+.running-head[data-ground="ink"]::before { opacity: 0.25; }
 .running-head[data-ground="red"] {
   --rh-ink: var(--paper);
-  --rh-soft: oklch(90% 0.03 40);
-  --rh-accent: var(--paper);
-  --rh-stock: var(--red-deep);
+  --rh-glass: oklch(40% 0.17 28 / 0.42);
+  --rh-rim: oklch(100% 0 0 / 0.3);
+  --rh-edge: oklch(100% 0 0 / 0.14);
 }
 
-/* where you are — shown on narrow screens, where the full list folds away */
-.rh-here {
-  display: none;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin: 0;
-  overflow: hidden;
-}
-.rh-no { color: var(--rh-accent); }
-.rh-of { color: var(--rh-soft); }
-.rh-label { display: inline-block; animation: rh-roll 0.45s var(--ease-set); }
+.rh-here { display: none; margin: 0 0.5rem; overflow: hidden; white-space: nowrap; }
+.rh-label { display: inline-block; animation: rh-roll 0.5s var(--ease-set); }
 @keyframes rh-roll {
   from { transform: translateY(110%); opacity: 0; }
   to { transform: none; opacity: 1; }
@@ -517,18 +543,42 @@ button.press-stamp {
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
-  color: var(--rh-ink);
-  padding: 0.5rem 0.1rem;
+  color: inherit;
+  padding: 0.5rem 0.7rem;
   cursor: pointer;
 }
 
-/* the strip itself */
+.rh-track { position: relative; display: flex; height: 32px; }
+.rh-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.28), 0 4px 12px -4px oklch(56% 0.214 27 / 0.6);
+  overflow: hidden;
+  transition: transform 0.6s var(--ease-set), width 0.6s var(--ease-set);
+}
+/* reading progress through the current section, along the pill's foot */
+.rh-fill {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 5px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: oklch(100% 0 0 / 0.75);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
 .rh-list {
+  position: relative;
   display: flex;
   align-items: stretch;
-  gap: clamp(0.4rem, 1.6vw, 1.8rem);
   height: 100%;
-  margin: 0 auto 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -537,66 +587,66 @@ button.press-stamp {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0 0.15rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
-  color: var(--rh-soft);
+  color: inherit;
+  opacity: 0.72;
   cursor: pointer;
-  transition: color 0.25s var(--ease-set);
+  transition: opacity 0.25s var(--ease-set), color 0.5s var(--ease-set);
 }
-.rh-list button:hover,
-.rh-list button:focus-visible { color: var(--rh-ink); }
-.rh-list button:focus-visible { outline: 2px solid var(--rh-accent); outline-offset: -4px; }
-.rh-list .is-current button { color: var(--rh-accent); }
-/* the reading hairline: fills across the current section's label */
-.rh-fill {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 7px;
-  height: 1.5px;
-  background: var(--rh-accent);
-  transform: scaleX(0);
-  transform-origin: 0 50%;
+.rh-list button:hover { opacity: 1; }
+.rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: 1px; }
+.rh-list .is-current button { opacity: 1; color: var(--paper); }
+
+.rh-pen {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 0.2rem;
+  border-radius: 50%;
+  color: inherit;
+  background: oklch(100% 0 0 / 0.16);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, currentColor 22%, transparent);
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-set), scale 0.25s var(--ease-stamp);
 }
-.rh-list button::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 7px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0;
-  transition: opacity 0.25s var(--ease-set);
-}
-.rh-list button:hover::after { opacity: 0.35; }
+.rh-pen:hover { background: oklch(100% 0 0 / 0.3); scale: 1.08; }
+.rh-pen:active { scale: 0.92; }
+.rh-pen:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rh-pen-icon { width: 18px; height: 18px; }
+.rh-pen-icon svg { width: 100%; height: 100%; }
+@media (pointer: coarse) { .rh-pen { display: none; } }
 
 @media (max-width: 900px) {
   .rh-here,
   .rh-toggle { display: inline-flex; }
+  .running-head { padding: 0 4px 0 10px; max-width: calc(100vw - 24px); }
+  .rh-toggle { white-space: nowrap; }
+  .rh-pill { display: none; }
+  .rh-track { position: static; height: auto; }
   .rh-list {
     position: absolute;
-    top: 100%;
-    right: clamp(1rem, 4vw, 4rem);
+    top: calc(100% + 8px);
+    right: 0;
     flex-direction: column;
-    gap: 0;
     height: auto;
-    min-width: 13.5rem;
-    margin: 0;
-    padding: 0.4rem 0;
-    background: var(--paper);
+    min-width: 12.5rem;
+    padding: 0.4rem;
+    border-radius: 18px;
     color: var(--ink);
-    border: 1.5px solid var(--ink);
-    box-shadow: 4px 6px 0 oklch(20% 0.02 60 / 0.14), 0 18px 40px oklch(20% 0.02 60 / 0.18);
-    --rh-soft: var(--ink-soft);
-    --rh-ink: var(--ink);
-    --rh-accent: var(--red);
+    background: oklch(97% 0.012 85 / 0.96);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.7), 0 0 0 1px oklch(20% 0.02 60 / 0.12),
+      0 18px 40px -12px oklch(20% 0.02 60 / 0.35);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-6px);
+    transform: translateY(-6px) scale(0.98);
+    transform-origin: top right;
     transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set), visibility 0s 0.25s;
   }
   .running-head.is-open .rh-list {
@@ -605,13 +655,9 @@ button.press-stamp {
     transform: none;
     transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set);
   }
-  .rh-list button {
-    width: 100%;
-    padding: 0.7rem 1rem;
-    font-size: 0.72rem;
-  }
-  .rh-fill,
-  .rh-list button::after { left: 1rem; right: 1rem; bottom: 0.45rem; }
+  .rh-list li { display: block; }
+  .rh-list button { display: flex; width: 100%; padding: 0.7rem 0.9rem; font-size: 0.72rem; opacity: 0.8; }
+  .rh-list .is-current button { color: var(--paper); background: var(--red); opacity: 1; }
 }
 
 /* ── Arrivals and exits (src/life/arrive.js) ──────────────────────────────────
@@ -629,3 +675,25 @@ button.press-stamp {
   scale: calc(var(--as, 1) * var(--ds, 1));
   opacity: calc(var(--ao, 1) * var(--do, 1));
 }
+
+/* the section banners (arrive.js): a huge outlined name behind each header —
+   every section is its own stacking context so the banner sits on its stock */
+[data-section] { isolation: isolate; }
+.folio {
+  position: absolute;
+  top: clamp(0.5rem, 3vw, 2.5rem);
+  left: 0;
+  z-index: -1;
+  font-family: var(--font-impact);
+  font-size: clamp(7rem, 22vw, 22rem);
+  line-height: 0.85;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px oklch(20% 0.018 60 / 0.09);
+  pointer-events: none;
+  user-select: none;
+}
+[data-ground="ink"] > .folio { -webkit-text-stroke-color: oklch(95.5% 0.014 85 / 0.08); }
+[data-ground="red"] > .folio { -webkit-text-stroke-color: oklch(95.5% 0.014 85 / 0.16); }
