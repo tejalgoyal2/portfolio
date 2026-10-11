@@ -3,7 +3,8 @@ import KineticHeadline from '../press/KineticHeadline';
 import Stamp from '../press/Stamp';
 
 /**
- * Let's talk — the warm red finale. Reveal is pure progressive enhancement with
+ * Let's talk — the oxblood finale, where the cube comes back out of the margin
+ * to finish its solve in front of you. Reveal is pure progressive enhancement with
  * zero ScrollTrigger dependency: the content is fully visible by default (no-JS
  * / reduced-motion). Only when JS runs with motion allowed do we add
  * `contact--anim` (which hides the blocks in CSS) and let an IntersectionObserver
@@ -38,6 +39,8 @@ export default function Contact() {
 
   return (
     <section ref={rootRef} className="contact" id="contact" data-ground="red" data-section="contact">
+      {/* the cube comes home here, big, for the last moves of the solve (src/gl/presence.js) */}
+      <div className="contact-cube" data-cube-home="contact" aria-hidden="true" />
       <div className="contact-inner">
         <header className="contact-hd">
           <p className="contact-kicker">Get in touch</p>

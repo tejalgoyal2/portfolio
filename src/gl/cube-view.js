@@ -126,7 +126,7 @@ function faceTable() {
   return tex;
 }
 
-/** Colour each fragment by its cubie and face; light the hovered face; edge light. */
+/** Colour each fragment by its cubie and face; edge light. */
 function stickerless(material, uniforms) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -136,18 +136,14 @@ function stickerless(material, uniforms) {
         `#include <common>
 flat out int vCubie;
 out vec3 vObjN;
-out vec3 vObjP;
-out vec3 vCubeN;
-out vec3 vCubiePos;`
+out vec3 vObjP;`
       )
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
 vCubie = gl_InstanceID;
 vObjN = normal;
-vObjP = position;
-vCubeN = mat3(instanceMatrix) * normal;
-vCubiePos = instanceMatrix[3].xyz;`
+vObjP = position;`
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -157,13 +153,9 @@ uniform sampler2D uFaces;
 uniform sampler2D uIcons;
 uniform float uEdge;
 uniform vec3 uEdgeCol;
-uniform float uHover;
-uniform vec3 uHoverN;
 flat in int vCubie;
 in vec3 vObjN;
-in vec3 vObjP;
-in vec3 vCubeN;
-in vec3 vCubiePos;`
+in vec3 vObjP;`
       )
       .replace(
         'vec4 diffuseColor = vec4( diffuse, opacity );',
@@ -183,9 +175,6 @@ if (face.a > 0.5) {
     plastic = mix(plastic, plastic * 0.62, ink * 0.9);
   }
 }
-// the face under the cursor: this cubie is in that layer, and this side faces out of it
-float lit = step(0.72, dot(normalize(vCubeN), uHoverN)) * step(0.5, dot(vCubiePos, uHoverN));
-plastic = mix(plastic, plastic * 1.12 + 0.035, lit * uHover);
 vec4 diffuseColor = vec4( plastic, opacity );`
       )
       .replace(
@@ -220,8 +209,6 @@ export async function createCubeView(director) {
     uIcons: { value: await iconAtlas() },
     uEdge: { value: 0 },
     uEdgeCol: { value: new Color(EDGE) },
-    uHover: { value: 0 },
-    uHoverN: { value: new Vector3(0, 0, 1) },
   };
   const material = stickerless(new MeshStandardMaterial({ color: '#ffffff', roughness: 0.62, metalness: 0 }), uniforms);
 
@@ -270,7 +257,6 @@ export async function createCubeView(director) {
   const box = new Box3(new Vector3(-CUBE_HALF, -CUBE_HALF, -CUBE_HALF), new Vector3(CUBE_HALF, CUBE_HALF, CUBE_HALF));
   const inv = new Matrix4();
   const hit = new Vector3();
-  const hoverN = { R: [1, 0, 0], L: [-1, 0, 0], U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], B: [0, 0, -1] };
   let vw = 1;
   let vh = 1;
 
@@ -287,10 +273,6 @@ export async function createCubeView(director) {
       camera.updateProjectionMatrix();
     },
     update,
-    setHover(face, amount) {
-      uniforms.uHover.value = director.active ? 0 : amount;
-      if (face) uniforms.uHoverN.value.set(...hoverN[face]);
-    },
     setEdge(v) {
       uniforms.uEdge.value = v;
     },

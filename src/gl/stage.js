@@ -11,6 +11,7 @@ import { SCRAMBLE, SOLVE, STAGES, SECTION_MOVES, SECTION_ORDER } from '../cube/s
 import { FACES } from '../cube/model';
 import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
+import { settings } from '../life/settings';
 import { onLayout } from '../life/layout';
 import { createCubeView } from './cube-view';
 import { createPresence } from './presence';
@@ -83,11 +84,14 @@ export async function startStage(canvas, hitBtn, noteHost) {
   window.addEventListener('resize', resize);
 
   // ---- input: the paper-press listener asks us first (src/life/paper.js)
-  bus.cubeAt = (x, y) => view.pick(x, y);
-  // a click twists the face under it — clockwise or anticlockwise, at random
-  bus.twist = (face) => {
-    const turns = Math.random() < 0.5 ? 1 : 3;
+  bus.cubeAt = (x, y) => (settings.cube ? view.pick(x, y) : null);
+  // a click twists the face under it clockwise — Shift for anticlockwise —
+  // and the twists stay put until the page scrolls on
+  let heldAt = 0;
+  bus.twist = (face, back = false) => {
+    const turns = back ? 3 : 1;
     director.click(face, turns);
+    heldAt = window.scrollY;
     return turns;
   };
   bus.orbit = (dx, dy) => presence.orbit(dx, dy);
@@ -99,10 +103,10 @@ export async function startStage(canvas, hitBtn, noteHost) {
     const k = e.key.toUpperCase();
     if (FACES.includes(k) && !e.metaKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault();
-      director.click(k);
+      bus.twist(k, e.shiftKey);
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      director.click('F');
+      bus.twist('F', e.shiftKey);
     }
   };
   hitBtn?.addEventListener('keydown', onKey);
@@ -114,12 +118,24 @@ export async function startStage(canvas, hitBtn, noteHost) {
   director.tick(0);
   director.instant = prefs.reduced;
 
+  let shownOn = true;
   const frame = (time, deltaMs) => {
     if (document.hidden) return;
     const dt = Math.min(deltaMs / 1000, 0.1);
+    if (director.held && Math.abs(window.scrollY - heldAt) > 24) director.letGo();
     director.setTarget(targetAt(window.scrollY, spans));
     const before = director.k;
     const done = director.tick(dt);
+    // switched off in Page settings: the solve keeps time, nothing is drawn
+    if (settings.cube !== shownOn) {
+      shownOn = settings.cube;
+      document.documentElement.classList.toggle('cube-off', !shownOn);
+      if (!shownOn) {
+        bus.cursorHint = null;
+        renderer.clear();
+      }
+    }
+    if (!shownOn) return;
     presence.update(dt);
     notes.follow(presence.state);
     // milestones, on the way forward only: two layers done, and the solve
@@ -127,7 +143,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
       if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
       if (before < director.total && director.k === director.total) {
         presence.celebrate();
-        notes.show('solved', presence.state);
+        notes.show('solved', presence.state, { moves: director.total });
       }
     }
     view.update();
@@ -172,6 +188,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
       bus.orbit = null;
       bus.release = null;
       notes.dispose();
+      document.documentElement.classList.remove('cube-off');
       delete window.__cube;
       canvas.classList.remove('is-ready');
     },

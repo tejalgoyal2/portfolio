@@ -37,7 +37,7 @@
   stroke: var(--red);
   stroke-width: 1.4;
   transform: translate(-50%, -50%) rotate(var(--rot));
-  animation: reg-print 2.1s var(--ease-set) forwards;
+  animation: reg-print 0.9s var(--ease-set) forwards;
 }
 .reg-mark .reg-dot { fill: currentColor; stroke: none; }
 .reg-mark--paper { color: var(--red); stroke: var(--red); mix-blend-mode: multiply; }
@@ -45,10 +45,9 @@
 .reg-mark--red { color: var(--paper); stroke: var(--paper); }
 @keyframes reg-print {
   0% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--rot) - 14deg)) scale(1.6); }
-  12% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.92); }
-  22% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
-  60% { opacity: 0.8; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+  16% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.92); }
+  30% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--rot) + 8deg)) scale(0.7); }
 }
 /* reduced motion: Life.jsx swaps the stamp-in for a plain Web Animations fade */
 
@@ -236,13 +235,29 @@ html.is-holding * {
   scale: 1 -1;
 }
 .cube-note.is-left .cube-note-arrow { left: auto; right: -34px; rotate: 0deg; scale: 1 -1; }
-/* the solve: the cube ringed in red pen */
-.cube-note--ring .cube-note-ring {
-  left: 0;
-  top: 0;
-  transform: translate(calc(var(--cr) * -0.9 - 50%), calc(var(--cr) * 1.15 - 50%));
+/* the solve: it's yours — a bigger hand, and the tally under it */
+.cube-note--stickers .cube-note-text { font-size: clamp(2.2rem, 3.6vw, 3.4rem); rotate: -6deg; }
+.cube-note-sub {
+  margin: 0.5rem 0 0 0.4rem;
+  font-family: var(--font-pen);
+  font-size: clamp(1.1rem, 1.5vw, 1.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  white-space: nowrap;
+  rotate: -3deg;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-set) 1.1s;
 }
-.cube-note.is-left.cube-note--ring .cube-note-ring { left: 100%; transform: translate(calc(var(--cr) * 1.35 + 10px - 50%), calc(var(--cr) * 1.15 - 50%)); }
+.cube-note.is-on .cube-note-sub { opacity: 0.85; }
+.cube-note--stickers { transform: translate3d(calc(var(--cx) + var(--cr) * 1.05), calc(var(--cy) - var(--cr) * 0.35), 0); }
+.cube-note--stickers.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.1 - 10px), calc(var(--cy) - var(--cr) * 0.35), 0) translateX(-100%); }
+.cube-note--stickers.is-left .cube-note-sub { text-align: right; margin: 0.5rem 0.4rem 0 0; }
+.cube-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cube-confetti span {
+  position: absolute;
+  border-radius: 22%;
+  box-shadow: inset 0 0 0 1px oklch(20% 0.02 60 / 0.18);
+}
 .cube-note.is-off { opacity: 0; transition: opacity 0.6s var(--ease-set); }
 .cube-note.is-still .cube-note-text span,
 .cube-note.is-still svg path { transition: none; }
@@ -252,4 +267,40 @@ html.is-orbiting,
 html.is-orbiting * {
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Page settings: the cube switched off */
+html.cube-off .stage-canvas,
+html.cube-off .cube-handle,
+html.cube-off .cube-notes { visibility: hidden; }
+
+/* the little car (src/life/car.js): line-drawn, paper-bodied, a red stripe */
+.press-car {
+  --car-scale: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: calc(64px * var(--car-scale));
+  height: calc(30px * var(--car-scale));
+  transform-origin: calc(32px * var(--car-scale)) calc(27px * var(--car-scale));
+  pointer-events: none;
+  will-change: transform;
+}
+.car-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.car-svg * { vector-effect: non-scaling-stroke; }
+.car-shell { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.car-glass { fill: color-mix(in oklch, var(--ink) 10%, var(--paper)); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.car-stripe { stroke: var(--red); stroke-width: 2.2; stroke-linecap: round; }
+.car-lamp { fill: var(--red); }
+.car-pipe { stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; }
+.car-spin circle { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+.car-spin path { stroke: var(--paper); stroke-width: 1.1; stroke-linecap: round; }
+.car-puff {
+  position: absolute;
+  z-index: 1;
+  border-radius: 50%;
+  border: 1.2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  background: color-mix(in oklch, var(--paper) 60%, transparent);
+  pointer-events: none;
 }

@@ -3,9 +3,11 @@
 //   margin corner, sized to the margin, choosing a corner with no text in it
 //   and tucking away when a full-width band (the wire, the filmstrip) passes;
 // - it never follows the cursor: it only turns slowly (~0.15 rad/s), slows
-//   down while the cursor is near so a face is easy to hit, and lights the face
-//   under the cursor; a click twists that face; hold and drag to turn the whole
+//   down while the cursor is near so a face is easy to hit; a click twists the
+//   face under it (Shift for the other way); hold and drag to turn the whole
 //   cube and look at it from any side (it keeps the view, with a little glide);
+// - at the end it comes back out of the margin into its own spot in Let's talk,
+//   big again, so the last moves of the solve play where you can see them;
 // - touch: a tap twists a face. Reduced motion: no turn.
 import { Euler, Quaternion, Vector3 } from 'three';
 import { gsap } from 'gsap';
@@ -24,10 +26,12 @@ const EDGE_FOR = { paper: 0, ink: 1, red: 0.6 };
 
 export function createPresence(view, hitBtn) {
   const slotEl = document.querySelector('[data-cube-home="hero"]');
+  const finaleEl = document.querySelector('[data-cube-home="contact"]');
   const containerEl = document.querySelector('.press-container');
 
   // the slot and the page's text, in document coordinates
   let slot = null; // { x, y, w, h }
+  let finale = null;
   let containerW = window.innerWidth * 0.92;
   let mask = []; // { x, y, w, h }
   const measure = () => {
@@ -35,6 +39,10 @@ export function createPresence(view, hitBtn) {
     if (slotEl) {
       const r = slotEl.getBoundingClientRect();
       slot = { x: r.left, y: r.top + sy, w: r.width, h: r.height };
+    }
+    if (finaleEl) {
+      const r = finaleEl.getBoundingClientRect();
+      finale = r.width > 0 ? { x: r.left, y: r.top + sy, w: r.width, h: r.height } : null;
     }
     if (containerEl) containerW = containerEl.getBoundingClientRect().width;
     mask = measureMask(4, false);
@@ -89,7 +97,6 @@ export function createPresence(view, hitBtn) {
   const dockY = new Spring(0, 0.55, 0.86);
   const tuck = new Spring(1, 0.45, 1);
   const turnRate = new Spring(1, 0.6, 1);
-  const hover = new Spring(0, 0.12, 1);
   const edge = new Spring(0, 0.5, 1);
   const shown = new Spring(0, 0.7, 1);
 
@@ -99,6 +106,7 @@ export function createPresence(view, hitBtn) {
   let frame = 0;
   let first = true;
   const spin = { v: 0 };
+  const pop = { v: 1 };
   // the visitor's own view of the cube: a drag turns it, and it glides to rest
   const orbitQ = new Quaternion();
   const dragQ = new Quaternion();
@@ -166,13 +174,23 @@ export function createPresence(view, hitBtn) {
       tuck.step(dt);
     }
 
-    const size = lerp(ss, ds * clamp(tuck.value, 0, 1.2), t);
+    let size = lerp(ss, ds * clamp(tuck.value, 0, 1.2), t);
     const float = reduced ? 0 : Math.sin((performance.now() / 1000) * 0.9) * 3;
-    const cx = lerp(sx, dockX.value, t);
-    const cy = lerp(sy, dockY.value, t) + float * (1 - t * 0.6);
+    let cx = lerp(sx, dockX.value, t);
+    let cy = lerp(sy, dockY.value, t) + float * (1 - t * 0.6);
+    // the finale: out of the margin and into its spot in Let's talk
+    if (finale) {
+      const fy = finale.y + finale.h / 2 - window.scrollY;
+      const u = smoothstep(H * 1.05, H * 0.5, fy);
+      if (u > 0) {
+        cx = lerp(cx, finale.x + finale.w / 2, u);
+        cy = lerp(cy, fy + float * 0.6, u);
+        size = lerp(size, finale.w, u);
+      }
+    }
     const rad = Math.max(0, size / 2);
 
-    // ---- near the cursor: slow the turn and light the face under it
+    // ---- near the cursor: slow the turn so a face is easy to hit
     const dc = pointer.active ? Math.hypot(pointer.x - cx, pointer.y - cy) - rad * 0.7 : Infinity;
     const near = prefs.fine && dc < NEAR;
     const face = pointer.active && prefs.fine && rad > 8 ? view.pick(pointer.x, pointer.y) : null;
@@ -190,8 +208,6 @@ export function createPresence(view, hitBtn) {
     }
     turnRate.step(dt);
     turn += dt * TURN_RATE * turnRate.value;
-    hover.target = face ? 1 : 0;
-    hover.step(dt);
     edge.target = EDGE_FOR[groundAt(cy)] ?? 0;
     if (first) edge.snap(edge.target);
     else edge.step(dt);
@@ -200,14 +216,13 @@ export function createPresence(view, hitBtn) {
     const g = view.group;
     g.position.set(cx - W / 2, H / 2 - cy, 0);
     const show = shown.step(dt);
-    g.scale.setScalar(Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show)));
+    g.scale.setScalar(Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show) * pop.v));
     turnQ.setFromAxisAngle(turnAxis, reduced ? TURN_REST : turn);
     qSpin.setFromAxisAngle(upAxis, spin.v);
     q.copy(orbitQ).multiply(qSpin).multiply(baseQ).multiply(turnQ);
     g.quaternion.copy(q);
     first = false;
 
-    view.setHover(face, hover.value);
     view.setEdge(edge.value);
 
     state.x = cx;
@@ -226,10 +241,13 @@ export function createPresence(view, hitBtn) {
     }
   }
 
-  /** One celebratory turn when the solve completes. */
+  /** The solve completes: a hop and one full turn, settling back. */
   function celebrate() {
     if (prefs.reduced) return;
-    gsap.fromTo(spin, { v: 0 }, { v: Math.PI * 2, duration: 1.5, ease: 'power3.inOut', overwrite: true });
+    gsap.fromTo(spin, { v: 0 }, { v: Math.PI * 2, duration: 1.6, ease: 'power3.inOut', overwrite: true });
+    gsap.timeline({ overwrite: true })
+      .to(pop, { v: 1.14, duration: 0.35, ease: 'power2.out' })
+      .to(pop, { v: 1, duration: 1.1, ease: 'elastic.out(1, 0.45)' });
   }
 
   function reveal() {

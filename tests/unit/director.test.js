@@ -77,32 +77,42 @@ describe('Director', () => {
     expect(d.visitor).toEqual(parseMoves("U F F L'"));
   });
 
-  it("undoes the visitor's twists after ~4 s without clicks, one by one", () => {
+  it("keeps the visitor's twists while they play, however long", () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.click('R');
+    d.click('U');
+    const out = run(d, 30);
+    expect(out.map((c) => c.kind)).toEqual(['visitor', 'visitor']);
+    expect(d.visitor.length).toBe(2);
+    expect(d.undoing).toBe(false);
+  });
+
+  it('once let go, undoes the twists one by one', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
     d.click('U');
     run(d, 1.2);
-    expect(d.visitor.length).toBe(2);
-    expect(d.undoing).toBe(false);
-    run(d, 2.3); // 3.5 s since the last click
-    expect(d.visitor.length).toBe(2);
-    const undone = run(d, 2.1);
-    expect(d.undoing || d.visitor.length === 0).toBe(true);
+    d.letGo();
+    expect(d.undoing).toBe(true);
+    const undone = run(d, 2);
     expect(undone.map((c) => c.kind)).toEqual(['undo', 'undo']);
     expect(undone.map((c) => c.move)).toEqual(parseMoves("U' R'"));
     expect(d.state.equals(expected(0))).toBe(true);
     expect(d.undoing).toBe(false);
   });
 
-  it('a new click during the undo pauses it and the 4 s wait restarts', () => {
+  it('a new click during the undo holds the rest in place again', () => {
     const d = new Director(SCRAMBLE, SOLVE);
     d.click('R');
     d.click('U');
-    run(d, 4.4); // first undo is under way or done
+    run(d, 1.2);
+    d.letGo();
+    run(d, 0.3); // first undo in flight — it finishes, the rest waits
     d.click('F');
-    run(d, 1);
-    expect(d.visitor.at(-1)).toEqual(parseMoves('F')[0]);
-    run(d, 6);
+    run(d, 5);
+    expect(d.visitor).toEqual(parseMoves('R F'));
+    d.letGo();
+    run(d, 3);
     expect(d.visitor.length).toBe(0);
     expect(d.state.equals(expected(0))).toBe(true);
   });

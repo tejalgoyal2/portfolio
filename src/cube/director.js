@@ -6,7 +6,8 @@
 //   (a fast scroll) speeds them up only a little, so the cube always takes its time;
 // - scrolling back plays inverse moves;
 // - visitor clicks twist a face (either way) and go on a stack; a click mid-twist waits, never dropped;
-// - after ~4 s without clicks the stack is undone one by one;
+// - the twists stay put while the visitor plays; once they let go (the page scrolls) the stack is
+//   undone one by one;
 // - if scroll asks for a solve move while the stack is not empty, the stack is undone quickly first;
 // - reduced motion: everything applies instantly.
 //
@@ -19,7 +20,6 @@ export class Director {
    * opts.baseDuration  seconds for one quarter turn when nothing is queued
    * opts.minDuration   fastest a queued move may play
    * opts.flushDuration seconds per move when clearing the visitor's twists before a solve move
-   * opts.undoDelay     seconds without clicks before the visitor's twists are undone
    * opts.instant       reduced motion: apply moves instantly
    */
   constructor(scramble, solve, opts = {}) {
@@ -30,14 +30,14 @@ export class Director {
     this.visitor = [];
     this.clicks = [];
     this.active = null;
-    this.sinceClick = Infinity;
+    /** The visitor is still playing: their twists stay where they left them. */
+    this.held = false;
     this.instant = opts.instant ?? false;
 
     this.solve = solve;
     this.base = opts.baseDuration ?? 0.5;
     this.min = opts.minDuration ?? 0.26;
     this.flushDur = opts.flushDuration ?? 0.22;
-    this.undoDelay = opts.undoDelay ?? 4;
   }
 
   get total() {
@@ -51,7 +51,12 @@ export class Director {
   /** Queue a visitor twist: turns 1 = clockwise, 3 = anticlockwise. */
   click(face, turns = 1) {
     this.clicks.push({ face, turns });
-    this.sinceClick = 0;
+    this.held = true;
+  }
+
+  /** The visitor has moved on: their twists may be undone. */
+  letGo() {
+    this.held = false;
   }
 
   /** 0..1 progress of the move in flight. */
@@ -62,7 +67,7 @@ export class Director {
   /** True while the visitor's twists are being (or are about to be) undone. */
   get undoing() {
     const k = this.active?.kind;
-    return k === 'undo' || k === 'flush' || (this.visitor.length > 0 && this.clicks.length === 0 && this.sinceClick >= this.undoDelay);
+    return k === 'undo' || k === 'flush' || (this.visitor.length > 0 && this.clicks.length === 0 && !this.held);
   }
 
   /** True when nothing is moving or waiting. */
@@ -78,7 +83,6 @@ export class Director {
 
   tick(dt) {
     const done = [];
-    this.sinceClick += dt;
     let budget = Math.max(0, dt);
     // Bounded so a pathological state can never spin forever.
     for (let guard = 0; guard < 512; guard++) {
@@ -119,7 +123,7 @@ export class Director {
     }
 
     const top = this.visitor[this.visitor.length - 1];
-    if (top && this.sinceClick >= this.undoDelay)
+    if (top && !this.held)
       return { move: invertMove(top), kind: 'undo', duration: this.instant ? 0 : this.base * 1.4, elapsed: 0 };
     return null;
   }

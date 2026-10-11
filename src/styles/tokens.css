@@ -56,6 +56,8 @@
 
   --red:         oklch(56%   0.214 27);
   --red-deep:    oklch(46%   0.190 28);
+  /* the finale's stock: an oxblood that's warm without glaring — easy on the eyes at full screen */
+  --red-stock:   oklch(37%   0.115 25);
   --red-wet:     oklch(62%   0.230 27);
 
   --blue-plate:  oklch(45%   0.10  250);

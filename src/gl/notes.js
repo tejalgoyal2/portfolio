@@ -3,27 +3,26 @@ import { groundAt } from '../life/ground';
 
 /**
  * The editor's notes on the cube: when the solve reaches a milestone, a pen
- * note is scribbled beside it — "two layers done" with a quick arrow, and for
- * the solve itself "solved it!" with the cube ringed in red pen, and a splash
- * of pencil icons thrown up from it. The arrow and the ring draw themselves on
- * like a pen stroke; the words write in letter by letter; the whole note
- * fades after a few seconds. It sits on the side of the cube with more room,
- * and is inked for the ground it lands on.
+ * note is scribbled beside it — "two layers done" with a quick arrow; and when
+ * it's solved, it's yours: "you solved it!", how many moves it took and how
+ * little you had to do, and the cube throws off a burst of its own stickers in
+ * all six colours. The arrow draws itself on like a pen stroke; the words
+ * write in letter by letter; the note fades after a while. It sits on the side
+ * of the cube with more room, and is inked for the ground it lands on.
  */
 const NOTES = {
-  layers: { text: 'two layers done', mark: 'arrow' },
-  solved: { text: 'solved it!', mark: 'ring' },
+  layers: { text: 'two layers done', mark: 'arrow', life: 3800 },
+  solved: { text: 'you solved it!', mark: 'stickers', life: 9000 },
 };
-const LIFE = 3800;
+const STICKERS = ['#f3eee4', '#ffcf1f', '#12a153', '#1b5fd1', '#de2a2b', '#ff7b16'];
 
 const ARROW = 'M6 34 C 30 30, 52 22, 70 8 M58 7 L71 7 L68 20';
-const RING = 'M100 8 C 150 4, 192 40, 186 98 C 180 160, 120 194, 64 180 C 16 168, 2 112, 18 64 C 30 30, 70 10, 112 12';
 
 export function createNotes(host) {
   let el = null;
   let timer = 0;
 
-  function show(kind, cube) {
+  function show(kind, cube, extra = {}) {
     const n = NOTES[kind];
     if (!n || !host) return;
     clearTimeout(timer);
@@ -37,9 +36,9 @@ export function createNotes(host) {
     const letters = [...n.text]
       .map((ch, i) => `<span style="--i:${i}">${ch === ' ' ? '&nbsp;' : ch}</span>`)
       .join('');
-    if (n.mark === 'ring') {
-      const s = cube.r * 2.5;
-      el.innerHTML = `<svg class="cube-note-ring" viewBox="0 0 200 200" style="width:${s}px;height:${s}px"><path d="${RING}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
+    if (n.mark === 'stickers') {
+      const moves = extra.moves ? `${extra.moves} moves. all you did was scroll.` : 'all you did was scroll.';
+      el.innerHTML = `<p class="cube-note-text">${letters}</p><p class="cube-note-sub">${moves}</p>`;
     } else {
       el.innerHTML = `<svg class="cube-note-arrow" viewBox="0 0 76 40"><path d="${ARROW}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
     }
@@ -54,10 +53,43 @@ export function createNotes(host) {
       el?.classList.add('is-off');
       const gone = el;
       setTimeout(() => gone?.remove(), 700);
-    }, LIFE);
-    if (kind === 'solved' && !prefs.reduced) {
-      // a little celebration: a splash of pencil icons from the cube
-      window.dispatchEvent(new CustomEvent('life:burst', { detail: { x: cube.x, y: cube.y - cube.r * 0.4, amount: 0.55 } }));
+    }, n.life);
+    if (kind === 'solved' && !prefs.reduced) confetti(cube);
+  }
+
+  /** The cube throws off its stickers: rounded squares in its six colours, flung out and falling. */
+  function confetti(cube) {
+    const layer = document.createElement('div');
+    layer.className = 'cube-confetti';
+    host.appendChild(layer);
+    const n = 42;
+    let left = n;
+    for (let i = 0; i < n; i++) {
+      const d = document.createElement('span');
+      const size = 7 + Math.random() * 9;
+      d.style.width = d.style.height = `${size}px`;
+      d.style.background = STICKERS[i % STICKERS.length];
+      d.style.left = `${cube.x - size / 2}px`;
+      d.style.top = `${cube.y - size / 2}px`;
+      layer.appendChild(d);
+      const th = Math.random() * Math.PI * 2;
+      const v = cube.r * (1.1 + Math.random() * 1.6);
+      const dx = Math.cos(th) * v;
+      const up = Math.sin(th) * v - cube.r * 0.6;
+      const fall = cube.r * (1.4 + Math.random());
+      const spin = (Math.random() - 0.5) * 900;
+      const a = d.animate(
+        [
+          { transform: 'translate(0,0) rotate(0deg) scale(0.3)', opacity: 1 },
+          { transform: `translate(${dx * 0.7}px,${up * 0.8}px) rotate(${spin * 0.4}deg) scale(1)`, opacity: 1, offset: 0.3 },
+          { transform: `translate(${dx}px,${up + fall}px) rotate(${spin}deg) scale(0.9)`, opacity: 0 },
+        ],
+        { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.15,.65,.35,1)', delay: Math.random() * 120 }
+      );
+      a.onfinish = () => {
+        d.remove();
+        if (--left === 0) layer.remove();
+      };
     }
   }
 
