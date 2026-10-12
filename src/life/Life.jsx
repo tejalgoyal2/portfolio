@@ -8,6 +8,7 @@ import { startPaperPress, isEmptyPaper, HOLD_SECONDS } from './paper';
 import { startIconDrift } from './iconDrift';
 import { startIconBurst } from './iconBurst';
 import { prefs } from './prefs';
+import { settings } from './settings';
 import { afterPrint } from './idle';
 
 /**
@@ -53,11 +54,11 @@ function BurstCanvas() {
 /**
  * A click on bare paper prints a small registration mark where it landed. The
  * marks are printed on the sheet (document coordinates, so they scroll with
- * it), fade over ~2 s, and at most six are wet at once. Red on the cream, the
+ * it), and are gone in under a second — at most six wet at once. Red on the cream, the
  * brighter spread red on the ink ground, paper on the red finale.
  */
 const MAX_MARKS = 6;
-const MARK_LIFE = 2100;
+const MARK_LIFE = 900;
 let markId = 0;
 
 // Reduced motion: no stamp-in, just a plain fade. The site-wide reduced-motion
@@ -75,6 +76,7 @@ function RegistrationMarks() {
   useEffect(() => {
     const timers = new Set();
     const onPress = (e) => {
+      if (!settings.ripples) return;
       const { x, y, ground } = e.detail;
       const id = ++markId;
       const rot = Math.round(Math.random() * 30 - 15);
@@ -222,7 +224,7 @@ function HoldHint() {
       if (!pointer.active || pointer.rest < 3 || frame % 10) return;
       const html = document.documentElement;
       if (html.classList.contains('is-holding')) return;
-      if (!isEmptyPaper(document.elementFromPoint(pointer.x, pointer.y))) return;
+      if (!isEmptyPaper(document.elementFromPoint(pointer.x, pointer.y), pointer.x, pointer.y)) return;
       visible = true;
       shown = true;
       since = performance.now();

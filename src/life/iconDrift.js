@@ -4,6 +4,7 @@ import { onLayout } from './layout';
 import { measureMask } from './paper';
 import { groundAtDoc } from './ground';
 import { loadSprites, INKS_FOR } from './sprites';
+import { settings, onSettings } from './settings';
 
 /**
  * A few of the pencil icons (matita.dev, MIT) drift across the bare paper —
@@ -15,9 +16,14 @@ import { loadSprites, INKS_FOR } from './sprites';
  *
  * A press on bare paper (`life:press`) drops a stone in the water: a damped
  * wave rings out from the point — four wavering crests in press red, the first
- * bold, a quick dent where it landed — and dies out within ~420 px. As the
- * packet passes, nearby icons are shoved outward and rock, then settle back
- * into their drift. Ripples overlap freely.
+ * bold, a quick dent where it landed — and dies out within ~420 px. As its
+ * front passes, each icon nearby gets one push outward and sways back on a soft
+ * spring (never shaken crest by crest, so overlapping ripples stay smooth). A
+ * few small sparks fly out of the splash too, slowing as they go, and knock
+ * any icon they run into.
+ *
+ * How many icons there are follows Page settings (src/life/settings.js), and
+ * ripples can be switched off there.
  *
  * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
  * Paused while the tab is hidden. Reduced motion: the icons sit still and
@@ -27,7 +33,23 @@ import { loadSprites, INKS_FOR } from './sprites';
 const PX = 40; // css px the sprites are rasterised at
 const PAD = 12; // clearance kept from text, on top of the icon's radius
 const SPACING = 150; // icons keep at least this far apart
-const RIPPLE = { speed: 330, wave: 40, reach: 420, amp: 16, crests: 4 };
+const RIPPLE = { speed: 330, wave: 40, reach: 420, crests: 4, push: 210 };
+const SPRING = { k: 14, damp: 5.2 }; // ~0.5 s sway back, one soft overshoot
+
+/** The offset an icon was pushed by eases home on a spring — smooth however many hits it took. */
+function springBack(o, dt) {
+  // a few substeps keep the spring steady on a slow frame
+  const n = dt > 0.02 ? 2 : 1;
+  const h = dt / n;
+  for (let i = 0; i < n; i++) {
+    o.ovx += (-SPRING.k * o.ox - SPRING.damp * o.ovx) * h;
+    o.ovy += (-SPRING.k * o.oy - SPRING.damp * o.ovy) * h;
+    o.ox += o.ovx * h;
+    o.oy += o.ovy * h;
+    o.rockV += (-SPRING.k * 0.8 * o.rock - SPRING.damp * o.rockV) * h;
+    o.rock += o.rockV * h;
+  }
+}
 const RING_INK = { paper: [213, 30, 34], ink: [254, 67, 62], red: [244, 240, 230] };
 
 export function startIconDrift(canvas) {
@@ -73,7 +95,8 @@ export function startIconDrift(canvas) {
     return true;
   }
 
-  const target = () => Math.max(8, Math.min(14, Math.round((W * H) / 110000)));
+  const target = () => Math.round(Math.max(8, Math.min(14, (W * H) / 110000)) * settings.drift);
+  const sparks = [];
 
   function spawn(fadeIn = true) {
     const sy0 = window.scrollY;
@@ -100,7 +123,10 @@ export function startIconDrift(canvas) {
         vy: 0,
         ox: 0,
         oy: 0,
+        ovx: 0,
+        ovy: 0,
         rock: 0,
+        rockV: 0,
         alpha: fadeIn ? 0 : 1,
         peak: 0.16 + Math.random() * 0.1,
         dying: false,
@@ -123,27 +149,21 @@ export function startIconDrift(canvas) {
       ic.alpha = ic.dying ? ic.alpha - dt * 1.4 : Math.min(1, ic.alpha + dt * 0.8);
       if (still) continue;
 
-      // the water: displaced while a packet passes, shoved as its front does
-      ic.ox = ic.oy = ic.rock = 0;
+      // the water: one push outward as a ripple's front passes, and a soft
+      // spring sways the icon back (slightly under-damped: a single bob)
       for (const rp of ripples) {
         const dx = ic.x - rp.x;
         const dy = ic.y - rp.y;
         const d = Math.hypot(dx, dy) || 1;
-        if (d > RIPPLE.reach) continue;
+        if (d > RIPPLE.reach || !(rp.prev < d && rp.R >= d)) continue;
         const env = Math.exp(-d / 210) * (1 - d / RIPPLE.reach);
-        const behind = rp.R - d;
-        if (behind > 0 && behind < RIPPLE.wave * RIPPLE.crests) {
-          const u = RIPPLE.amp * env * Math.sin((2 * Math.PI * behind) / RIPPLE.wave) * Math.exp(-behind / (1.6 * RIPPLE.wave));
-          ic.ox += (dx / d) * u;
-          ic.oy += (dy / d) * u;
-          ic.rock += u * 0.05;
-        }
-        if (rp.prev < d && rp.R >= d) {
-          ic.vx += (dx / d) * 150 * env;
-          ic.vy += (dy / d) * 150 * env;
-          ic.av += (Math.random() < 0.5 ? -1 : 1) * 2.4 * env;
-        }
+        ic.ovx += (dx / d) * RIPPLE.push * env;
+        ic.ovy += (dy / d) * RIPPLE.push * env;
+        ic.vx += (dx / d) * 60 * env;
+        ic.vy += (dy / d) * 60 * env;
+        ic.rockV += (Math.random() < 0.5 ? -1 : 1) * 1.6 * env;
       }
+      springBack(ic, dt);
 
       // a slow random walk, turning away from text before it gets there
       ic.dir += (Math.random() - 0.5) * 0.9 * dt;
@@ -164,6 +184,38 @@ export function startIconDrift(canvas) {
       }
       ic.av += (ic.av0 - ic.av) * (1 - Math.exp(-1.5 * dt));
       ic.a += ic.av * dt;
+    }
+
+    // sparks from a splash: fly out, slow down, fade; they knock icons they hit
+    for (let k = sparks.length - 1; k >= 0; k--) {
+      const sp = sparks[k];
+      sp.age += dt;
+      const drag = Math.exp(-2.6 * dt);
+      sp.vx *= drag;
+      sp.vy *= drag;
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+      sp.a += sp.av * dt;
+      sp.av *= drag;
+      for (const ic of icons) {
+        const dx = ic.x + ic.ox - sp.x;
+        const dy = ic.y + ic.oy - sp.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const reach = ic.r + sp.r;
+        if (d < reach && !sp.hit.has(ic)) {
+          sp.hit.add(ic);
+          const sp2 = Math.hypot(sp.vx, sp.vy);
+          ic.ovx += (dx / d) * (40 + sp2 * 0.55);
+          ic.ovy += (dy / d) * (40 + sp2 * 0.55);
+          ic.vx += (dx / d) * sp2 * 0.18;
+          ic.vy += (dy / d) * sp2 * 0.18;
+          ic.rockV += (Math.random() < 0.5 ? -1 : 1) * 2.2;
+          // and the spark glances off
+          sp.vx = -sp.vx * 0.35 + (Math.random() - 0.5) * 40;
+          sp.vy = -sp.vy * 0.35 + (Math.random() - 0.5) * 40;
+        }
+      }
+      if (sp.age > sp.life) sparks.splice(k, 1);
     }
 
     // off screen: retire, then keep the count up
@@ -223,6 +275,19 @@ export function startIconDrift(canvas) {
     ctx.clearRect(0, 0, W, H);
     const sy0 = window.scrollY;
     drawRipples(sy0);
+    for (const sp of sparks) {
+      const inks = INKS_FOR[sp.ground] || INKS_FOR.paper;
+      const img = sprites[sp.sprite][inks[sp.accent ? 1 : 0]];
+      // in quick, out slow
+      const t = sp.age / sp.life;
+      ctx.globalAlpha = Math.min(1, sp.age / 0.08) * (1 - t) ** 1.6 * 0.6;
+      ctx.save();
+      ctx.translate(sp.x, sp.y - sy0);
+      ctx.rotate(sp.a);
+      const s = sp.size * (0.6 + 0.4 * Math.min(1, sp.age / 0.2));
+      ctx.drawImage(img, -s / 2, -s / 2, s, s);
+      ctx.restore();
+    }
     for (const ic of icons) {
       const inks = INKS_FOR[groundAtDoc(ic.y)] || INKS_FOR.paper;
       const img = sprites[ic.sprite][inks[ic.accent ? 1 : 0]];
@@ -251,12 +316,43 @@ export function startIconDrift(canvas) {
   };
 
   const onPress = (e) => {
-    if (prefs.reduced) return;
+    if (prefs.reduced || !settings.ripples || !sprites) return;
     const { x, y, ground } = e.detail;
-    ripples.push({ x, y: y + window.scrollY, t0: clock, ground, R: 0, prev: 0 });
+    const docY = y + window.scrollY;
+    ripples.push({ x, y: docY, t0: clock, ground, R: 0, prev: 0 });
     if (ripples.length > 10) ripples.shift();
+    // a handful of sparks thrown out of the splash, evenly round with a wobble
+    const n = 5 + ((Math.random() * 3) | 0);
+    const th0 = Math.random() * Math.PI * 2;
+    for (let i = 0; i < n; i++) {
+      const th = th0 + (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+      const v = 300 + Math.random() * 260;
+      sparks.push({
+        x,
+        y: docY,
+        vx: Math.cos(th) * v,
+        vy: Math.sin(th) * v,
+        r: 9,
+        size: 16 + Math.random() * 7,
+        a: Math.random() * Math.PI * 2,
+        av: (Math.random() - 0.5) * 9,
+        sprite: (Math.random() * sprites.length) | 0,
+        accent: Math.random() < 0.4,
+        ground,
+        age: 0,
+        life: 1.5 + Math.random() * 0.7,
+        hit: new Set(),
+      });
+    }
+    if (sparks.length > 40) sparks.splice(0, sparks.length - 40);
   };
   window.addEventListener('life:press', onPress);
+  // fewer or more icons, from Page settings: the extras drift off or float in
+  const offSettings = onSettings((_, key) => {
+    if (key !== 'drift') return;
+    const alive = icons.filter((ic) => !ic.dying);
+    for (let i = target(); i < alive.length; i++) alive[i].dying = true;
+  });
 
   let cancelled = false;
   const offLayout = onLayout(measure);
@@ -275,6 +371,7 @@ export function startIconDrift(canvas) {
     gsap.ticker.remove(tick);
     window.removeEventListener('life:press', onPress);
     window.removeEventListener('resize', resize);
+    offSettings();
     offLayout();
   };
 }

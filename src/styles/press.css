@@ -21,9 +21,10 @@
 }
 
 /* ── The pen cursor (PressCursor.jsx) ─────────────────────────────────────────
- * A press-red point at the exact position, the visitor's pencil icon riding
- * beside it, and a ring that only appears for links and marks. Paper white under
- * difference blending, so the pen re-inks itself over every ground. */
+ * One pointy pencil icon, its tip on the pointer; a small mark beside it for
+ * the cube and friends; a quarter-turn arrow after a twist. No dot, no ring.
+ * Inked for the stock under it (--pen-ink), with a thin halo of the paper so it
+ * holds up over type and the cube. */
 html.cursor-hidden,
 html.cursor-hidden * {
   cursor: none;
@@ -33,9 +34,9 @@ html.cursor-hidden textarea,
 html.cursor-hidden select {
   cursor: text;
 }
-.press-cursor-dot,
-.press-cursor-ring,
+.press-cursor.is-system { display: none; }
 .press-pen,
+.press-cursor-mark,
 .cursor-flick {
   position: fixed;
   top: 0;
@@ -44,70 +45,48 @@ html.cursor-hidden select {
   pointer-events: none;
   will-change: transform;
 }
-.press-cursor-dot {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  border-radius: 50%;
-  background: var(--red);
-  box-shadow: 0 0 0 1.5px var(--paper);
-  transition: scale 0.2s var(--ease-stamp), opacity 0.2s;
-}
-html.cursor-down .press-cursor-dot { scale: 0.6; }
-html.cursor-over-link .press-cursor-dot,
-html.cursor-has-mark .press-cursor-dot { scale: 0.55; }
-
 .press-pen {
-  width: 30px;
-  height: 30px;
-  margin: 0;
-  mix-blend-mode: difference;
-  transform-origin: 0 0;
+  --pen-ink: var(--ink);
+  width: 0;
+  height: 0;
+  opacity: 0;
+  color: var(--pen-ink);
+  transition: opacity 0.2s var(--ease-set), color 0.35s var(--ease-set);
 }
+.press-pen.is-on { opacity: 1; }
+.press-pen-lean { width: 0; height: 0; }
 .press-pen-icon {
-  width: 100%;
-  height: 100%;
-  transition: scale 0.3s var(--ease-stamp), opacity 0.25s var(--ease-set);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  transform-origin: 0 0;
+  transform: rotate(var(--rot, 0deg)) translate(var(--tx, 0px), var(--ty, 0px));
+  filter: drop-shadow(0 0 1.5px color-mix(in oklch, var(--paper) 70%, transparent));
+  transition: scale 0.32s var(--ease-stamp), opacity 0.25s var(--ease-set);
 }
 .press-pen-icon svg { width: 100%; height: 100%; overflow: visible; }
-/* over a link the pen lifts off the paper a little */
-html.cursor-over-link .press-pen-icon { scale: 1.3; }
-/* while a mark is showing, the pen steps out of its way */
-html.cursor-has-mark .press-pen-icon { opacity: 0; scale: 0.6; }
+.press-pen-icon svg path { stroke-width: 1.15; }
+/* over something you can click, the pen lifts off the paper a little */
+html.cursor-over-link .press-pen-icon { scale: 1.16; }
+html.cursor-down .press-pen-icon { scale: 0.88; }
 
-.press-cursor-ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border-radius: 50%;
-  border: 1.5px solid var(--paper);
-  mix-blend-mode: difference;
-  opacity: 0;
-  scale: 0.5;
-  transition: opacity 0.2s var(--ease-set), scale 0.3s var(--ease-stamp), width 0.25s var(--ease-set),
-    height 0.25s var(--ease-set), margin 0.25s var(--ease-set), border-color 0.2s;
+/* per-target marks, riding beside the tip: a twist arc for the cube, orbit
+   while turning it, a steering wheel for the car, a nib for the gratitude input */
+.press-cursor-mark {
+  width: 30px;
+  height: 30px;
+  color: var(--ink);
 }
-html.cursor-over-link .press-cursor-ring { opacity: 1; scale: 1; }
-html.cursor-down .press-cursor-ring { scale: 0.85; }
-.press-cursor-ring[data-state] {
-  opacity: 1;
-  scale: 1;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-color: transparent;
-}
-
-/* per-target marks: a twist arc for the cube, orbit while turning it, a
-   steering wheel for the car, a pen nib for the gratitude input */
 .cursor-mark {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: var(--paper);
-  stroke-width: 1.6;
+  stroke: currentColor;
+  stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   overflow: visible;
@@ -115,15 +94,18 @@ html.cursor-down .press-cursor-ring { scale: 0.85; }
   transform: scale(0.6) rotate(-40deg);
   transition: opacity 0.18s var(--ease-set), transform 0.3s var(--ease-stamp);
 }
-.press-cursor-ring[data-state="twist"] .cursor-mark--twist,
-.press-cursor-ring[data-state="orbit"] .cursor-mark--orbit,
-.press-cursor-ring[data-state="wheel"] .cursor-mark--wheel,
-.press-cursor-ring[data-state="nib"] .cursor-mark--nib {
+.press-cursor-mark[data-state="twist"] .cursor-mark--twist,
+.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit,
+.press-cursor-mark[data-state="wheel"] .cursor-mark--wheel,
+.press-cursor-mark[data-state="nib"] .cursor-mark--nib {
   opacity: 1;
   transform: none;
 }
+.press-cursor-mark[data-state] { color: var(--red); }
+.press-cursor-mark[data-ground="ink"][data-state] { color: var(--red-wet); }
+.press-cursor-mark[data-ground="red"][data-state] { color: var(--paper); }
 /* the twist arc keeps hinting a quarter turn while you hover the cube */
-.press-cursor-ring[data-state="twist"] .cursor-mark--twist {
+.press-cursor-mark[data-state="twist"] .cursor-mark--twist {
   animation: cursor-twist 4.8s var(--ease-set) infinite;
 }
 /* four quarter turns, a beat between each — like a face being turned */
@@ -134,24 +116,27 @@ html.cursor-down .press-cursor-ring { scale: 0.85; }
   75%, 89% { transform: rotate(270deg); }
   100% { transform: rotate(360deg); }
 }
-.press-cursor-ring[data-state="orbit"] .cursor-mark--orbit { animation: cursor-orbit 2.4s linear infinite; }
+.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit { animation: cursor-orbit 2.4s linear infinite; }
 @keyframes cursor-orbit { to { transform: rotate(360deg); } }
 
-/* the flick: an arrow sweeping round the point the way a face just turned */
+/* the flick: a quarter-turn arrow drawn round the point, the way a face just turned */
 .cursor-flick {
-  width: 64px;
-  height: 64px;
-  margin: -32px 0 0 -32px;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
   fill: none;
   stroke: var(--red);
-  stroke-width: 2.4;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
   opacity: 0;
   overflow: visible;
 }
+.cursor-flick[data-ground="ink"] { stroke: var(--red-wet); }
+.cursor-flick[data-ground="red"] { stroke: var(--paper); }
+.cursor-flick path:first-child { stroke-dasharray: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .press-cursor-ring[data-state] .cursor-mark { animation: none; }
+  .press-cursor-mark[data-state] .cursor-mark { animation: none; }
 }
 
 /* ── Onomatopoeia impacts ────────────────────────────────────────────────── */
@@ -391,7 +376,21 @@ button.press-stamp {
 /* dark-red → red: the upper stays the dark ground, the torn lower shape is the
    press red. Mirror the tear so the two seams aren't an obvious copy of each. */
 .seam--ink-red { background: var(--ground); }
-.seam--ink-red .seam-tear { background: var(--red-deep); transform: scaleX(-1); }
+.seam--ink-red .seam-tear { background: color-mix(in oklch, var(--red-stock), white 2.5%); transform: scaleX(-1); }
+
+/* ── The ridge — the ink spread rising as mountains (Ridge.jsx) ───────────── */
+.ridge {
+  position: relative;
+  z-index: 1;
+  height: clamp(120px, 12vw, 190px);
+  margin-bottom: -1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ridge svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ridge-far { fill: color-mix(in oklch, var(--ground) 16%, transparent); }
+.ridge-near { fill: var(--ground); }
+.ridge .press-car { z-index: 2; }
 
 /* ── The wire — newsroom crawl under the nameplate ────────────────────────────
  * A slim ink band that runs a slow dispatch crawl between Hero and About.
@@ -460,11 +459,12 @@ button.press-stamp {
   .wire-track { transform: none; }
 }
 
-/* ── Running head (Contents.jsx) ──────────────────────────────────────────────
- * A floating capsule of liquid glass: the page blurred and brightened through
- * it, a lit rim along its top edge, every section inside, the current one on a
- * sliding press-red pill. It re-inks for the stock beneath, fading over half a
- * second. Narrow screens: the current section, Contents, and a small list. */
+/* ── Running head (Contents.jsx, PageSettings.jsx) ───────────────────────────
+ * A band of glass across the top, ruled off like a folio line: every section
+ * in it, one long rule along its foot that a tiny pen draws as you read, the
+ * current section in a red cell made of the same ink (it sinks into the rule
+ * and rises at the next one). Two cells at the end: your pen, Page settings.
+ * Re-inks for the stock beneath, fading over half a second. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -480,59 +480,45 @@ button.press-stamp {
 
 .running-head {
   position: fixed;
-  top: 12px;
-  left: 50%;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 9100;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  height: 42px;
-  padding: 0 5px 0 6px;
-  translate: -50% 0;
-  border-radius: 999px;
+  height: 46px;
   --rh-ink: var(--ink);
-  --rh-glass: oklch(98% 0.01 85 / 0.42);
-  --rh-rim: oklch(100% 0 0 / 0.7);
-  --rh-edge: oklch(20% 0.02 60 / 0.12);
+  --rh-glass: oklch(97.5% 0.012 85 / 0.62);
+  --rh-rule: oklch(20% 0.02 60 / 0.14);
   color: var(--rh-ink);
   background: var(--rh-glass);
-  -webkit-backdrop-filter: blur(14px) saturate(1.7) brightness(1.04);
-  backdrop-filter: blur(14px) saturate(1.7) brightness(1.04);
-  box-shadow: inset 0 1px 0 var(--rh-rim), inset 0 -1px 0 oklch(100% 0 0 / 0.12), 0 0 0 1px var(--rh-edge),
-    0 10px 30px -10px oklch(20% 0.02 60 / 0.3);
-  transition: color 0.6s var(--ease-set), background-color 0.6s var(--ease-set), box-shadow 0.6s var(--ease-set);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
+  transition: color 0.6s var(--ease-set), background-color 0.6s var(--ease-set);
   font-family: var(--font-data);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
-/* the glass catches light along its top: a soft sheen, not a flat tint */
-.running-head::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(180deg, oklch(100% 0 0 / 0.32), oklch(100% 0 0 / 0) 55%);
-  opacity: 0.8;
-  transition: opacity 0.6s var(--ease-set);
-}
 .running-head[data-ground="ink"] {
   --rh-ink: var(--paper);
-  --rh-glass: oklch(26% 0.015 60 / 0.5);
-  --rh-rim: oklch(100% 0 0 / 0.22);
-  --rh-edge: oklch(100% 0 0 / 0.1);
+  --rh-glass: oklch(21% 0.015 60 / 0.66);
+  --rh-rule: oklch(100% 0 0 / 0.14);
 }
-.running-head[data-ground="ink"]::before { opacity: 0.25; }
 .running-head[data-ground="red"] {
   --rh-ink: var(--paper);
-  --rh-glass: oklch(40% 0.17 28 / 0.42);
-  --rh-rim: oklch(100% 0 0 / 0.3);
-  --rh-edge: oklch(100% 0 0 / 0.14);
+  --rh-glass: oklch(33% 0.1 25 / 0.66);
+  --rh-rule: oklch(100% 0 0 / 0.18);
+}
+.rh-bar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  max-width: min(1280px, 92vw);
+  margin-inline: auto;
 }
 
-.rh-here { display: none; margin: 0 0.5rem; overflow: hidden; white-space: nowrap; }
+.rh-here { display: none; align-items: center; margin: 0 0.75rem 0 0; overflow: hidden; white-space: nowrap; }
 .rh-label { display: inline-block; animation: rh-roll 0.5s var(--ease-set); }
 @keyframes rh-roll {
   from { transform: translateY(110%); opacity: 0; }
@@ -540,44 +526,36 @@ button.press-stamp {
 }
 .rh-toggle {
   display: none;
+  align-items: center;
+  gap: 0.4em;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   color: inherit;
-  padding: 0.5rem 0.7rem;
+  padding: 0 0.7rem;
   cursor: pointer;
 }
 
-.rh-track { position: relative; display: flex; height: 32px; }
+.rh-track { position: relative; flex: 1; display: flex; }
+/* the cell: press red, sitting on the rule */
 .rh-pill {
   position: absolute;
-  top: 0;
+  top: 7px;
+  bottom: 2px;
   left: 0;
-  height: 100%;
   width: 0;
-  border-radius: 999px;
+  border-radius: 2px 2px 0 0;
   background: var(--red);
-  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.28), 0 4px 12px -4px oklch(56% 0.214 27 / 0.6);
-  overflow: hidden;
-  transition: transform 0.6s var(--ease-set), width 0.6s var(--ease-set);
+  transform-origin: 50% 100%;
+  will-change: transform;
 }
-/* reading progress through the current section, along the pill's foot */
-.rh-fill {
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  bottom: 5px;
-  height: 1.5px;
-  border-radius: 1px;
-  background: oklch(100% 0 0 / 0.75);
-  transform: scaleX(0);
-  transform-origin: 0 50%;
-}
+.running-head[data-ground="red"] .rh-pill { background: var(--paper); }
 .rh-list {
   position: relative;
   display: flex;
+  flex: 1;
+  justify-content: space-between;
   align-items: stretch;
-  height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -587,66 +565,326 @@ button.press-stamp {
   position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 0 0.85rem;
-  border-radius: 999px;
+  padding: 3px 0.85rem 0;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   color: inherit;
-  opacity: 0.72;
+  opacity: 0.66;
   cursor: pointer;
-  transition: opacity 0.25s var(--ease-set), color 0.5s var(--ease-set);
+  transition: opacity 0.25s var(--ease-set), color 0.3s var(--ease-set) 0.25s;
 }
 .rh-list button:hover { opacity: 1; }
-.rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: 1px; }
+.rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: -2px; }
 .rh-list .is-current button { opacity: 1; color: var(--paper); }
+.running-head[data-ground="red"] .rh-list .is-current button { color: var(--red-stock); }
 
+/* the rule along the foot, and the pen drawing it */
+.rh-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--rh-rule);
+  pointer-events: none;
+}
+.rh-line-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+.running-head[data-ground="red"] .rh-line-fill { background: var(--paper); }
+.rh-line-tip { position: absolute; left: 0; top: 1px; width: 0; height: 0; }
+.rh-line-pen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  /* the pencil writes with its tip on the rule */
+  transform-origin: 0 0;
+  transform: translate(-2.9px, -17.4px);
+  color: var(--rh-ink);
+}
+.rh-line-pen svg { width: 100%; height: 100%; overflow: visible; }
+
+/* the cells at the end */
+.rh-cells { display: flex; align-items: stretch; margin-left: 0.6rem; }
+.rh-cells > * { position: relative; display: flex; align-items: center; border-left: 1px solid var(--rh-rule); }
+.rh-pen-wrap { padding: 0 0.35rem; }
 .rh-pen {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-left: 0.2rem;
-  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border-radius: 3px;
   color: inherit;
-  background: oklch(100% 0 0 / 0.16);
-  box-shadow: inset 0 0 0 1px color-mix(in oklch, currentColor 22%, transparent);
   cursor: pointer;
   transition: background-color 0.25s var(--ease-set), scale 0.25s var(--ease-stamp);
 }
-.rh-pen:hover { background: oklch(100% 0 0 / 0.3); scale: 1.08; }
-.rh-pen:active { scale: 0.92; }
-.rh-pen:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-.rh-pen-icon { width: 18px; height: 18px; }
+.rh-pen:hover { background: color-mix(in oklch, currentColor 10%, transparent); }
+.rh-pen:active { scale: 0.9; }
+.rh-pen:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.rh-pen-icon { width: 20px; height: 20px; }
 .rh-pen-icon svg { width: 100%; height: 100%; }
-@media (pointer: coarse) { .rh-pen { display: none; } }
+@media (pointer: coarse) { .rh-pen-wrap { display: none !important; } }
+
+.rh-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 0 0.2rem 0 0.85rem;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease-set);
+}
+.rh-settings-btn:hover,
+.rh-settings.is-open .rh-settings-btn { opacity: 1; }
+.rh-settings-btn:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+.rh-settings-glyph {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.rh-settings-glyph circle { fill: var(--rh-glass); transition: transform 0.4s var(--ease-stamp); }
+.rh-settings-btn:hover .rh-settings-glyph circle:first-of-type { transform: translateX(-5px); }
+.rh-settings-btn:hover .rh-settings-glyph circle:last-of-type { transform: translateX(5px); }
+@media (max-width: 1180px) { .rh-settings-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+
+/* comic bubbles: the credit on hover, the hint now and then */
+.rh-bubble {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -6px;
+  width: max-content;
+  max-width: 17.5rem;
+  margin: 0;
+  padding: 0.6rem 0.85rem 0.65rem;
+  font-family: var(--font-pen);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  rotate: -2deg;
+  transform-origin: calc(100% - 22px) -12px;
+}
+/* the tail, up to the pen */
+.rh-bubble::before,
+.rh-bubble::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  border-style: solid;
+}
+.rh-bubble::before { top: -15px; border-width: 0 0 15px 13px; border-color: transparent transparent var(--ink) transparent; }
+.rh-bubble::after { top: -10px; right: 20.5px; border-width: 0 0 11px 9px; border-color: transparent transparent var(--paper) transparent; }
+.rh-bubble a { color: var(--red); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+.rh-bubble--credit {
+  max-width: 15.5rem;
+  font-size: 1.08rem;
+  opacity: 0;
+  visibility: hidden;
+  scale: 0.9;
+  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-stamp), visibility 0s 0.2s;
+}
+.rh-pen-wrap:hover .rh-bubble--credit,
+.rh-pen-wrap:focus-within .rh-bubble--credit {
+  opacity: 1;
+  visibility: visible;
+  scale: 1;
+  transition: opacity 0.18s var(--ease-set) 0.3s, scale 0.35s var(--ease-stamp) 0.3s, visibility 0s 0.3s;
+}
+.rh-bubble--hint {
+  color: var(--paper);
+  background: var(--red);
+  border-color: var(--ink);
+  animation: rh-pop 0.6s var(--ease-stamp) both, rh-nudge 2.4s ease-in-out 0.8s 2;
+  pointer-events: none;
+}
+.rh-bubble--hint::after { border-color: transparent transparent var(--red) transparent; }
+@keyframes rh-pop {
+  0% { opacity: 0; scale: 0.3; rotate: -14deg; }
+  60% { opacity: 1; scale: 1.08; rotate: 1deg; }
+  100% { opacity: 1; scale: 1; rotate: -2deg; }
+}
+@keyframes rh-nudge {
+  0%, 100% { translate: 0 0; }
+  12% { translate: 0 -5px; }
+  24% { translate: 0 0; }
+  32% { translate: 0 -3px; }
+  40% { translate: 0 0; }
+}
+
+/* the settings card */
+.rh-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 20rem;
+  padding: 1rem 1.1rem 0.9rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 5px 5px 0 var(--ink);
+  letter-spacing: 0.14em;
+  animation: rh-panel-in 0.32s var(--ease-stamp);
+}
+.rh-panel[hidden] { display: none; }
+@keyframes rh-panel-in {
+  from { opacity: 0; translate: 0 -8px; rotate: 0.6deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+.rh-panel-title {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-name);
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.rh-opt { margin: 0 0 0.9rem; padding: 0; border: 0; }
+.rh-opt legend { margin-bottom: 0.5rem; padding: 0; font-size: 0.6rem; opacity: 0.7; }
+.rh-pens { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.35rem; margin-bottom: 0.55rem; }
+.rh-pen-pick {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--ink) 25%, transparent);
+  border-radius: 3px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, scale 0.25s var(--ease-stamp);
+}
+.rh-pen-pick span { width: 22px; height: 22px; }
+.rh-pen-pick svg { width: 100%; height: 100%; }
+.rh-pen-pick:hover { scale: 1.08; border-color: var(--ink); }
+.rh-pen-pick[aria-pressed="true"] { color: var(--red); border-color: var(--red); background: color-mix(in oklch, var(--red) 8%, transparent); }
+.rh-pen-pick:focus-visible,
+.rh-seg button:focus-visible,
+.rh-rain:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rh-seg { display: flex; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
+.rh-seg button {
+  flex: 1;
+  padding: 0.5rem 0.2rem;
+  font: inherit;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+.rh-seg button + button { border-left: 1px solid var(--ink); }
+.rh-seg button[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+.rh-rain {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  font-size: 0.56rem;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--red);
+  border: 1px dashed var(--red);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.rh-rain:hover { background: color-mix(in oklch, var(--red) 8%, transparent); }
+.rh-rain:disabled { opacity: 0.4; cursor: default; }
+.rh-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-family: var(--font-read);
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+.rh-switch input {
+  appearance: none;
+  flex-shrink: 0;
+  position: relative;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-set);
+}
+.rh-switch input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: translate 0.3s var(--ease-stamp), background-color 0.25s;
+}
+.rh-switch input:checked { background: var(--red); border-color: var(--red); }
+.rh-switch input:checked::after { translate: 13px 0; background: var(--paper); }
+.rh-switch input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rh-panel-foot {
+  margin: 0.2rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 20%, transparent);
+  font-size: 0.55rem;
+  opacity: 0.75;
+}
+.rh-panel-foot a { color: var(--red); }
 
 @media (max-width: 900px) {
+  .running-head { height: 44px; }
+  .rh-bar { max-width: none; padding: 0 0 0 14px; }
   .rh-here,
   .rh-toggle { display: inline-flex; }
-  .running-head { padding: 0 4px 0 10px; max-width: calc(100vw - 24px); }
-  .rh-toggle { white-space: nowrap; }
+  .rh-toggle { white-space: nowrap; margin-left: auto; }
   .rh-pill { display: none; }
-  .rh-track { position: static; height: auto; }
+  .rh-track { position: static; flex: 0; }
+  .rh-line-pen { display: none; }
+  .rh-cells { margin-left: 0; }
   .rh-list {
     position: absolute;
     top: calc(100% + 8px);
-    right: 0;
+    right: 8px;
     flex-direction: column;
     height: auto;
     min-width: 12.5rem;
     padding: 0.4rem;
-    border-radius: 18px;
+    border-radius: 4px;
     color: var(--ink);
-    background: oklch(97% 0.012 85 / 0.96);
-    -webkit-backdrop-filter: blur(18px) saturate(1.6);
-    backdrop-filter: blur(18px) saturate(1.6);
-    box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.7), 0 0 0 1px oklch(20% 0.02 60 / 0.12),
-      0 18px 40px -12px oklch(20% 0.02 60 / 0.35);
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-6px) scale(0.98);
-    transform-origin: top right;
+    transform: translateY(-6px);
     transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set), visibility 0s 0.25s;
   }
   .running-head.is-open .rh-list {
@@ -656,8 +894,14 @@ button.press-stamp {
     transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set);
   }
   .rh-list li { display: block; }
-  .rh-list button { display: flex; width: 100%; padding: 0.7rem 0.9rem; font-size: 0.72rem; opacity: 0.8; }
-  .rh-list .is-current button { color: var(--paper); background: var(--red); opacity: 1; }
+  .rh-list button { display: flex; width: 100%; padding: 0.7rem 0.9rem; font-size: 0.72rem; opacity: 0.8; transition: none; }
+  .rh-list .is-current button,
+  .running-head[data-ground="red"] .rh-list .is-current button { color: var(--paper); background: var(--red); opacity: 1; }
+  .rh-panel { right: 8px; width: min(20rem, calc(100vw - 24px)); }
+  .rh-settings-btn { padding: 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-bubble--hint { animation: none; }
 }
 
 /* ── Arrivals and exits (src/life/arrive.js) ──────────────────────────────────
@@ -690,10 +934,24 @@ button.press-stamp {
   letter-spacing: 0.01em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1.5px oklch(20% 0.018 60 / 0.09);
+  --folio-ink: oklch(20% 0.018 60);
+  --folio-line: 0.17;
+  --folio-wash: 0.06;
+  --folio-reg: var(--red);
   pointer-events: none;
   user-select: none;
 }
-[data-ground="ink"] > .folio { -webkit-text-stroke-color: oklch(95.5% 0.014 85 / 0.08); }
-[data-ground="red"] > .folio { -webkit-text-stroke-color: oklch(95.5% 0.014 85 / 0.16); }
+.folio > span { display: block; }
+.folio-line {
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in oklch, var(--folio-ink) calc(var(--folio-line) * 100%), transparent);
+}
+.folio-fill,
+.folio-reg { position: absolute; inset: 0; }
+.folio-fill { color: color-mix(in oklch, var(--folio-ink) calc(var(--folio-wash) * 100%), transparent); }
+.folio-reg {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklch, var(--folio-reg) 26%, transparent);
+}
+[data-ground="ink"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.13; --folio-wash: 0.045; --folio-reg: #fe433e; }
+[data-ground="red"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.2; --folio-wash: 0.07; --folio-reg: oklch(95.5% 0.014 85); }

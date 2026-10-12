@@ -6,14 +6,28 @@ import { groundAt } from './ground';
  * mark, where the type field may show, and where the cube is allowed to come
  * and sit — so all three agree about what "bare paper" is.
  */
-const CONTENT = [
-  'a', 'button', 'input', 'textarea', 'select', 'label',
-  'p', 'h1', 'h2', 'h3', 'h4', 'li', 'dt', 'dd', 'blockquote', 'img', 'video', 'figure',
-  '.kinetic', '.case-file', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted',
-  '.press-loader', '[data-content]',
+// Things that are solid all over: anywhere on them is theirs.
+const SOLID = [
+  'a', 'button', 'input', 'textarea', 'select', 'label', 'img', 'video',
+  '.case-file', '.opdesk-strip-wrap', '.wire', '.press-stamp', '.redacted', '.skill',
+  '.running-head', '.press-loader', '[data-content]',
 ].join(',');
+// Text: only the lines themselves are content — the bare paper beside a short
+// line, or round a headline, is still paper you can press.
+const WORDS = 'p, h1, h2, h3, h4, li, dt, dd, blockquote, figure, .kinetic';
+const range = typeof document !== 'undefined' ? document.createRange() : null;
 
-export const isEmptyPaper = (el) => !!el && el.nodeType === 1 && !el.closest(CONTENT);
+export function isEmptyPaper(el, x, y) {
+  if (!el || el.nodeType !== 1 || el.closest(SOLID)) return false;
+  const text = el.closest(WORDS);
+  if (!text) return true;
+  if (x == null) return false;
+  range.selectNodeContents(text);
+  for (const r of range.getClientRects()) {
+    if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 3 && y <= r.bottom + 3) return false;
+  }
+  return true;
+}
 
 // What the type field keeps clear of. Text gets tight per-line boxes; the
 // cards, the filmstrip and the wire band are masked whole.
@@ -53,7 +67,7 @@ export function measureMask(pad = 10, decor = true) {
 /**
  * The one paper-press listener, and the difference between a click and a hold.
  *
- * - On the cube: a click twists the face under it (either way, at random);
+ * - On the cube: a click twists the face under it (clockwise; Shift turns it back);
  *   holding and dragging turns the whole cube to see its other sides (mice
  *   and pens — on touch a drag scrolls the page, so a tap twists).
  * - A quick click on bare paper dispatches `life:press` {x, y, ground}: the
@@ -100,7 +114,7 @@ export function startPaperPress() {
     const touch = e.pointerType === 'touch';
     if (!touch && e.button !== 0) return;
     const face = bus.cubeAt?.(e.clientX, e.clientY) || null;
-    if (!face && !isEmptyPaper(e.target)) return;
+    if (!face && !isEmptyPaper(e.target, e.clientX, e.clientY)) return;
     end();
     press = {
       id: e.pointerId,
@@ -155,7 +169,7 @@ export function startPaperPress() {
       const still = performance.now() - p.t > 80;
       bus.release?.(still ? 0 : p.vx, still ? 0 : p.vy);
     } else if (p.face) {
-      const turns = bus.twist?.(p.face);
+      const turns = bus.twist?.(p.face, e.shiftKey);
       emit('life:twist', { x: p.x0, y: p.y0, turns });
     } else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
     end();
