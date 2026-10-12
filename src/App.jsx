@@ -9,6 +9,7 @@ import PressCursor from './press/PressCursor';
 import PressImpacts from './press/PressImpacts';
 import PressTicker from './press/PressTicker';
 import Seam from './press/Seam';
+import Ridge from './press/Ridge';
 import Life from './life/Life';
 import CubeStage from './gl/CubeStage';
 import Contents from './press/Contents';
@@ -25,8 +26,8 @@ import Contact from './sections/Contact';
  * animates off. Persistent layers mount once: PaperBackdrop (the warm paper
  * ground), PressCursor and PressImpacts (portaled). Sections mount inside <main>
  * in reading order. One warm system runs the whole page (cream, then ink-black,
- * then press red); the two real colour turns are torn deckle seams where the
- * lower stock shows through hand-torn paper.
+ * then press red): the ink rises out of the cream as a mountain range (Ridge,
+ * with a little car driving over it), and the red is a torn deckle seam.
  *
  * Life (src/life) is the layer that answers the visitor — drifting icons and
  * their ripples, registration marks, press-and-hold printing, the ink roller —
@@ -66,7 +67,7 @@ export default function App() {
         <About />
         <Skills />
         <Projects />
-        <Seam variant="cream-ink" />
+        <Ridge />
         <Experience />
         <Blog />
         <Seam variant="ink-red" />

@@ -2,14 +2,18 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
+import { typeOut, settle, handwrite } from '../life/writeIn';
+import { startCar } from '../life/car';
+import { afterPrint } from '../life/idle';
 
 /**
  * The Feature Story — a broadsheet profile in three columns: a drop-cap lead
  * with a red pull-quote, the continued prose, and a stats/marginalia rail.
- * The columns are laid on the desk as you scroll (src/life/arrive.js): the
- * lead from the left, the body from below, the rail's rows pasted in and its
- * notes pinned on; the pull-quote rides off-register and snaps home; the
- * rail's hard numbers come in redacted and declassify on scroll.
+ * Each column gets its words a different way (src/life/writeIn.js): the lead is
+ * typed out, the body arrives jumbled and shakes into place, and the margin
+ * notes are handwritten by a pencil. The rail's rows are pasted in, the
+ * pull-quote rides off-register and snaps home, the hard numbers declassify on
+ * scroll — and a little car drives the rule under the headline as you go.
  */
 export default function About() {
   const rootRef = useRef(null);
@@ -38,6 +42,46 @@ export default function About() {
     return () => ctx.revert();
   }, []);
 
+  // the words, once fonts and layout have settled
+  useEffect(
+    () =>
+      afterPrint(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        let stops = [];
+        let cancelled = false;
+        const go = async () => {
+          await document.fonts?.ready;
+          if (cancelled) return;
+          const { ICON } = await import('../life/icons');
+          if (cancelled) return;
+          const grid = root.querySelector('.about-grid');
+          stops = [
+            typeOut(root.querySelector('.about-lead')),
+            ...[...root.querySelectorAll('.about-col--body p')].map(settle),
+            handwrite(root.querySelector('.about-margin'), ICON.pencil),
+            // the car on the rule: across as the rule climbs the screen
+            startCar(grid, {
+              pathAt: (x) => ({ x: 34 + x, y: -3, angle: 0 }),
+              length: () => grid.clientWidth - 68,
+              target: () => {
+                const r = grid.getBoundingClientRect();
+                const vh = window.innerHeight;
+                const p = Math.min(1, Math.max(0, (vh * 0.95 - r.top) / (vh * 0.85)));
+                return p * (grid.clientWidth - 68);
+              },
+            }),
+          ];
+        };
+        go();
+        return () => {
+          cancelled = true;
+          stops.forEach((f) => f());
+        };
+      }),
+    []
+  );
+
   const PQ = '“I treat AI-generated code as untrusted by default.”';
 
   return (
@@ -52,8 +96,8 @@ export default function About() {
 
         <div className="about-grid">
           {/* Column 1 — lead + pull-quote */}
-          <div className="about-col about-col--lead" data-arrive="deal-l" data-depart="part-l">
-            <p className="about-lead" data-ink="block">
+          <div className="about-col about-col--lead" data-depart="part-l">
+            <p className="about-lead">
               I started in electronics engineering, detoured through a
               federated-learning lab where I scaled experiments from 50 to a
               million simulated clients, spent a winter on a cybersecurity desk
@@ -71,20 +115,20 @@ export default function About() {
           </div>
 
           {/* Column 2 — continued */}
-          <div className="about-col about-col--body" data-arrive="rise" data-depart="lift">
-            <p data-ink>
+          <div className="about-col about-col--body" data-depart="lift">
+            <p>
               The lab taught me that a result you can&rsquo;t reproduce at scale
               isn&rsquo;t a result. So I kept rebuilding the harness until a
               million clients behaved like fifty — and the bugs that fell out on
               the way were the interesting part.
             </p>
-            <p data-ink>
+            <p>
               The security desk taught me the opposite reflex: assume the thing is
               already compromised, then go looking. I learned to read a binary the
               way a good editor reads a draft — suspicious of every line that looks
               too clean.
             </p>
-            <p data-ink>
+            <p>
               Those two instincts run together now. An MCP server is a door
               between an AI agent and a company&rsquo;s real systems. I build the
               door — then I spend just as long trying to kick it in.
@@ -120,7 +164,7 @@ export default function About() {
               </div>
             </dl>
 
-            <ul className="about-margin" aria-label="Off the clock" data-arrive-items="pin">
+            <ul className="about-margin" aria-label="Off the clock">
               <li>F1 on weekends.</li>
               <li>Co-founded an NGO with my brother — 1,000+ trees in.</li>
               <li>State-level badminton, once.</li>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
 import Nameplate from '../press/Nameplate';
+import Thinking from '../press/Thinking';
 
 /**
  * The opening — a clean editorial nameplate over a two-column lead: the story
@@ -68,7 +69,9 @@ export default function Hero() {
           <div className="mast-rule mast-rule--thick" aria-hidden="true" />
           <div className="mast-kickrow">
             <span className="mast-kicker">Software Engineer</span>
-            <span className="mast-kicker mast-meta">Victoria, BC</span>
+            <span className="mast-kicker mast-meta">
+              <Thinking />
+            </span>
           </div>
           <div className="mast-rule" aria-hidden="true" />
 
