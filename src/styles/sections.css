@@ -146,6 +146,47 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--ink);
 }
+/* the status line: a terminal thinking out loud */
+.thinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55em;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+.thinking-glyph {
+  display: inline-block;
+  width: 1.1em;
+  text-align: center;
+  color: var(--red);
+  font-size: 1.15em;
+  font-weight: 400;
+}
+.thinking-word { display: inline-flex; color: var(--ink); }
+.thinking-word span {
+  display: inline-block;
+  white-space: pre;
+  /* each letter lands, then a lighter band sweeps across them */
+  animation: think-in 0.42s var(--ease-stamp) calc(var(--i) * 18ms) both,
+    think-shimmer 2.2s ease-in-out calc(0.5s + var(--i) * 55ms) infinite;
+}
+@keyframes think-in {
+  from { opacity: 0; translate: 0 0.55em; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes think-shimmer {
+  0%, 30%, 100% { color: var(--ink); }
+  12% { color: var(--red-wet); }
+}
+.thinking-secs { opacity: 0.68; font-weight: 500; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) {
+  .thinking-word span { animation: none; }
+}
+@media (max-width: 520px) {
+  .thinking-secs { display: none; }
+}
+
 .mast-plate {
   margin: 0;
   padding-block: clamp(0.5rem, 1.4vw, 1.1rem);
@@ -372,6 +413,46 @@ html.press-booting { overflow: hidden; }
   line-height: 1.05;
   color: var(--red-deep);
 }
+/* written in by the pencil (src/life/writeIn.js handwrite) */
+.about-margin { position: relative; }
+.hw-pen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  margin: -22.6px 0 0 -3.8px;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+.hw-pen svg { width: 100%; height: 100%; overflow: visible; }
+
+/* the lead, typed (writeIn.js typeOut) */
+.about-lead.is-typing { position: relative; }
+.about-lead .tw { opacity: 0; }
+.about-lead .tw.is-in { opacity: 1; }
+.tw-caret {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.5em;
+  border-bottom: 3px solid var(--red);
+  pointer-events: none;
+  transition: transform 0.05s linear;
+}
+.tw-caret.is-done { animation: tw-blink 1s steps(1) 3 forwards; }
+@keyframes tw-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* the body, jumbled into place (writeIn.js settle) */
+.about-col--body .jc { display: inline-block; will-change: transform; }
+
+/* the little car on the rule (src/life/car.js) */
+.about-grid { position: relative; }
+
 .about-margin li:nth-child(odd) { transform: rotate(-1.6deg); transform-origin: left; }
 .about-margin li:nth-child(even) { transform: rotate(1.2deg); transform-origin: left; margin-left: 0.6rem; }
 
@@ -460,6 +541,12 @@ html.press-booting { overflow: hidden; }
   transform: translateY(-2px);
 }
 
+/* the tornado (src/life/tornado.js): weather behind the slugs, the funnel's near side in front */
+.tornado-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+.tornado-canvas--back { z-index: -1; }
+.tornado-canvas--front { z-index: 4; }
+.has-tornado .skill { transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set); }
+
 @media (max-width: 1024px) {
   .about-grid {
     grid-template-columns: 1fr 1fr;
@@ -507,6 +594,53 @@ html.press-booting { overflow: hidden; }
   grid-template-columns: repeat(2, 1fr);
   gap: clamp(1rem, 2vw, 1.4rem);
 }
+
+/* The wraparound display (Projects.jsx CurvedRows): three full-bleed rows,
+   each a strip of cards on the inside of a cylinder — real CSS 3D. */
+.cf-rows {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.6rem, 1.6vh, 1.1rem);
+  width: 100vw;
+  margin: clamp(2rem, 4vh, 3rem) 0 0 calc(50% - 50vw);
+}
+.cf-row {
+  position: relative;
+  height: 250px;
+  perspective: 1500px;
+  perspective-origin: 50% 50%;
+}
+.cf-rows { --cf-card: min(360px, 78vw); }
+.cf-slot {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: var(--cf-card);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.cf-row .case-file {
+  width: var(--cf-card);
+  padding: 1.15rem 1.3rem 1.2rem;
+}
+.cf-row .cf-name { font-size: 1.55rem; }
+.cf-row .cf-deck {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.98rem;
+  min-height: calc(1.4em * 3);
+}
+.cf-row .cf-filed { flex-wrap: nowrap; max-width: 100%; overflow: hidden; mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.cf-row .cf-tag { flex-shrink: 0; white-space: nowrap; }
+.cf-row .cf-foot { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+/* now and then, a card is ringed in red */
+.case-file.is-flagged {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1.5px var(--red), 3px 4px 0 oklch(56% 0.2 27 / 0.18);
+}
+.case-file.is-flagged .cf-no { text-decoration: underline wavy var(--red); text-underline-offset: 3px; }
 
 /* A case file. Rest = cream sheet. Hover inverts to ink, tilts in REAL CSS 3D
    toward the cursor (perspective + rotateX/Y driven by JS custom props), and a
@@ -1063,8 +1197,8 @@ html.press-booting { overflow: hidden; }
  * ──────────────────────────────────────────────────────────────────────── */
 .contact {
   position: relative;
-  /* printed red stock: the deeper press red, with the paper's grain over it */
-  background: var(--red-deep);
+  /* printed red stock: a deep oxblood, with the paper's grain over it */
+  background: var(--red-stock);
   color: var(--paper);
   padding: clamp(10vh, 15vh, 18vh) clamp(1.5rem, 5vw, 6rem) clamp(5rem, 9vh, 7rem);
   overflow: hidden;
@@ -1081,7 +1215,7 @@ html.press-booting { overflow: hidden; }
 }
 .contact::before {
   background-size: 220px 220px;
-  opacity: 0.42;
+  opacity: 0.26;
   mix-blend-mode: overlay;
 }
 .contact::after {
@@ -1137,6 +1271,27 @@ html.press-booting { overflow: hidden; }
   font-style: italic;
   color: var(--paper);
   opacity: 0.8;
+}
+
+/* the cube's last stop: its own square to the right of the finale */
+.contact-cube {
+  position: absolute;
+  right: clamp(1.5rem, 6vw, 7rem);
+  top: 46%;
+  width: min(27vw, 25rem);
+  aspect-ratio: 1;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+@media (max-width: 1100px) {
+  .contact-cube {
+    position: relative;
+    right: auto;
+    top: auto;
+    translate: none;
+    width: min(56vw, 15rem);
+    margin: 0 auto clamp(2rem, 5vh, 3rem);
+  }
 }
 
 /* ── Classified CTAs ─────────────────────────────────────────────────────── */

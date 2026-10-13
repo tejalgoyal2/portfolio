@@ -69,7 +69,13 @@ function scrubbed(trigger, range, build) {
   return tl;
 }
 
-/** The banners: one outlined section name per section after the front page. */
+/**
+ * The banners: one huge outlined section name behind each section after the
+ * front page. It slides along as the section passes, and fills with a faint
+ * wash of ink as you read through it — a progress gauge set in wood type —
+ * while a press-red copy rides a hair off-register and only settles home
+ * once you've read to the end.
+ */
 function banners(root, made) {
   for (const { key, label } of SECTIONS.slice(1)) {
     const section = root.querySelector(`[data-section="${key}"]`);
@@ -77,15 +83,22 @@ function banners(root, made) {
     const el = document.createElement('span');
     el.className = 'folio';
     el.setAttribute('aria-hidden', 'true');
-    el.textContent = label;
+    el.innerHTML = `<span class="folio-line">${label}</span><span class="folio-fill">${label}</span><span class="folio-reg">${label}</span>`;
     section.prepend(el);
+    const fill = el.querySelector('.folio-fill');
+    const reg = el.querySelector('.folio-reg');
     if (prefs.reduced) {
+      fill.style.clipPath = 'none';
       made.push({ revert: () => el.remove() });
       continue;
     }
-    const tl = gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'top -60%', scrub: true } });
-    tl.fromTo(el, { xPercent: 18 }, { xPercent: -42, ease: 'none' });
-    made.push({ revert: () => (tl.revert(), el.remove()) });
+    const slide = gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'top -60%', scrub: true } });
+    slide.fromTo(el, { xPercent: 18 }, { xPercent: -42, ease: 'none' });
+    const read = gsap.timeline({ scrollTrigger: { trigger: section, start: 'top 70%', end: 'bottom 70%', scrub: 0.6 } });
+    read
+      .fromTo(fill, { clipPath: 'inset(-10% 100% -10% 0)' }, { clipPath: 'inset(-10% 0% -10% 0)', ease: 'none' }, 0)
+      .fromTo(reg, { x: 14, y: -9, rotate: -0.6 }, { x: 0, y: 0, rotate: 0, ease: 'power2.in' }, 0);
+    made.push({ revert: () => (slide.revert(), read.revert(), el.remove()) });
   }
 }
 

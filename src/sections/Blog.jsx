@@ -13,7 +13,7 @@ import Redacted from '../press/Redacted';
  * Punchline words are redacted; hover reveals them. Drag or horizontal-scroll to
  * browse. Reduced motion → a flat static grid, no marquee, no tilt.
  *
- * The strip feels the page move: scroll speed quickens the crawl, which
+ * The strip feels the page move: scroll speed quickens the crawl (smoothly), which
  * settles back to its idle pace as the page stops.
  */
 const CRAWL = 27; // px/s at rest
@@ -95,15 +95,25 @@ export default function Blog() {
 
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
     let wrote = '';
+    // the crawl's speed rides a soft spring: it eases to a stop when you hover,
+    // pulls away (a little past its cruise) when you leave, and a scroll of the
+    // page quickens it smoothly instead of kicking it
+    let v = CRAWL;
+    let a = 0;
+    let boost = 0;
     const tick = (time, deltaMs) => {
       if (!visibleRef.current) return;
       const dt = Math.min(0.05, deltaMs / 1000);
       const half = strip.scrollWidth / 2;
       if (half <= 0) return;
-      if (!(hoverRef.current || dragRef.current.active || wheelRef.current)) {
-        const speed = CRAWL + Math.min(Math.abs(scroll.v) * 0.45, 900);
-        offsetRef.current = (offsetRef.current + speed * dt) % half;
-      }
+      const held = hoverRef.current || dragRef.current.active || wheelRef.current;
+      boost += (Math.min(Math.abs(scroll.v) * 0.22, 320) - boost) * (1 - Math.exp(-2.5 * dt));
+      const target = held ? 0 : CRAWL + boost;
+      const [k, c] = held ? [10, 6.4] : [4, 2.2];
+      a += (k * (target - v) - c * a) * dt;
+      v = Math.max(0, v + a * dt);
+      if (held && v < 0.4) v = a = 0;
+      if (!dragRef.current.active && !wheelRef.current) offsetRef.current = (offsetRef.current + v * dt) % half;
       const next = `translateX(${(-offsetRef.current).toFixed(2)}px)`;
       if (next !== wrote) {
         wrote = next;
