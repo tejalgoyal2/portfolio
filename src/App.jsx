@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { usePressScroll } from './press/usePressScroll';
 import { startInkLines } from './life/inkLines';
 import { startArrivals } from './life/arrive';
+import { startBanners } from './life/banners';
 import { afterPrint } from './life/idle';
 import Loader from './press/Loader';
 import PaperBackdrop from './press/PaperBackdrop';
@@ -43,9 +44,11 @@ export default function App() {
       afterPrint(() => {
         const stopInk = startInkLines();
         const stopArrivals = startArrivals();
+        const stopBanners = startBanners();
         return () => {
           stopInk();
           stopArrivals();
+          stopBanners();
         };
       }),
     []
