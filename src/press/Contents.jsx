@@ -14,9 +14,9 @@ import PageSettings from './PageSettings';
  *
  * Along its foot runs one long rule, and a tiny pen (the cursor's icon) draws
  * it as you read: from the section you're in towards the next. The section
- * you're in sits in a red cell that's made of the same ink — when you move on,
- * the cell sinks back into the rule, runs along it, and rises up round the
- * next label.
+ * you're in is ringed in the editor's red pen — a loose loop that rises off
+ * the rule, goes round the label once and a bit and lifts off. Move on and the
+ * old loop is wiped back along itself while the next is drawn.
  *
  * One click (or Enter) flies you to any section with Lenis. At its end sit two
  * cells: your pen (click to swap it; hover for who drew it) and Page settings.
@@ -48,6 +48,36 @@ const markHint = (k) => {
   }
 };
 
+/** A loose hand-drawn loop round a label, starting on the rule below it. */
+function loopPath(x, y, w, h, trackH, seed) {
+  const cx = x + w / 2;
+  const cy = y + h / 2 + 1;
+  const rx = w / 2 + 6;
+  const ry = h / 2 - 7;
+  const j = (k) => Math.sin(seed * 12.9898 + k * 78.233) * 0.5; // steady wobble per label
+  const pts = [[x + 4, trackH - 1]];
+  const turns = 1.12;
+  const n = 26;
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    const a = Math.PI * 1.05 + t * turns * Math.PI * 2; // from the left, over the top, round
+    const grow = 1 + t * 0.07 + j(k) * 0.05;
+    pts.push([cx + Math.cos(a) * rx * grow, cy + Math.sin(a) * ry * grow - t * 1.5]);
+  }
+  // Catmull-Rom through the points, as cubic curves
+  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
 export default function Contents() {
   const [current, setCurrent] = useState(0);
   const [open, setOpen] = useState(false);
@@ -59,7 +89,6 @@ export default function Contents() {
   const lineRef = useRef(null);
   const fillRef = useRef(null);
   const tipRef = useRef(null);
-  const pillRef = useRef(null);
   const itemRefs = useRef([]);
   const geo = useRef({ centers: [], w: 1, narrow: false });
   const changedPen = useRef(false);
@@ -156,33 +185,40 @@ export default function Contents() {
     };
   }, [place]);
 
-  // the red cell: sinks into the rule, runs along it, rises round the new label
-  const placedOnce = useRef(false);
-  useEffect(() => {
-    const item = itemRefs.current[current];
-    const pill = pillRef.current;
-    if (!item || !pill || !item.offsetParent) return;
-    const to = { x: item.offsetLeft, width: item.offsetWidth };
-    if (!placedOnce.current || prefs.reduced) {
-      placedOnce.current = true;
-      gsap.set(pill, { ...to, scaleY: 1 });
+  // the editor's pen circles the section you're in: a loop that rises off the
+  // reading rule at the label's left, goes round it once and a bit, and lifts
+  // off; moving on, the old loop is wiped back along itself as the new one is drawn
+  const loopRefs = useRef([]);
+  const live = useRef(0);
+  const drawLoop = useCallback((i, animate) => {
+    const item = itemRefs.current[i];
+    const track = trackRef.current;
+    if (!item || !track || !item.offsetParent) return;
+    const paths = loopRefs.current;
+    const prev = paths[live.current];
+    const next = paths[(live.current = 1 - live.current)];
+    const d = loopPath(item.offsetLeft, item.offsetTop, item.offsetWidth, item.offsetHeight, track.clientHeight, i);
+    next.setAttribute('d', d);
+    gsap.killTweensOf([prev, next]);
+    if (!animate || prefs.reduced) {
+      gsap.set(next, { strokeDashoffset: 0, opacity: 1 });
+      gsap.set(prev, { strokeDashoffset: 1, opacity: 0 });
       return;
     }
-    gsap
-      .timeline({ overwrite: true })
-      .to(pill, { scaleY: 0.07, duration: 0.2, ease: 'power2.in' })
-      .to(pill, { ...to, duration: 0.38, ease: 'power3.inOut' })
-      .to(pill, { scaleY: 1, duration: 0.55, ease: 'back.out(2.4)' });
-  }, [current]);
+    gsap.to(prev, { strokeDashoffset: -1, duration: 0.45, ease: 'power2.in' });
+    gsap.fromTo(next, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, duration: 0.85, ease: 'power3.inOut', delay: 0.12 });
+  }, []);
+  const placedOnce = useRef(false);
   useEffect(() => {
-    const onResize = () => {
-      const item = itemRefs.current[current];
-      if (item && pillRef.current) gsap.set(pillRef.current, { x: item.offsetLeft, width: item.offsetWidth });
-    };
-    document.fonts?.ready.then(onResize);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [current]);
+    drawLoop(current, placedOnce.current);
+    placedOnce.current = true;
+  }, [current, drawLoop]);
+  useEffect(() => {
+    const again = () => drawLoop(current, false);
+    document.fonts?.ready.then(again);
+    window.addEventListener('resize', again);
+    return () => window.removeEventListener('resize', again);
+  }, [current, drawLoop]);
 
   const go = useCallback((i) => {
     const el = document.querySelector(`[data-section="${SECTIONS[i].key}"]`);
@@ -274,7 +310,10 @@ export default function Contents() {
           Contents <span aria-hidden="true">{open ? '−' : '+'}</span>
         </button>
         <div ref={trackRef} className="rh-track">
-          <span ref={pillRef} className="rh-pill" aria-hidden="true" />
+          <svg className="rh-loops" aria-hidden="true">
+            <path ref={(el) => (loopRefs.current[0] = el)} pathLength="1" />
+            <path ref={(el) => (loopRefs.current[1] = el)} pathLength="1" />
+          </svg>
           <ol ref={listRef} id="rh-list" className="rh-list">
             {SECTIONS.map(({ key, label }, i) => (
               <li key={key} className={i === current ? 'is-current' : undefined}>
@@ -311,8 +350,8 @@ export default function Contents() {
               full disclosure: I didn&rsquo;t draw these. they&rsquo;re from{' '}
               <a href="https://github.com/matita-dev/icons" target="_blank" rel="noopener noreferrer">
                 matita-dev/icons
-              </a>{' '}
-              (MIT, so it&rsquo;s not stealing). go give them a&nbsp;★
+              </a>
+              . go give them a&nbsp;★
             </p>
             {hint && (
               <p className="rh-bubble rh-bubble--hint" role="status" key={hint}>

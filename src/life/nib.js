@@ -13,8 +13,15 @@ export const NIBS = [
   { name: 'zap', label: 'Lightning', tip: [10.4, 21.9], rot: 141 },
   { name: 'set-square', label: 'Set square', tip: [3.7, 20.2], rot: 105 },
   { name: 'drafting-compass', label: 'Compass', tip: [5.6, 20.4], rot: 113 },
+  { name: 'mouse-pointer', label: 'Plain arrow', tip: [4.9, 2.8], rot: 0 },
+  { name: 'send', label: 'Paper plane', tip: [20.9, 3], rot: -75 },
+  { name: 'brush', label: 'Brush', tip: [3.3, 20.5], rot: 104 },
+  { name: 'navigation', label: 'Compass needle', tip: [20.8, 2.9], rot: -75 },
+  { name: 'crosshair', label: 'Crosshair', tip: [12, 12], rot: 0 },
 ];
 export const SYSTEM = { name: 'system', label: 'Your own cursor' };
+/** Pens the page hands you over particular things (not in the chooser). */
+export const LOANERS = [{ name: 'eraser', label: 'Eraser', tip: [5, 19], rot: 106 }];
 const KEY = 'press-nib';
 const subs = new Set();
 

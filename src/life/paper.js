@@ -15,6 +15,7 @@ const SOLID = [
 // Text: only the lines themselves are content — the bare paper beside a short
 // line, or round a headline, is still paper you can press.
 const WORDS = 'p, h1, h2, h3, h4, li, dt, dd, blockquote, figure, .kinetic';
+const DECOY = '.kh-ghost, .kh-spread, .about-pq-ghost, [aria-hidden="true"]:not(.kh-set):not(.kh-set *)';
 const range = typeof document !== 'undefined' ? document.createRange() : null;
 
 export function isEmptyPaper(el, x, y) {
@@ -22,9 +23,15 @@ export function isEmptyPaper(el, x, y) {
   const text = el.closest(WORDS);
   if (!text) return true;
   if (x == null) return false;
-  range.selectNodeContents(text);
-  for (const r of range.getClientRects()) {
-    if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 3 && y <= r.bottom + 3) return false;
+  // the glyphs only: whole boxes of decoration inside (a headline's ghost and
+  // spread, a quote's off-register copy) would cover the paper round the words
+  const walk = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (!n.nodeValue.trim() || n.parentElement.closest(DECOY)) continue;
+    range.selectNodeContents(n);
+    for (const r of range.getClientRects()) {
+      if (x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 3 && y <= r.bottom + 3) return false;
+    }
   }
   return true;
 }

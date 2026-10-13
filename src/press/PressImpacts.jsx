@@ -16,9 +16,9 @@ export function pickImpact() {
 }
 
 /** Dispatch an impact. Call this from user-driven handlers only. */
-export function fireImpact(word, x, y, tone = 'ink') {
+export function fireImpact(word, x, y, tone = 'ink', size = 'lg') {
   window.dispatchEvent(
-    new CustomEvent('press:impact', { detail: { word, x, y, tone } })
+    new CustomEvent('press:impact', { detail: { word, x, y, tone, size } })
   );
 }
 
@@ -35,11 +35,11 @@ export default function PressImpacts() {
 
   useEffect(() => {
     const onImpact = (e) => {
-      const { word, x, y, tone } = e.detail || {};
+      const { word, x, y, tone, size } = e.detail || {};
       const id = ++uid;
       const rot = (Math.random() * 16 - 8).toFixed(1);
       setBursts((list) => {
-        const next = [...list, { id, word: word || pickImpact(), x, y, tone, rot }];
+        const next = [...list, { id, word: word || pickImpact(), x, y, tone, rot, size }];
         return next.length > MAX_CONCURRENT ? next.slice(next.length - MAX_CONCURRENT) : next;
       });
       setTimeout(() => remove(id), LIFE_MS);
@@ -53,7 +53,7 @@ export default function PressImpacts() {
       {bursts.map((b) => (
         <span
           key={b.id}
-          className={`press-impact press-impact--${b.tone}`}
+          className={`press-impact press-impact--${b.tone}${b.size === 'sm' ? ' press-impact--sm' : ''}`}
           style={{ left: b.x, top: b.y, '--rot': `${b.rot}deg` }}
         >
           {b.word}

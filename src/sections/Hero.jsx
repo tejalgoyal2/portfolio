@@ -21,8 +21,9 @@ export default function Hero() {
     let detach;
 
     const ctx = gsap.context(() => {
-      // nameplate sets on mount — seated by the time the loader lifts
-      if (reduced) {
+      // nameplate: when the press runs, the loader's own plate flies in to
+      // become it (src/press/Loader.jsx); otherwise it's inked in on mount
+      if (reduced || !sessionStorage.getItem('press-loaded')) {
         gsap.set('.mast-plate', { clipPath: 'inset(0)', opacity: 1 });
       } else {
         gsap.fromTo(

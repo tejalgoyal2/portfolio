@@ -117,27 +117,33 @@ function RegistrationMarks() {
 }
 
 /**
- * While a press is held on bare paper, an ink ring fills around the cursor —
- * full at the biggest splash. It follows the pointer, and is inked for the
+ * While a press is held on bare paper, a little ink well under the pen fills
+ * up: ink rises inside a thin ring, its surface sloshing gently, until it's
+ * brimming at the biggest splash. It follows the pointer, and is inked for the
  * ground it started on.
  */
-const RING_R = 22;
-const RING_C = 2 * Math.PI * RING_R;
+const WELL_R = 10.5;
 
 function HoldRing() {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
-    const arc = el.querySelector('.hold-arc');
-    const dot = el.querySelector('.hold-dot');
+    const ink = el.querySelector('.hold-ink');
     let t0 = 0;
     let on = false;
     const tick = () => {
       if (!on) return;
-      const p = Math.min(1, (performance.now() - t0) / 1000 / HOLD_SECONDS);
+      const now = performance.now();
+      const p = Math.min(1, (now - t0) / 1000 / HOLD_SECONDS);
       el.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`;
-      arc.style.strokeDashoffset = (RING_C * (1 - p)).toFixed(2);
-      dot.style.transform = `scale(${(0.25 + 0.75 * p).toFixed(3)})`;
+      // the surface: a little wave that settles as the well fills
+      const level = WELL_R - p * WELL_R * 2.15;
+      const amp = 1.7 * (1 - p * 0.7);
+      const ph = now / 160;
+      let d = `M-14 14L-14 ${level.toFixed(2)}`;
+      for (let x = -14; x <= 14; x += 3.5) d += `L${x} ${(level + Math.sin(x * 0.42 + ph) * amp).toFixed(2)}`;
+      ink.setAttribute('d', `${d}L14 14Z`);
+      el.classList.toggle('is-full', p >= 1);
     };
     const onHold = (e) => {
       const { phase, ground } = e.detail;
@@ -149,7 +155,7 @@ function HoldRing() {
         tick();
       } else {
         on = false;
-        el.classList.remove('is-on');
+        el.classList.remove('is-on', 'is-full');
       }
     };
     window.addEventListener('life:hold', onHold);
@@ -161,16 +167,14 @@ function HoldRing() {
   }, []);
   return (
     <div ref={ref} className="hold-ring" aria-hidden="true">
-      <svg viewBox="0 0 56 56" width="56" height="56">
-        <circle className="hold-track" cx="28" cy="28" r={RING_R} />
-        <circle
-          className="hold-arc"
-          cx="28"
-          cy="28"
-          r={RING_R}
-          style={{ strokeDasharray: RING_C, strokeDashoffset: RING_C }}
-        />
-        <circle className="hold-dot" cx="28" cy="28" r="7" />
+      <svg viewBox="-16 -16 32 32" width="32" height="32">
+        <defs>
+          <clipPath id="hold-well">
+            <circle r={WELL_R} />
+          </clipPath>
+        </defs>
+        <path className="hold-ink" clipPath="url(#hold-well)" d="" />
+        <circle className="hold-track" r={WELL_R + 0.6} />
       </svg>
     </div>
   );

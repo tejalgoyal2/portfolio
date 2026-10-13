@@ -3,45 +3,202 @@ import { prefs } from '../life/prefs';
 
 /**
  * The masthead's status line, borrowed from a terminal that's thinking: a
- * little star that twinkles through its shapes, and a verb in the -ing that
- * changes every few seconds with a shimmer running across it — what I'm up to,
- * more or less. Plus the seconds you've been here, because the terminal
- * counts too. Reduced motion: the star holds still, the words still change.
+ * little star that twinkles through its shapes, and one of Claude Code's own
+ * -ing verbs, changing every few seconds with a shimmer running across it —
+ * what I'm up to, more or less. Reduced motion: the star holds still, the
+ * words still change.
  */
 const GLYPHS = ['·', '✢', '✳', '✶', '✻', '✽', '✻', '✶', '✳', '✢'];
 const WORDS = [
-  'Shipping',
-  'Debugging',
-  'Caffeinating',
-  'Refactoring',
-  'Overthinking',
-  'Rubber-ducking',
-  'Pipelining',
-  'Prompting',
-  'Yak-shaving',
-  'Tinkering',
-  'Noodling',
-  'Cubing',
+  'Accomplishing',
+  'Actioning',
+  'Actualizing',
+  'Baking',
+  'Befuddling',
+  'Bloviating',
+  'Boondoggling',
+  'Booping',
+  'Brewing',
+  'Bunning',
+  'Burrowing',
+  'Calculating',
+  'Canoodling',
+  'Caramelizing',
+  'Cascading',
+  'Catapulting',
+  'Cerebrating',
+  'Channelling',
+  'Choreographing',
+  'Churning',
+  'Clauding',
+  'Coalescing',
+  'Cogitating',
+  'Combobulating',
+  'Composing',
+  'Computing',
+  'Concocting',
+  'Considering',
+  'Contemplating',
+  'Cooking',
+  'Crafting',
+  'Creating',
+  'Crunching',
+  'Crystallizing',
+  'Cultivating',
+  'Deciphering',
+  'Deliberating',
+  'Determining',
+  'Dilly-dallying',
+  'Discombobulating',
+  'Doing',
   'Doodling',
-  'Benchmarking',
-  'Scheming',
-  'Inking',
-  'Tejal-ing',
+  'Drizzling',
+  'Ebbing',
+  'Effecting',
+  'Elucidating',
+  'Embellishing',
+  'Enchanting',
+  'Envisioning',
+  'Evaporating',
+  'Fermenting',
+  'Fiddle-faddling',
+  'Finagling',
+  'Flambéing',
+  'Flibbertigibbeting',
+  'Flowing',
+  'Flummoxing',
+  'Fluttering',
+  'Forging',
+  'Forming',
+  'Frolicking',
+  'Frosting',
+  'Gallivanting',
+  'Galloping',
+  'Garnishing',
+  'Generating',
+  'Germinating',
+  'Gitifying',
+  'Grooving',
+  'Gusting',
+  'Harmonizing',
+  'Hashing',
+  'Hatching',
+  'Herding',
+  'Honking',
+  'Hullaballooing',
+  'Hyperspacing',
+  'Ideating',
+  'Imagining',
+  'Improvising',
+  'Incubating',
+  'Inferring',
+  'Infusing',
+  'Ionizing',
+  'Jitterbugging',
+  'Julienning',
+  'Kneading',
+  'Leavening',
+  'Levitating',
+  'Lollygagging',
+  'Manifesting',
+  'Marinating',
+  'Meandering',
+  'Metamorphosing',
+  'Misting',
+  'Moonwalking',
+  'Moseying',
+  'Mulling',
+  'Mustering',
+  'Musing',
+  'Nebulizing',
+  'Nesting',
+  'Noodling',
+  'Nucleating',
+  'Orbiting',
+  'Orchestrating',
+  'Osmosing',
+  'Perambulating',
+  'Percolating',
+  'Perusing',
+  'Philosophising',
+  'Photosynthesizing',
+  'Pollinating',
+  'Pondering',
+  'Pontificating',
+  'Pouncing',
+  'Precipitating',
+  'Prestidigitating',
+  'Processing',
+  'Proofing',
+  'Propagating',
+  'Puttering',
+  'Puzzling',
+  'Quantumizing',
+  'Razzle-dazzling',
+  'Razzmatazzing',
+  'Recombobulating',
+  'Reticulating',
+  'Roosting',
+  'Ruminating',
+  'Sautéing',
+  'Scampering',
+  'Schlepping',
+  'Scurrying',
+  'Seasoning',
+  'Shenaniganing',
+  'Shimmying',
+  'Simmering',
+  'Skedaddling',
+  'Sketching',
+  'Slithering',
+  'Smooshing',
+  'Sock-hopping',
+  'Spelunking',
+  'Spinning',
+  'Sprouting',
+  'Stewing',
+  'Sublimating',
+  'Swirling',
+  'Swooping',
+  'Symbioting',
+  'Synthesizing',
+  'Tempering',
+  'Thinking',
+  'Thundering',
+  'Tinkering',
+  'Tomfoolering',
+  'Topsy-turvying',
+  'Transfiguring',
+  'Transmuting',
+  'Twisting',
+  'Undulating',
+  'Unfurling',
+  'Unravelling',
+  'Vibing',
+  'Waddling',
+  'Wandering',
+  'Warping',
+  'Whatchamacalliting',
+  'Whirlpooling',
+  'Whirring',
+  'Whisking',
+  'Wibbling',
+  'Working',
+  'Wrangling',
+  'Zesting',
+  'Zigzagging',
 ];
 
 export default function Thinking() {
-  const [word, setWord] = useState(0);
-  const [secs, setSecs] = useState(0);
+  const [word, setWord] = useState(() => Math.floor(Math.random() * WORDS.length));
   const glyphRef = useRef(null);
 
   useEffect(() => {
-    const t0 = performance.now();
     let g = 0;
     // a fresh word every few seconds, never the same twice running
     const words = setInterval(() => {
       setWord((w) => (w + 1 + Math.floor(Math.random() * (WORDS.length - 2))) % WORDS.length);
     }, 3200);
-    const clock = setInterval(() => setSecs(Math.floor((performance.now() - t0) / 1000)), 1000);
     const twinkle = setInterval(() => {
       if (prefs.reduced || !glyphRef.current) return;
       g = (g + 1) % GLYPHS.length;
@@ -49,7 +206,6 @@ export default function Thinking() {
     }, 120);
     return () => {
       clearInterval(words);
-      clearInterval(clock);
       clearInterval(twinkle);
     };
   }, []);
@@ -67,9 +223,6 @@ export default function Thinking() {
             {ch}
           </span>
         ))}
-      </span>
-      <span className="thinking-secs">
-        ({secs}s)
       </span>
     </span>
   );

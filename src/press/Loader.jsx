@@ -7,7 +7,10 @@ import { fireImpact } from './PressImpacts';
  * TEJAL GOYAL with a CHA-CHUNK, a red plate rides off-register and snaps home,
  * the edition line stamps. ~1.2s, skippable (any key/click), once per session.
  * On finish it sets sessionStorage and dispatches `press:loaded` so the masthead
- * sets its lead story, then the sheet feeds up and away to reveal the page.
+ * sets its lead story — and the name doesn't leave: the printed plate glides
+ * and shrinks straight into the masthead's nameplate while the sheet around it
+ * dissolves into the same paper and the masthead's rules draw out under it, so
+ * the loader becomes the front page rather than lifting off it.
  */
 const SESSION_KEY = 'press-loaded';
 
@@ -39,7 +42,7 @@ export default function Loader() {
       detachSkip?.();
 
       sessionStorage.setItem(SESSION_KEY, '1');
-      window.dispatchEvent(new Event('press:loaded'));
+      const loaded = () => window.dispatchEvent(new Event('press:loaded'));
 
       const unlock = () => {
         window.__lenis?.start();
@@ -47,8 +50,43 @@ export default function Loader() {
         setDone(true);
       };
 
-      if (reduced) gsap.to(root, { opacity: 0, duration: 0.3, onComplete: unlock });
-      else gsap.to(root, { yPercent: -100, duration: 0.7, ease: 'power4.inOut', onComplete: unlock });
+      const html = document.documentElement;
+      const plate = root.querySelector('.loader-plate');
+      const home = document.querySelector('.mast-plate .np');
+      if (reduced) {
+        loaded();
+        gsap.to(root, { opacity: 0, duration: 0.3, onComplete: unlock });
+      } else if (!home || window.scrollY > 40) {
+        loaded();
+        gsap.to(root, { yPercent: -100, duration: 0.7, ease: 'power4.inOut', onComplete: unlock });
+      } else {
+        // the hand-off: the plate is set into the masthead, the sheet becomes the page
+        html.classList.add('np-handoff');
+        gsap.killTweensOf(plate);
+        const a = plate.getBoundingClientRect();
+        const b = home.getBoundingClientRect();
+        const s = b.width / Math.max(1, a.width);
+        const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+        const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+        const rules = document.querySelectorAll('.mast-band .mast-rule');
+        gsap
+          .timeline({
+            onComplete: () => {
+              html.classList.remove('np-handoff');
+              gsap.set(rules, { clearProps: 'transform' });
+              unlock();
+            },
+          })
+          .to(root.querySelectorAll('.loader-kicker, .loader-edition, .loader-ghost'), { opacity: 0, y: -8, duration: 0.3, ease: 'power1.in' }, 0)
+          // the name is set into the masthead on a blank sheet first…
+          .to(plate, { x: dx, y: dy, scale: s, duration: 0.9, ease: 'expo.inOut' }, 0.05)
+          // …then the real nameplate takes over under it, and the page develops round it
+          .add(() => html.classList.remove('np-handoff'), 0.95)
+          .set(plate, { opacity: 0 }, 0.97)
+          .add(loaded, 0.95)
+          .to(root, { backgroundColor: 'rgba(0,0,0,0)', duration: 0.5, ease: 'power1.inOut' }, 0.95)
+          .fromTo(rules, { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, 0.95);
+      }
     };
 
     const ctx = gsap.context(() => {

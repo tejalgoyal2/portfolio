@@ -135,6 +135,7 @@ html.cursor-down .press-pen-icon { scale: 0.88; }
 .cursor-flick[data-ground="ink"] { stroke: var(--red-wet); }
 .cursor-flick[data-ground="red"] { stroke: var(--paper); }
 .cursor-flick path:first-child { stroke-dasharray: 1; }
+.cursor-flick .flick-line { stroke-dasharray: 1; stroke-dashoffset: 1; stroke-width: 2.2; }
 @media (prefers-reduced-motion: reduce) {
   .press-cursor-mark[data-state] .cursor-mark { animation: none; }
 }
@@ -162,6 +163,17 @@ html.cursor-down .press-pen-icon { scale: 0.88; }
 }
 .press-impact--red {
   color: var(--red);
+}
+/* the small comic tag a cube twist makes: a word on a jagged red burst */
+.press-impact--sm {
+  padding: 0.55em 0.75em 0.5em;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--paper);
+  background: var(--red);
+  text-shadow: none;
+  clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 32%, 100% 38%, 80% 54%, 96% 76%, 70% 72%, 64% 100%, 50% 80%, 34% 100%, 30% 72%, 4% 78%, 20% 54%, 0 36%, 24% 32%, 16% 8%, 40% 22%);
+  animation-duration: 620ms;
 }
 @keyframes impact-pop {
   0% {
@@ -197,19 +209,13 @@ html.cursor-down .press-pen-icon { scale: 0.88; }
   display: inline-block;
   white-space: nowrap;
 }
-.redacted-bar {
+.redacted-panel {
   position: absolute;
-  inset: -0.05em -0.14em;
-  background: var(--ink);
-  clip-path: inset(0 0 0 0);
-  will-change: clip-path;
+  top: -2px;
+  left: -3px;
+  border-radius: 2px;
 }
-.redacted-bar--red {
-  background: var(--red);
-}
-.redacted.is-revealed {
-  cursor: text;
-}
+.redacted.is-revealed { cursor: text; }
 
 /* ── Stamps ──────────────────────────────────────────────────────────────── */
 .press-stamp {
@@ -387,10 +393,40 @@ button.press-stamp {
   overflow: hidden;
   pointer-events: none;
 }
-.ridge svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ridge-land { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ridge-far { fill: color-mix(in oklch, var(--ground) 16%, transparent); }
 .ridge-near { fill: var(--ground); }
 .ridge .press-car { z-index: 2; }
+.ridge-boulder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  overflow: visible;
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  will-change: transform;
+}
+.ridge-crack { fill: none; stroke-width: 1.1; stroke-linecap: round; }
+.ridge-yikes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 18px;
+  margin-left: -9px;
+  font-family: var(--font-impact);
+  font-size: 1.15rem;
+  line-height: 1;
+  text-align: center;
+  color: var(--red);
+  opacity: 0;
+  scale: 0.4;
+  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-stamp);
+}
+.ridge-yikes.is-on { opacity: 1; scale: 1; }
 
 /* ── The wire — newsroom crawl under the nameplate ────────────────────────────
  * A slim ink band that runs a slow dispatch crawl between Hero and About.
@@ -537,19 +573,23 @@ button.press-stamp {
 }
 
 .rh-track { position: relative; flex: 1; display: flex; }
-/* the cell: press red, sitting on the rule */
-.rh-pill {
+/* the editor's loop round the current section */
+.rh-loops {
   position: absolute;
-  top: 7px;
-  bottom: 2px;
-  left: 0;
-  width: 0;
-  border-radius: 2px 2px 0 0;
-  background: var(--red);
-  transform-origin: 50% 100%;
-  will-change: transform;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-.running-head[data-ground="red"] .rh-pill { background: var(--paper); }
+.rh-loops path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.running-head[data-ground="ink"] .rh-loops { stroke: var(--red-wet); }
+.running-head[data-ground="red"] .rh-loops { stroke: var(--paper); }
 .rh-list {
   position: relative;
   display: flex;
@@ -576,8 +616,9 @@ button.press-stamp {
 }
 .rh-list button:hover { opacity: 1; }
 .rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: -2px; }
-.rh-list .is-current button { opacity: 1; color: var(--paper); }
-.running-head[data-ground="red"] .rh-list .is-current button { color: var(--red-stock); }
+.rh-list .is-current button { opacity: 1; color: var(--red); }
+.running-head[data-ground="ink"] .rh-list .is-current button { color: var(--red-wet); }
+.running-head[data-ground="red"] .rh-list .is-current button { color: var(--paper); }
 
 /* the rule along the foot, and the pen drawing it */
 .rh-line {
@@ -865,7 +906,7 @@ button.press-stamp {
   .rh-here,
   .rh-toggle { display: inline-flex; }
   .rh-toggle { white-space: nowrap; margin-left: auto; }
-  .rh-pill { display: none; }
+  .rh-loops { display: none; }
   .rh-track { position: static; flex: 0; }
   .rh-line-pen { display: none; }
   .rh-cells { margin-left: 0; }
@@ -920,38 +961,61 @@ button.press-stamp {
   opacity: calc(var(--ao, 1) * var(--do, 1));
 }
 
-/* the section banners (arrive.js): a huge outlined name behind each header —
-   every section is its own stacking context so the banner sits on its stock */
+/* the section banners (src/life/banners.js): the name in huge wood type, each
+   letter pegged to a sagging string and swinging from its peg; touched letters
+   soak up ink (--ink) and dry back to an outline. Every section is its own
+   stacking context so the banner sits on its own stock. */
 [data-section] { isolation: isolate; }
 .folio {
+  --folio-ink: oklch(20% 0.018 60);
+  --folio-line: 0.2;
+  --folio-wash: 0.11;
   position: absolute;
-  top: clamp(0.5rem, 3vw, 2.5rem);
-  left: 0;
+  top: clamp(1.2rem, 3.6vw, 3rem);
+  left: 2vw;
   z-index: -1;
+  display: flex;
   font-family: var(--font-impact);
   font-size: clamp(7rem, 22vw, 22rem);
   line-height: 0.85;
   letter-spacing: 0.01em;
   text-transform: uppercase;
   white-space: nowrap;
-  --folio-ink: oklch(20% 0.018 60);
-  --folio-line: 0.17;
-  --folio-wash: 0.06;
-  --folio-reg: var(--red);
   pointer-events: none;
   user-select: none;
 }
-.folio > span { display: block; }
-.folio-line {
-  color: transparent;
+.folio-string {
+  position: absolute;
+  top: -0.05em;
+  left: -0.2em;
+  width: calc(100% + 0.4em);
+  height: 0.16em;
+  overflow: visible;
+  fill: none;
+  stroke: color-mix(in oklch, var(--folio-ink) 30%, transparent);
+  stroke-width: 1.2;
+}
+.folio-sort {
+  --ink: 0;
+  position: relative;
+  display: inline-block;
+  translate: 0 var(--sag, 0);
+  transform-origin: 50% -0.04em;
+  color: color-mix(in oklch, var(--folio-ink) calc(var(--ink) * var(--folio-wash) * 100%), transparent);
   -webkit-text-stroke: 1.5px color-mix(in oklch, var(--folio-ink) calc(var(--folio-line) * 100%), transparent);
+  will-change: rotate;
 }
-.folio-fill,
-.folio-reg { position: absolute; inset: 0; }
-.folio-fill { color: color-mix(in oklch, var(--folio-ink) calc(var(--folio-wash) * 100%), transparent); }
-.folio-reg {
-  color: transparent;
-  -webkit-text-stroke: 1px color-mix(in oklch, var(--folio-reg) 26%, transparent);
+/* the peg: a little clothes-peg over the string */
+.folio-sort::before {
+  content: "";
+  position: absolute;
+  top: -0.06em;
+  left: 50%;
+  width: 0.024em;
+  height: 0.075em;
+  translate: -50% 0;
+  border-radius: 0.008em;
+  background: color-mix(in oklch, var(--red) 45%, transparent);
 }
-[data-ground="ink"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.13; --folio-wash: 0.045; --folio-reg: #fe433e; }
-[data-ground="red"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.2; --folio-wash: 0.07; --folio-reg: oklch(95.5% 0.014 85); }
+[data-ground="ink"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.15; --folio-wash: 0.12; }
+[data-ground="red"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.22; --folio-wash: 0.16; }

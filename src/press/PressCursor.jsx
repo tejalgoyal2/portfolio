@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { bus } from '../life/bus';
-import { groundAt } from '../life/ground';
-import { nib, onNib } from '../life/nib';
+import { nib, onNib, NIBS, LOANERS } from '../life/nib';
+import { fireImpact } from './PressImpacts';
+
+// what a face says when it turns
+const TWIST_WORDS = ['KRK!', 'KLAK!', 'ZZIP!', 'TWIST!', 'KLIK!', 'SHK!', 'VRRT!'];
+let lastWord = -1;
 
 /**
  * The cursor is your pen: one of the site's pointy pencil icons, its tip
@@ -12,17 +15,45 @@ import { nib, onNib } from '../life/nib';
  *
  * - Over links and buttons it lifts a touch (bigger, more upright) — no ring.
  * - Elements can ask for a small mark beside the tip with
- *   data-cursor="twist | wheel | nib"; the WebGL stage asks for "twist" over
- *   the cube (bus.cursorHint), and dragging the cube shows "orbit".
+ *   data-cursor="wheel | nib"; dragging the cube shows "orbit".
+ * - Some things hand you a fitting pen while you're over them
+ *   (data-pen="pen-nib" on the blog cards, a set square on the case files…).
  * - A click that twists a face draws a quarter-turn arrow round the point,
  *   the way the face went (life:twist).
  *
- * It's inked for the stock under it — ink on cream, cream on ink and red —
- * easing between them. Fine pointers only; on touch the OS cursor stays.
+ * It's inked for whatever is actually under it — the first solid background
+ * up the tree, a paper card on the ink spread included — easing between ink
+ * and cream. Fine pointers only; on touch the OS cursor stays.
  */
-const STATES = ['twist', 'wheel', 'nib', 'orbit'];
+const STATES = ['wheel', 'nib', 'orbit'];
 const SIZE = 40; // css px
-const INK_FOR = { paper: 'var(--ink)', ink: 'var(--paper)', red: 'var(--paper)' };
+
+// what colour is really under the pointer: the first solid background up the tree
+let probe = null;
+const lumOf = (css) => {
+  probe ||= document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = 'rgba(0,0,0,0)';
+  probe.fillStyle = css;
+  probe.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+  return a < 128 ? -1 : (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+};
+let cache = new WeakMap();
+setInterval(() => (cache = new WeakMap()), 1500); // grounds re-ink (the running head), so forget now and then
+function darkUnder(el) {
+  for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    let l = cache.get(n);
+    if (l === undefined) {
+      l = lumOf(getComputedStyle(n).backgroundColor);
+      cache.set(n, l);
+    }
+    if (l >= 0) return l < 0.45;
+    const g = n.dataset?.ground;
+    if (g) return g !== 'paper';
+  }
+  return false;
+}
 
 export default function PressCursor() {
   const penRef = useRef(null);
@@ -38,17 +69,30 @@ export default function PressCursor() {
     if (!fine) return;
     let cancelled = false;
     let icons = null;
+    let shown = '';
     const paint = (n, animate = true) => {
       setSystem(n.name === 'system');
       const el = iconRef.current;
-      if (!icons || !el || !n.tip) return;
+      if (!icons || !el || !n.tip || shown === n.name) return;
+      shown = n.name;
       const k = SIZE / 24;
       el.innerHTML = icons[n.name] || '';
       el.style.setProperty('--rot', `${n.rot}deg`);
       el.style.setProperty('--tx', `${(-n.tip[0] * k).toFixed(2)}px`);
       el.style.setProperty('--ty', `${(-n.tip[1] * k).toFixed(2)}px`);
-      if (animate) gsap.fromTo(leanRef.current, { scale: 0.3 }, { scale: 1, duration: 0.55, ease: 'back.out(2.2)' });
+      if (animate) gsap.fromTo(leanRef.current, { scale: 0.3 }, { scale: 1, duration: 0.55, ease: 'back.out(2.2)', overwrite: true });
     };
+    // the pen a thing hands you while you're over it, else your own
+    let over = null;
+    const onOver = (e) => {
+      const want = e.target.closest?.('[data-pen]')?.dataset.pen || null;
+      if (want === over) return;
+      over = want;
+      const mine = nib();
+      if (mine.name === 'system') return;
+      paint(want ? [...NIBS, ...LOANERS].find((x) => x.name === want) || mine : mine);
+    };
+    window.addEventListener('pointerover', onOver);
     import('../life/icons').then(({ ICON }) => {
       if (cancelled) return;
       icons = ICON;
@@ -58,6 +102,7 @@ export default function PressCursor() {
     return () => {
       cancelled = true;
       off();
+      window.removeEventListener('pointerover', onOver);
     };
   }, [fine]);
 
@@ -75,16 +120,24 @@ export default function PressCursor() {
 
     let hovered = null; // data-cursor of the element under the pointer
     let lastX = 0;
-    let ground = '';
+    let dark = null;
     let seen = false;
+    let afterMenu = false;
     const move = (e) => {
       const x = e.clientX;
       const y = e.clientY;
       // the tip is the pointer: no lag at all
       pen.style.transform = `translate3d(${x}px,${y}px,0)`;
-      if (!seen) {
+      if (!seen || afterMenu) {
         seen = true;
         pen.classList.add('is-on');
+      }
+      // back from a context menu: the browser forgets cursor:none until the
+      // style changes, so take it off and put it back
+      if (afterMenu) {
+        afterMenu = false;
+        html.classList.remove('cursor-hidden');
+        requestAnimationFrame(() => html.classList.add('cursor-hidden'));
       }
       markX(x + 22);
       markY(y + 20);
@@ -94,19 +147,23 @@ export default function PressCursor() {
       const vx = x - lastX;
       lastX = x;
       lean(Math.max(-16, Math.min(16, vx * 0.9)));
-      const g = groundAt(y);
-      if (g !== ground) {
-        ground = g;
-        pen.style.setProperty('--pen-ink', INK_FOR[g] || INK_FOR.paper);
-        mark.dataset.ground = g;
+      const d = darkUnder(e.target);
+      if (d !== dark) {
+        dark = d;
+        pen.style.setProperty('--pen-ink', d ? 'var(--paper)' : 'var(--ink)');
+        mark.dataset.ground = d ? 'ink' : 'paper';
       }
     };
     const leave = () => pen.classList.remove('is-on');
+    const onMenu = () => {
+      afterMenu = true;
+      pen.classList.remove('is-on');
+    };
     const enter = () => seen && pen.classList.add('is-on');
 
     let shown = null;
     const sync = () => {
-      const want = html.classList.contains('is-orbiting') ? 'orbit' : bus.cursorHint || hovered;
+      const want = html.classList.contains('is-orbiting') ? 'orbit' : hovered;
       const state = STATES.includes(want) ? want : null;
       if (state === shown) return;
       shown = state;
@@ -120,7 +177,7 @@ export default function PressCursor() {
       const el = flickRef.current;
       if (!el) return;
       const cw = e.detail.turns !== 3;
-      el.dataset.ground = groundAt(e.detail.y);
+      el.dataset.ground = darkUnder(document.elementFromPoint(e.detail.x, e.detail.y)) ? 'ink' : 'paper';
       const [arc, head] = el.querySelectorAll('path');
       gsap.killTweensOf([el, arc, head]);
       gsap.set(el, { x: e.detail.x, y: e.detail.y, scaleX: cw ? 1 : -1, opacity: 1, rotate: -20 });
@@ -131,6 +188,14 @@ export default function PressCursor() {
         .to(el, { rotate: 10, duration: 0.5, ease: 'power2.inOut' }, 0)
         .to(head, { opacity: 1, scale: 1, duration: 0.18, ease: 'back.out(3)' }, 0.36)
         .to(el, { opacity: 0, duration: 0.35, ease: 'power1.in' }, 0.75);
+      // the comic bit: speed lines flick off the arrow, and the face says something
+      const lines = el.querySelectorAll('.flick-line');
+      gsap.fromTo(lines, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: -1, duration: 0.5, ease: 'power2.out', stagger: 0.04, delay: 0.3 });
+      let w = (Math.random() * TWIST_WORDS.length) | 0;
+      if (w === lastWord) w = (w + 1) % TWIST_WORDS.length;
+      lastWord = w;
+      const side = cw ? 1 : -1;
+      setTimeout(() => fireImpact(TWIST_WORDS[w], e.detail.x + side * 46, e.detail.y - 40, 'red', 'sm'), 260);
     };
 
     const down = () => html.classList.add('cursor-down');
@@ -142,6 +207,7 @@ export default function PressCursor() {
     document.addEventListener('pointerleave', leave);
     document.addEventListener('pointerenter', enter);
     window.addEventListener('life:twist', onTwist);
+    window.addEventListener('contextmenu', onMenu);
     gsap.ticker.add(sync);
 
     return () => {
@@ -152,6 +218,7 @@ export default function PressCursor() {
       document.removeEventListener('pointerleave', leave);
       document.removeEventListener('pointerenter', enter);
       window.removeEventListener('life:twist', onTwist);
+      window.removeEventListener('contextmenu', onMenu);
       gsap.ticker.remove(sync);
     };
   }, [fine, system]);
@@ -166,11 +233,6 @@ export default function PressCursor() {
         </div>
       </div>
       <div ref={markRef} className="press-cursor-mark">
-        {/* twist — a three-quarter turn with an arrowhead, for the cube */}
-        <svg className="cursor-mark cursor-mark--twist" viewBox="0 0 56 56">
-          <path d="M28 8a20 20 0 1 1-20 20" />
-          <path d="M3 22.5 8 28.6l6.2-5" />
-        </svg>
         {/* orbit — two arcs round a centre, while you turn the cube */}
         <svg className="cursor-mark cursor-mark--orbit" viewBox="0 0 56 56">
           <ellipse cx="28" cy="28" rx="21" ry="9" />
@@ -194,6 +256,9 @@ export default function PressCursor() {
       <svg ref={flickRef} className="cursor-flick" viewBox="-40 -40 80 80">
         <path d="M-21.2 -21.2A30 30 0 0 1 21.2 -21.2" pathLength="1" />
         <path d="M18.9 -29.9 21.2 -21.2 12.5 -23.5" />
+        <path className="flick-line" d="M27 -27 34 -33" pathLength="1" />
+        <path className="flick-line" d="M30 -18 39 -19" pathLength="1" />
+        <path className="flick-line" d="M22 -35 24 -43" pathLength="1" />
       </svg>
     </div>
   );
