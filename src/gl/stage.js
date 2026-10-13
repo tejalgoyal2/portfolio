@@ -119,11 +119,13 @@ export async function startStage(canvas, hitBtn, noteHost) {
   director.instant = prefs.reduced;
 
   let shownOn = true;
+  let solvedOnce = false;
   const frame = (time, deltaMs) => {
     if (document.hidden) return;
     const dt = Math.min(deltaMs / 1000, 0.1);
     if (director.held && Math.abs(window.scrollY - heldAt) > 24) director.letGo();
-    director.setTarget(targetAt(window.scrollY, spans));
+    // once it's been solved it stays solved: scrolling back up doesn't scramble it again
+    director.setTarget(solvedOnce ? director.total : targetAt(window.scrollY, spans));
     const before = director.k;
     const done = director.tick(dt);
     // switched off in Page settings: the solve keeps time, nothing is drawn
@@ -142,8 +144,9 @@ export async function startStage(canvas, hitBtn, noteHost) {
     if (done.some((c) => c.kind === 'solve')) {
       if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
       if (before < director.total && director.k === director.total) {
+        solvedOnce = true;
         presence.celebrate();
-        notes.show('solved', presence.state, { moves: director.total });
+        notes.show('solved', presence.state);
       }
     }
     view.update();

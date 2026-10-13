@@ -1,7 +1,8 @@
 // Where the cube is and how it behaves (docs/REVAMP.md §2, docs/cube/CUBE.md):
-// - big in the hero's slot; as the hero scrolls away it travels down to a
-//   margin corner, sized to the margin, choosing a corner with no text in it
-//   and tucking away when a full-width band (the wire, the filmstrip) passes;
+// - big in the hero's slot; as the hero scrolls away it travels down to its
+//   one home in the margin (bottom right), sized to the margin, and slides out
+//   past the edge while a full-width band (the wire, the rows, the filmstrip)
+//   goes by;
 // - it never follows the cursor: it only turns slowly (~0.15 rad/s), slows
 //   down while the cursor is near so a face is easy to hit; a click twists the
 //   face under it (Shift for the other way); hold and drag to turn the whole
@@ -81,21 +82,17 @@ export function createPresence(view, hitBtn) {
     return s;
   }
 
-  let cornerIdx = 0;
-  function pickCorner(s) {
-    const r = s * 0.46;
-    const free = (i) => {
-      const c = corner(i, s);
-      return overlap(c.x, c.y, r) < 1;
-    };
-    if (cornerIdx >= 0 && free(cornerIdx)) return cornerIdx;
-    for (const i of [0, 1, 2, 3]) if (free(i)) return i;
-    return -1;
-  }
+  // one home in the margin, bottom right. When something full-width passes
+  // through it (the wire, the work rows, the filmstrip) the cube slides out
+  // past the edge and back — never hopping corner to corner. Decided with a
+  // little patience either way, so a band skimming past doesn't flick it.
+  let blockedFor = 0;
+  let clearFor = 0;
+  let blocked = false;
 
   const dockX = new Spring(0, 0.55, 0.86);
   const dockY = new Spring(0, 0.55, 0.86);
-  const tuck = new Spring(1, 0.45, 1);
+  const away = new Spring(0, 0.75, 1);
   const turnRate = new Spring(1, 0.6, 1);
   const edge = new Spring(0, 0.5, 1);
   const shown = new Spring(0, 0.7, 1);
@@ -146,12 +143,18 @@ export function createPresence(view, hitBtn) {
 
     // ---- home: the hero slot, travelling to a docked margin corner
     const ds = dockSize();
-    if (frame % 3 === 1 || first) {
-      const c = pickCorner(ds);
-      if (c >= 0) cornerIdx = c;
-      tuck.target = c >= 0 ? 1 : 0;
+    const cp = corner(0, ds);
+    if (frame % 3 === 1 || first) blocked = overlap(cp.x, cp.y, ds * 0.46) >= 1;
+    if (blocked) {
+      blockedFor += dt;
+      clearFor = 0;
+    } else {
+      clearFor += dt;
+      blockedFor = 0;
     }
-    const cp = corner(cornerIdx, ds);
+    if (first) away.target = blocked ? 1 : 0;
+    else if (blockedFor > 0.2) away.target = 1;
+    else if (clearFor > 0.45) away.target = 0;
     dockX.target = cp.x;
     dockY.target = cp.y;
     let sx = cp.x;
@@ -167,16 +170,18 @@ export function createPresence(view, hitBtn) {
     if (first || reduced) {
       dockX.snap(dockX.target);
       dockY.snap(dockY.target);
-      tuck.snap(tuck.target);
+      away.snap(away.target);
     } else {
       dockX.step(dt);
       dockY.step(dt);
-      tuck.step(dt);
+      away.step(dt);
     }
 
-    let size = lerp(ss, ds * clamp(tuck.value, 0, 1.2), t);
+    let size = lerp(ss, ds, t);
     const float = reduced ? 0 : Math.sin((performance.now() / 1000) * 0.9) * 3;
-    let cx = lerp(sx, dockX.value, t);
+    // slid out past the right edge while something wide goes by
+    const out = clamp(away.value, 0, 1.1) * (W - dockX.value + ds * 0.6);
+    let cx = lerp(sx, dockX.value + out, t);
     let cy = lerp(sy, dockY.value, t) + float * (1 - t * 0.6);
     // the finale: out of the margin and into its spot in Let's talk
     if (finale) {
@@ -193,8 +198,6 @@ export function createPresence(view, hitBtn) {
     // ---- near the cursor: slow the turn so a face is easy to hit
     const dc = pointer.active ? Math.hypot(pointer.x - cx, pointer.y - cy) - rad * 0.7 : Infinity;
     const near = prefs.fine && dc < NEAR;
-    const face = pointer.active && prefs.fine && rad > 8 ? view.pick(pointer.x, pointer.y) : null;
-    bus.cursorHint = face ? 'twist' : null;
     turnRate.target = reduced || dragging ? 0 : near ? 0.15 : 1;
     // a released drag glides a moment, then stops
     if (!dragging && (Math.abs(glideX) > 1 || Math.abs(glideY) > 1)) {

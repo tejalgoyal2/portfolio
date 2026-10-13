@@ -4,6 +4,8 @@
 // Rules (docs/cube/CUBE.md):
 // - scroll sets a target solve-move count; moves play one at a time, never skipped — a long queue
 //   (a fast scroll) speeds them up only a little, so the cube always takes its time;
+// - a jump (Home/End, a fling, a menu link) more than `catchUp` moves away applies the moves in
+//   between at once, in order, and only animates the last few — it never spins for half a minute;
 // - scrolling back plays inverse moves;
 // - visitor clicks twist a face (either way) and go on a stack; a click mid-twist waits, never dropped;
 // - the twists stay put while the visitor plays; once they let go (the page scrolls) the stack is
@@ -20,6 +22,7 @@ export class Director {
    * opts.baseDuration  seconds for one quarter turn when nothing is queued
    * opts.minDuration   fastest a queued move may play
    * opts.flushDuration seconds per move when clearing the visitor's twists before a solve move
+   * opts.catchUp       a gap of more moves than this is closed instantly down to `catchUp`
    * opts.instant       reduced motion: apply moves instantly
    */
   constructor(scramble, solve, opts = {}) {
@@ -38,6 +41,7 @@ export class Director {
     this.base = opts.baseDuration ?? 0.5;
     this.min = opts.minDuration ?? 0.26;
     this.flushDur = opts.flushDuration ?? 0.22;
+    this.catchUp = opts.catchUp ?? 4;
   }
 
   get total() {
@@ -117,9 +121,11 @@ export class Director {
     if (this.target !== this.k) {
       const top = this.visitor[this.visitor.length - 1];
       if (top) return { move: invertMove(top), kind: 'flush', duration: this.instant ? 0 : this.flushDur, elapsed: 0 };
-      if (this.target > this.k)
-        return { move: this.solve[this.k], kind: 'solve', duration: this.duration(this.base), elapsed: 0 };
-      return { move: invertMove(this.solve[this.k - 1]), kind: 'unsolve', duration: this.duration(this.base), elapsed: 0 };
+      // far behind: close the gap at once, in order, keeping the last few to watch
+      const jump = Math.abs(this.target - this.k) > this.catchUp;
+      const dur = jump ? 0 : this.duration(this.base);
+      if (this.target > this.k) return { move: this.solve[this.k], kind: 'solve', duration: dur, elapsed: 0 };
+      return { move: invertMove(this.solve[this.k - 1]), kind: 'unsolve', duration: dur, elapsed: 0 };
     }
 
     const top = this.visitor[this.visitor.length - 1];

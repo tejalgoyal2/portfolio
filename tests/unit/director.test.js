@@ -27,8 +27,8 @@ describe('Director', () => {
     expect(d.k).toBe(1);
   });
 
-  it('fast scroll queues every move and plays them a little faster, never skipping a state', () => {
-    const d = new Director(SCRAMBLE, SOLVE);
+  it('a short run plays every move, a little faster, never skipping a state', () => {
+    const d = new Director(SCRAMBLE, SOLVE, { catchUp: 99 });
     d.setTarget(33);
     const seen = [];
     let elapsed = 0;
@@ -43,6 +43,18 @@ describe('Director', () => {
     seen.forEach((s, i) => expect(s.equals(expected(i + 1)), `state ${i + 1}`).toBe(true));
     expect(elapsed).toBeLessThan(33 * 0.5); // faster than one by one…
     expect(elapsed).toBeGreaterThan(33 * 0.26 - 0.1); // …but never a blur
+  });
+
+  it('a jump applies the moves in between at once, in order, and animates the last few', () => {
+    const d = new Director(SCRAMBLE, SOLVE);
+    d.setTarget(33);
+    const first = d.tick(1 / 60);
+    expect(first.length).toBe(29);
+    first.forEach((c, i) => expect(c.move).toEqual(SOLVE[i]));
+    expect(d.active?.kind).toBe('solve');
+    run(d, 3);
+    expect(d.k).toBe(33);
+    expect(d.state.equals(expected(33))).toBe(true);
   });
 
   it('scrolling back plays the inverse moves', () => {

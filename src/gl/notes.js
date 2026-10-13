@@ -4,9 +4,9 @@ import { groundAt } from '../life/ground';
 /**
  * The editor's notes on the cube: when the solve reaches a milestone, a pen
  * note is scribbled beside it — "two layers done" with a quick arrow; and when
- * it's solved, it's yours: "you solved it!", how many moves it took and how
- * little you had to do, and the cube throws off a burst of its own stickers in
- * all six colours. The arrow draws itself on like a pen stroke; the words
+ * it's solved, it's yours: "you solved it!" with a little crown scribbled
+ * over it, and the cube throws off a burst of its own stickers in all six
+ * colours. The arrow draws itself on like a pen stroke; the words
  * write in letter by letter; the note fades after a while. It sits on the side
  * of the cube with more room, and is inked for the ground it lands on.
  */
@@ -16,13 +16,15 @@ const NOTES = {
 };
 const STICKERS = ['#f3eee4', '#ffcf1f', '#12a153', '#1b5fd1', '#de2a2b', '#ff7b16'];
 
+// a crown, scribbled in one go, with a little flourish under it
+const CROWN = 'M8 36 L4 10 L22 24 L40 4 L58 24 L76 10 L72 36 Z M12 42 C 30 38, 50 38, 70 42';
 const ARROW = 'M6 34 C 30 30, 52 22, 70 8 M58 7 L71 7 L68 20';
 
 export function createNotes(host) {
   let el = null;
   let timer = 0;
 
-  function show(kind, cube, extra = {}) {
+  function show(kind, cube) {
     const n = NOTES[kind];
     if (!n || !host) return;
     clearTimeout(timer);
@@ -37,8 +39,7 @@ export function createNotes(host) {
       .map((ch, i) => `<span style="--i:${i}">${ch === ' ' ? '&nbsp;' : ch}</span>`)
       .join('');
     if (n.mark === 'stickers') {
-      const moves = extra.moves ? `${extra.moves} moves. all you did was scroll.` : 'all you did was scroll.';
-      el.innerHTML = `<p class="cube-note-text">${letters}</p><p class="cube-note-sub">${moves}</p>`;
+      el.innerHTML = `<svg class="cube-note-crown" viewBox="0 0 80 44"><path d="${CROWN}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
     } else {
       el.innerHTML = `<svg class="cube-note-arrow" viewBox="0 0 76 40"><path d="${ARROW}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
     }
