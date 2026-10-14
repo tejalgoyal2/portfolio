@@ -2,16 +2,18 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
-import { typeOut, settle, handwrite } from '../life/writeIn';
+import { handwrite } from '../life/writeIn';
+import { startMarkup } from '../life/markup';
 import { startCar } from '../life/car';
 import { afterPrint } from '../life/idle';
 
 /**
  * The Feature Story — a broadsheet profile in three columns: a drop-cap lead
  * with a red pull-quote, the continued prose, and a stats/marginalia rail.
- * Each column gets its words a different way (src/life/writeIn.js): the lead is
- * typed out, the body arrives jumbled and shakes into place, and the margin
- * notes are handwritten by a pencil. The rail's rows are pasted in, the
+ * The prose inks in line by line as you read, and then the editor goes over
+ * it in red pen (src/life/markup.js): a phrase circled here, one underlined
+ * there, a note in the margin — hover a marked phrase and they go over it
+ * again. The margin notes are handwritten by a pencil. The rail's rows are pasted in, the
  * pull-quote rides off-register and snaps home, the hard numbers declassify on
  * scroll — and a little car drives the rule under the headline as you go.
  */
@@ -57,8 +59,7 @@ export default function About() {
           if (cancelled) return;
           const grid = root.querySelector('.about-grid');
           stops = [
-            typeOut(root.querySelector('.about-lead')),
-            ...[...root.querySelectorAll('.about-col--body p')].map(settle),
+            startMarkup(grid),
             handwrite(root.querySelector('.about-margin'), ICON.pencil),
             // the car on the rule: across as the rule climbs the screen
             startCar(grid, {
@@ -97,15 +98,18 @@ export default function About() {
         <div className="about-grid">
           {/* Column 1 — lead + pull-quote */}
           <div className="about-col about-col--lead" data-depart="part-l">
-            <p className="about-lead">
+            <p className="about-lead" data-ink="block">
               I started in electronics engineering, detoured through a
-              federated-learning lab where I scaled experiments from 50 to a
-              million simulated clients, spent a winter on a cybersecurity desk
+              federated-learning lab where I scaled experiments from{' '}
+              <span data-mark="circle" data-mark-id="scale" data-note="!!">50 to a million</span> simulated clients, spent a winter on a cybersecurity desk
               hunting shadow AI and chasing a malicious binary to ground — and now
               I build and modernize the financial apps BCI&rsquo;s investment
               teams depend on: React/Azure rebuilds, platform tooling, AI
-              plumbing woven in. The thread through all of it: break things to
-              understand them, then build the better version.
+              plumbing woven in. The thread through all of it:{' '}
+              <span data-mark="underline" data-mark-id="thread" data-note="the whole job">
+                break things to understand them
+              </span>
+              , then build the better version.
             </p>
 
             <blockquote className="about-pq" data-arrive="pin">
@@ -116,22 +120,32 @@ export default function About() {
 
           {/* Column 2 — continued */}
           <div className="about-col about-col--body" data-depart="lift">
-            <p>
-              The lab taught me that a result you can&rsquo;t reproduce at scale
-              isn&rsquo;t a result. So I kept rebuilding the harness until a
+            <p data-ink>
+              The lab taught me that{' '}
+              <span data-mark="underline" data-mark-id="repro" data-note="rule #1">
+                a result you can&rsquo;t reproduce at scale isn&rsquo;t a result
+              </span>
+              . So I kept rebuilding the harness until a
               million clients behaved like fifty — and the bugs that fell out on
               the way were the interesting part.
             </p>
-            <p>
-              The security desk taught me the opposite reflex: assume the thing is
-              already compromised, then go looking. I learned to read a binary the
+            <p data-ink>
+              The security desk taught me the opposite reflex: assume the thing is{' '}
+              <span data-mark="circle" data-mark-id="pwned" data-note="always.">
+                already compromised
+              </span>
+              , then go looking. I learned to read a binary the
               way a good editor reads a draft — suspicious of every line that looks
               too clean.
             </p>
-            <p>
+            <p data-ink>
               Those two instincts run together now. An MCP server is a door
               between an AI agent and a company&rsquo;s real systems. I build the
-              door — then I spend just as long trying to kick it in.
+              door — then I spend just as long trying to{' '}
+              <span data-mark="scribble" data-mark-id="kick" data-note="fun part">
+                kick it in
+              </span>
+              .
             </p>
           </div>
 

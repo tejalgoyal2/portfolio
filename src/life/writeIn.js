@@ -1,116 +1,18 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
 import { prefs } from './prefs';
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Three ways the Profile gets its words onto the page, each played once as
- * the text comes up — and each finished before you'd be reading that line. The
- * words never change place: everything here is opacity, a clip or a transform
- * on letters that are already laid out. Reduced motion: the text is printed.
+ * The Profile's margin notes are written out by a pencil, one after the other
+ * in a single unbroken run of the pen — played once as they come up, and
+ * finished before you'd be reading them. The words never change place: it's a
+ * clip. Reduced motion: the notes are simply there.
  *
- *   typeOut(p)    the lead is typed: word by word behind a red caret, with a
- *                 beat at the commas and stops (the drop cap is struck first)
- *   settle(p)     the body arrives jumbled — every letter small, tipped and
- *                 scattered — and shakes itself into place, fast then easing
- *   handwrite(ul) the margin notes are written out by a pencil, one after the
- *                 other in a single unbroken run of the pen
+ *   handwrite(ul)
  */
 const once = (el, start, fn) => ScrollTrigger.create({ trigger: el, start, once: true, onEnter: fn });
-
-export function typeOut(p) {
-  if (prefs.reduced) return () => {};
-  const text = p.textContent;
-  const original = p.innerHTML;
-  // the first letter stays a bare text node so ::first-letter still makes the drop cap
-  const [, first, rest] = text.match(/^(\s*\S)([\s\S]*)$/) || [null, '', text];
-  p.textContent = first;
-  const words = [];
-  for (const part of rest.split(/(\s+)/)) {
-    if (!part) continue;
-    if (/^\s+$/.test(part)) {
-      p.appendChild(document.createTextNode(part));
-      continue;
-    }
-    const w = document.createElement('span');
-    w.className = 'tw';
-    w.textContent = part;
-    p.appendChild(w);
-    words.push(w);
-  }
-  const caret = document.createElement('span');
-  caret.className = 'tw-caret';
-  caret.setAttribute('aria-hidden', 'true');
-  p.appendChild(caret);
-  p.classList.add('is-typing');
-  // measured from boxes, not offsets: inline offsets go wrong round the floated drop cap
-  const at = (w) => {
-    const o = p.getBoundingClientRect();
-    const r = w.getBoundingClientRect();
-    caret.style.transform = `translate(${(r.right - o.left + 2).toFixed(1)}px, ${(r.top - o.top).toFixed(1)}px)`;
-    caret.style.height = `${r.height.toFixed(1)}px`;
-  };
-  at(words[0]);
-
-  let timer = 0;
-  const st = once(p, 'top 82%', () => {
-    let i = 0;
-    const next = () => {
-      const w = words[i++];
-      if (!w) {
-        caret.classList.add('is-done');
-        return;
-      }
-      w.classList.add('is-in');
-      at(w);
-      const beat = /[,;:—]$/.test(w.textContent) ? 110 : /[.!?]$/.test(w.textContent) ? 200 : 0;
-      timer = setTimeout(next, 9 + Math.random() * 14 + beat * 0.7);
-    };
-    next();
-  });
-  return () => {
-    clearTimeout(timer);
-    st.kill();
-    p.innerHTML = original;
-    p.classList.remove('is-typing');
-  };
-}
-
-export function settle(p) {
-  if (prefs.reduced) return () => {};
-  const split = SplitText.create(p, { type: 'words,chars', charsClass: 'jc', aria: 'none' });
-  const chars = split.chars;
-  const rnd = gsap.utils.random;
-  gsap.set(chars, {
-    opacity: 0,
-    scale: () => rnd(0.25, 0.5),
-    x: () => rnd(-14, 14),
-    y: () => rnd(-12, 12),
-    rotation: () => rnd(-50, 50),
-  });
-  let tween = null;
-  const st = once(p, 'top 86%', () => {
-    tween = gsap.to(chars, {
-      opacity: 1,
-      scale: 1,
-      x: 0,
-      y: 0,
-      rotation: 0,
-      duration: 0.85,
-      ease: 'expo.out',
-      // in reading order, but not in lockstep: a little shuffle in the timing
-      stagger: { each: 0.0045, from: 'start' },
-      delay: 0.05,
-    });
-  });
-  return () => {
-    st.kill();
-    tween?.kill();
-    split.revert();
-  };
-}
 
 export function handwrite(list, penSvg) {
   if (prefs.reduced) return () => {};

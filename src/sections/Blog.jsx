@@ -53,7 +53,7 @@ function RedactedTitle({ title }) {
   return (
     <>
       {title.slice(0, idx)}
-      <Redacted trigger="hover" tone="ink" stamp={false}>
+      <Redacted trigger="hover" tone="ink">
         {word}
       </Redacted>
       {title.slice(idx + word.length)}
@@ -270,6 +270,7 @@ export default function Blog() {
               target="_blank"
               rel="noopener noreferrer"
               className="opdesk-card"
+              data-pen="pen-nib"
               draggable={false}
               onPointerMove={reduced ? undefined : onCardMove}
               onPointerLeave={reduced ? undefined : onCardLeave}

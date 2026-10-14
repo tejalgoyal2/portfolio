@@ -11,8 +11,11 @@ gsap.registerPlugin(ScrollTrigger);
  * Where the cream gives way to the ink spread, the ink rises as a mountain
  * range: a near ridge in solid ink that runs straight into Experience, and a
  * far one behind it, faint, that rises a little slower as you scroll past.
- * A little car drives over the near ridge — up the slopes, over the tops,
- * puffing exhaust — while the range crosses the screen.
+ * Pines stand in clumps along both. A little camper van (surfboard on the
+ * roof) drives over the near ridge as the range crosses the screen — and a
+ * boulder is rolling after it. It keeps its distance while the van keeps
+ * going, gains on it when the van slows, and when they're close a little "!"
+ * pops up over the van.
  *
  * The ridges are drawn for the real width (rounded peaks, eased valleys, from
  * a fixed seed so they're the same every visit). Reduced motion: the range is
@@ -45,13 +48,36 @@ function range(w, h, seed, top, bottom, step) {
   return { d, at };
 }
 
+/** Clumps of pines standing on a ridge, as one silhouette path. */
+function pines(w, at, seed, tall, every) {
+  let d = '';
+  for (let x = every * hash(seed) * 0.6; x < w; x += every * (0.7 + hash(seed + x) * 0.9)) {
+    const n = 2 + ((hash(seed + x * 1.7) * 3) | 0);
+    for (let k = 0; k < n; k++) {
+      const tx = x + k * tall * 0.42 + hash(seed + x + k) * 6;
+      const th = tall * (0.65 + hash(seed + tx * 0.3) * 0.55);
+      const base = at(tx) + 3;
+      const half = th * 0.26;
+      // three tiers of boughs and a stub of trunk
+      d += `M${(tx - 1).toFixed(1)} ${base}V${(base - th * 0.18).toFixed(1)}`;
+      for (let t = 0; t < 3; t++) {
+        const y0 = base - th * (0.12 + t * 0.27);
+        const hw = half * (1 - t * 0.24);
+        d += `M${(tx - hw).toFixed(1)} ${y0.toFixed(1)}L${tx.toFixed(1)} ${(y0 - th * 0.42).toFixed(1)}L${(tx + hw).toFixed(1)} ${y0.toFixed(1)}Z`;
+      }
+      d += `M${(tx - 1).toFixed(1)} ${base}h2V${(base - th * 0.2).toFixed(1)}h-2Z`;
+    }
+  }
+  return d;
+}
+
 export default function Ridge() {
   const ref = useRef(null);
 
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const svg = root.querySelector('svg');
+    const svg = root.querySelector('.ridge-land');
     const far = root.querySelector('.ridge-far');
     const near = root.querySelector('.ridge-near');
     let ground = (x) => x * 0;
@@ -65,8 +91,8 @@ export default function Ridge() {
       const step = Math.max(110, w / 9);
       const f = range(w, h, 11, 0.04, 0.42, step * 0.8);
       const n = range(w, h, 47, 0.3, 0.62, step);
-      far.setAttribute('d', f.d);
-      near.setAttribute('d', n.d);
+      far.setAttribute('d', f.d + pines(w, f.at, 3, 14, 210));
+      near.setAttribute('d', n.d + pines(w, n.at, 29, 30, 260));
       ground = n.at;
     };
     draw();
@@ -84,6 +110,7 @@ export default function Ridge() {
 
     const slope = (x) => Math.atan2(ground(x + 6) - ground(x - 6), 12);
     const stopCar = startCar(root, {
+      kind: 'van',
       scale: 1.1,
       pathAt: (s) => ({ x: s, y: ground(s) + 1.5, angle: slope(s) }),
       length: () => w,
@@ -96,19 +123,55 @@ export default function Ridge() {
       },
     });
 
+    // the boulder: rolls after the van along the same ground
+    const rock = root.querySelector('.ridge-boulder');
+    const yikes = root.querySelector('.ridge-yikes');
+    const car = stopCar.state;
+    const R = 15;
+    let bs = car.s - 140;
+    let bv = 0;
+    let roll = 0;
+    let face = 1;
+    const chase = (t, deltaMs) => {
+      const dt = Math.min(0.05, deltaMs / 1000);
+      if (Math.abs(car.v) > 8) face = car.v > 0 ? 1 : -1;
+      // it keeps its distance at speed, and gains when the van slows
+      const gap = 70 + Math.min(110, Math.abs(car.v) * 0.35);
+      const goal = car.s - face * gap;
+      if (prefs.reduced) bs = goal;
+      else {
+        bv += (4.5 * (goal - bs) - 3 * bv) * dt;
+        bs += bv * dt;
+      }
+      roll += (bv * dt) / R;
+      const bump = Math.abs(Math.sin(bs * 0.045)) * Math.min(1, Math.abs(bv) / 200) * 4;
+      const y = ground(bs) + 1.5 - R - bump;
+      rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;
+      const close = Math.abs(bs - car.s) < 105 && Math.abs(car.v) + Math.abs(bv) > 30;
+      yikes.classList.toggle('is-on', close);
+      yikes.style.transform = `translate3d(${car.x.toFixed(1)}px,${(car.y - 52).toFixed(1)}px,0)`;
+    };
+    gsap.ticker.add(chase);
+
     return () => {
       ro.disconnect();
       ctx.revert();
       stopCar();
+      gsap.ticker.remove(chase);
     };
   }, []);
 
   return (
     <div ref={ref} className="ridge" aria-hidden="true">
-      <svg viewBox={`0 0 1440 ${VB_H}`} preserveAspectRatio="none">
+      <svg className="ridge-land" viewBox={`0 0 1440 ${VB_H}`} preserveAspectRatio="none">
         <path className="ridge-far" d={`M0 ${VB_H}L0 60L360 20L720 70L1080 30L1440 64L1440 ${VB_H}Z`} />
         <path className="ridge-near" d={`M0 ${VB_H}L0 90L300 60L620 104L960 56L1260 98L1440 74L1440 ${VB_H}Z`} />
       </svg>
+      <svg className="ridge-boulder" viewBox="-16 -16 32 32" width="30" height="30">
+        <path d="M-14 2C-15 -7 -8 -14 1 -14C9 -14 15 -8 14 1C14 9 8 15 -1 14C-9 14 -14 9 -14 2Z" />
+        <path className="ridge-crack" d="M-6 -9 -2 -3 -7 2M4 -10 3 -4 9 0M-3 6 2 3 4 9" />
+      </svg>
+      <span className="ridge-yikes">!</span>
     </div>
   );
 }

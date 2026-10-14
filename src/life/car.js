@@ -14,10 +14,27 @@ import { prefs } from './prefs';
  *
  * Only runs while its host is on screen. Reduced motion: parked, no puffs.
  *
- *   startCar(host, { pathAt(s) → { x, y, angle }, length(), target() → s, scale })
+ *   startCar(host, { pathAt(s) → { x, y, angle }, length(), target() → s, scale, kind })
+ *   kind: 'sedan' (the little saloon) | 'van' (a camper with a surfboard on top)
+ *   Returns a stop function; stop.state is the live { s, v, face, x, y } for
+ *   anything that wants to follow the car (the boulder on the ridge).
  */
 const W = 64;
 const BASE = 27; // where the wheels touch the ground, in the drawing's units
+const WHEELS = `<g transform="translate(16 22)"><g class="car-spin"><circle r="5"/><path d="M-3.2 0H3.2M0 -3.2V3.2"/></g></g>
+  <g transform="translate(48 22)"><g class="car-spin"><circle r="5"/><path d="M-3.2 0H3.2M0 -3.2V3.2"/></g></g>`;
+export const VAN_SVG = `<svg class="car-svg" viewBox="0 0 64 30" width="64" height="30" aria-hidden="true">
+  <g class="car-body">
+    <path class="car-board" d="M11 3.4Q26 -0.6 41 3.4Q26 5.2 11 3.4Z"/>
+    <path class="car-pipe" d="M15 5V3.8M37 5V3.8"/>
+    <path class="car-shell" d="M4 22V9Q4 5 8 5H43Q48 5 51 9L57.5 15Q60 16 60 19V22H54.5A6.5 6.5 0 0 0 41.5 22H22.5A6.5 6.5 0 0 0 9.5 22Z"/>
+    <path class="car-glass" d="M8 8.6H18V13.6H8ZM21 8.6H31V13.6H21ZM34 8.6H42V13.6H34ZM45 8.6H49.6L54.4 14H45Z"/>
+    <path class="car-stripe" d="M5 17.4H59"/>
+    <circle class="car-lamp" cx="58.4" cy="18.3" r="1.1"/>
+    <path class="car-pipe" d="M4.2 20.6H1.6"/>
+  </g>
+  ${WHEELS}
+</svg>`;
 export const CAR_SVG = `<svg class="car-svg" viewBox="0 0 64 30" width="64" height="30" aria-hidden="true">
   <g class="car-body">
     <path class="car-shell" d="M4 22V16Q4 13 7 13H14L20 6.5Q21.5 5 24 5H38Q40.5 5 42 6.5L48 13L56 14Q60 14.8 60 18V22H54.5A6.5 6.5 0 0 0 41.5 22H22.5A6.5 6.5 0 0 0 9.5 22Z"/>
@@ -30,11 +47,11 @@ export const CAR_SVG = `<svg class="car-svg" viewBox="0 0 64 30" width="64" heig
   <g transform="translate(48 22)"><g class="car-spin"><circle r="5"/><path d="M-3.2 0H3.2M0 -3.2V3.2"/></g></g>
 </svg>`;
 
-export function startCar(host, { pathAt, length, target, scale = 1, className = '' }) {
+export function startCar(host, { pathAt, length, target, scale = 1, className = '', kind = 'sedan' }) {
   const el = document.createElement('div');
   el.className = `press-car ${className}`.trim();
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = CAR_SVG;
+  el.innerHTML = kind === 'van' ? VAN_SVG : CAR_SVG;
   el.style.setProperty('--car-scale', scale);
   host.appendChild(el);
   const body = el.querySelector('.car-body');
@@ -47,6 +64,7 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   let pitch = 0;
   let puffClock = 0;
   let on = false;
+  const state = { s, v: 0, face: 1, x: 0, y: 0, angle: 0 };
 
   const place = (dt) => {
     const len = Math.max(1, length());
@@ -69,6 +87,7 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
       else if (v < -6) face = -1;
     }
     const p = pathAt(s);
+    Object.assign(state, { s, v, face, x: p.x, y: p.y, angle: p.angle });
     const k = scale;
     el.style.transform = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${face})`;
     body.setAttribute('transform', `rotate(${(pitch * face).toFixed(2)} 16 22)`);
@@ -124,10 +143,12 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   gsap.ticker.add(tick);
   place(0);
 
-  return () => {
+  const stop = () => {
     io.disconnect();
     gsap.ticker.remove(tick);
     el.remove();
     host.querySelectorAll('.car-puff').forEach((d) => d.remove());
   };
+  stop.state = state;
+  return stop;
 }

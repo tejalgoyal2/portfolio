@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
-import Stamp from '../press/Stamp';
+import Postage from '../press/Postage';
 
 /**
  * Let's talk — the oxblood finale, where the cube comes back out of the margin
@@ -60,7 +60,7 @@ export default function Contact() {
 
         <div className="contact-body">
           <div className="contact-stamp-row">
-            <Stamp label="APPROVED" tone="ink" rotate={-6} interactive />
+            <Postage />
           </div>
 
           <ul className="contact-classified" data-arrive-items="paste">
@@ -69,6 +69,7 @@ export default function Contact() {
               <a
                 href="mailto:itejalgoyal@gmail.com"
                 className="contact-line-link"
+                data-pen="rocket"
               >
                 itejalgoyal@gmail.com
               </a>
@@ -80,6 +81,7 @@ export default function Contact() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="contact-line-link"
+                data-pen="rocket"
               >
                 github.com/tejalgoyal2
               </a>
@@ -91,8 +93,9 @@ export default function Contact() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="contact-line-link"
+                data-pen="rocket"
               >
-                in/tejalgoyal
+                linkedin.com/in/tejalgoyal
               </a>
             </li>
           </ul>

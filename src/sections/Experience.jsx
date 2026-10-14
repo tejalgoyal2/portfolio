@@ -14,7 +14,8 @@ import CountUp from '../press/CountUp';
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red rule draws itself down the left margin
- * (scaleY, scrubbed), each row is pasted in from the margin and slides off the
+ * (scaleY, scrubbed) with a pen nib riding its tip, pressing a dot into the
+ * margin as it reaches each job; each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
  * marked {{like this}} in the data — count up as they arrive.
  */
@@ -52,13 +53,28 @@ export default function Experience() {
     if (isReduced) return;
 
     const ctx = gsap.context(() => {
+      const ledger = root.querySelector('.ledger');
+      const nib = root.querySelector('.led-nib');
+      const dots = [...root.querySelectorAll('.led-dot-mark')];
       gsap.fromTo(
         '.led-rule',
         { scaleY: 0 },
         {
           scaleY: 1,
           ease: 'none',
-          scrollTrigger: { trigger: '.ledger', start: 'top 70%', end: 'bottom 70%', scrub: true },
+          scrollTrigger: {
+            trigger: ledger,
+            start: 'top 70%',
+            end: 'bottom 70%',
+            scrub: 0.5,
+            onUpdate: (self) => {
+              // the nib rides the tip; each job's dot is pressed in as the line reaches it
+              const y = self.progress * ledger.offsetHeight;
+              nib.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0)`;
+              nib.classList.toggle('is-on', self.progress > 0.002 && self.progress < 0.998);
+              for (const d of dots) d.classList.toggle('is-in', y >= d.parentElement.offsetTop + 14);
+            },
+          },
         }
       );
     }, root);
@@ -78,6 +94,13 @@ export default function Experience() {
 
         <div className="ledger">
           <span className="led-rule" aria-hidden="true" />
+          <span className="led-nib" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22 6.5 12.5 9 4h6l2.5 8.5z" />
+              <circle cx="12" cy="11.5" r="1.4" />
+              <path d="M12 13v8" />
+            </svg>
+          </span>
           {EXPERIENCE.map((entry) => (
             <article
               key={`${entry.org}-${entry.period}`}
@@ -85,6 +108,7 @@ export default function Experience() {
               data-arrive="paste"
               data-depart="slide"
             >
+              <span className="led-dot-mark" aria-hidden="true" />
               <div className="led-period">{entry.period}</div>
 
               <div className="led-body">
