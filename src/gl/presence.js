@@ -198,6 +198,8 @@ export function createPresence(view, hitBtn) {
     // ---- near the cursor: slow the turn so a face is easy to hit
     const dc = pointer.active ? Math.hypot(pointer.x - cx, pointer.y - cy) - rad * 0.7 : Infinity;
     const near = prefs.fine && dc < NEAR;
+    // over the cube, the cursor becomes a little turning arrow (checked every few frames)
+    if (frame % 3 === 0) bus.cursorHint = near && rad > 8 && view.pick(pointer.x, pointer.y) ? 'rotate' : null;
     turnRate.target = reduced || dragging ? 0 : near ? 0.15 : 1;
     // a released drag glides a moment, then stops
     if (!dragging && (Math.abs(glideX) > 1 || Math.abs(glideY) > 1)) {

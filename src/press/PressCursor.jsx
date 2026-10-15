@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { nib, onNib, NIBS, LOANERS } from '../life/nib';
-import { fireImpact } from './PressImpacts';
-
-// what a face says when it turns
-const TWIST_WORDS = ['KRK!', 'KLAK!', 'ZZIP!', 'TWIST!', 'KLIK!', 'SHK!', 'VRRT!'];
-let lastWord = -1;
+import { bus } from '../life/bus';
+import { thock } from '../life/sound';
 
 /**
  * The cursor is your pen: one of the site's pointy pencil icons, its tip
@@ -15,17 +12,20 @@ let lastWord = -1;
  *
  * - Over links and buttons it lifts a touch (bigger, more upright) — no ring.
  * - Elements can ask for a small mark beside the tip with
- *   data-cursor="wheel | nib"; dragging the cube shows "orbit".
- * - Some things hand you a fitting pen while you're over them
- *   (data-pen="pen-nib" on the blog cards, a set square on the case files…).
+ *   data-cursor="wheel | nib".
+ * - A couple of places hand you a fitting pen while you're over them
+ *   (data-pen: a pencil on the blog cards, a rocket in Let's talk), and over
+ *   the cube — or while you turn it — the cursor is a little turning arrow.
  * - A click that twists a face draws a quarter-turn arrow round the point,
- *   the way the face went (life:twist).
+ *   the way the face went, with comic motion lines (life:twist), and the face
+ *   lands with a soft thock (src/life/sound.js; off in Page settings).
  *
  * It's inked for whatever is actually under it — the first solid background
  * up the tree, a paper card on the ink spread included — easing between ink
  * and cream. Fine pointers only; on touch the OS cursor stays.
  */
-const STATES = ['wheel', 'nib', 'orbit'];
+const STATES = ['wheel', 'nib'];
+const ALL_PENS = () => [...NIBS, ...LOANERS];
 const SIZE = 40; // css px
 
 // what colour is really under the pointer: the first solid background up the tree
@@ -82,17 +82,18 @@ export default function PressCursor() {
       el.style.setProperty('--ty', `${(-n.tip[1] * k).toFixed(2)}px`);
       if (animate) gsap.fromTo(leanRef.current, { scale: 0.3 }, { scale: 1, duration: 0.55, ease: 'back.out(2.2)', overwrite: true });
     };
-    // the pen a thing hands you while you're over it, else your own
+    // which pen: turning arrow over the cube, else what a thing hands you, else your own
     let over = null;
-    const onOver = (e) => {
-      const want = e.target.closest?.('[data-pen]')?.dataset.pen || null;
-      if (want === over) return;
-      over = want;
-      const mine = nib();
-      if (mine.name === 'system') return;
-      paint(want ? [...NIBS, ...LOANERS].find((x) => x.name === want) || mine : mine);
-    };
+    const onOver = (e) => (over = e.target.closest?.('[data-pen]')?.dataset.pen || null);
     window.addEventListener('pointerover', onOver);
+    const choose = () => {
+      const mine = nib();
+      if (mine.name === 'system' || !icons) return;
+      const turning = bus.cursorHint === 'rotate' || document.documentElement.classList.contains('is-orbiting');
+      const want = turning ? 'rotate-cw' : over;
+      paint(want ? ALL_PENS().find((x) => x.name === want) || mine : mine);
+    };
+    gsap.ticker.add(choose);
     import('../life/icons').then(({ ICON }) => {
       if (cancelled) return;
       icons = ICON;
@@ -103,6 +104,7 @@ export default function PressCursor() {
       cancelled = true;
       off();
       window.removeEventListener('pointerover', onOver);
+      gsap.ticker.remove(choose);
     };
   }, [fine]);
 
@@ -122,22 +124,30 @@ export default function PressCursor() {
     let lastX = 0;
     let dark = null;
     let seen = false;
-    let afterMenu = false;
+    let menuUntil = 0;
+    let lastFix = 0;
+    // macOS shows its own cursor for its menus and popovers (a right-click,
+    // Look Up…) and the browser doesn't hide it again until the style changes —
+    // so after any of those, keep re-asserting the hidden cursor for a while
+    const fix = () => {
+      html.classList.remove('cursor-hidden');
+      void html.offsetWidth;
+      requestAnimationFrame(() => html.classList.add('cursor-hidden'));
+    };
+    const soon = () => (menuUntil = performance.now() + 5000);
     const move = (e) => {
       const x = e.clientX;
       const y = e.clientY;
       // the tip is the pointer: no lag at all
       pen.style.transform = `translate3d(${x}px,${y}px,0)`;
-      if (!seen || afterMenu) {
+      if (!seen || !pen.classList.contains('is-on')) {
         seen = true;
         pen.classList.add('is-on');
       }
-      // back from a context menu: the browser forgets cursor:none until the
-      // style changes, so take it off and put it back
-      if (afterMenu) {
-        afterMenu = false;
-        html.classList.remove('cursor-hidden');
-        requestAnimationFrame(() => html.classList.add('cursor-hidden'));
+      const now = performance.now();
+      if (now < menuUntil && now - lastFix > 140) {
+        lastFix = now;
+        fix();
       }
       markX(x + 22);
       markY(y + 20);
@@ -156,8 +166,12 @@ export default function PressCursor() {
     };
     const leave = () => pen.classList.remove('is-on');
     const onMenu = () => {
-      afterMenu = true;
+      soon();
       pen.classList.remove('is-on');
+    };
+    const onFocus = () => {
+      soon();
+      fix();
     };
     const enter = () => seen && pen.classList.add('is-on');
 
@@ -188,14 +202,12 @@ export default function PressCursor() {
         .to(el, { rotate: 10, duration: 0.5, ease: 'power2.inOut' }, 0)
         .to(head, { opacity: 1, scale: 1, duration: 0.18, ease: 'back.out(3)' }, 0.36)
         .to(el, { opacity: 0, duration: 0.35, ease: 'power1.in' }, 0.75);
-      // the comic bit: speed lines flick off the arrow, and the face says something
+      // the comic bit: motion arcs trail the arrow round, speed lines flick off its head
+      const trails = el.querySelectorAll('.flick-trail');
+      gsap.fromTo(trails, { strokeDashoffset: 1, opacity: 0.9 }, { strokeDashoffset: -1, duration: 0.55, ease: 'power2.inOut', stagger: 0.06 });
       const lines = el.querySelectorAll('.flick-line');
       gsap.fromTo(lines, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: -1, duration: 0.5, ease: 'power2.out', stagger: 0.04, delay: 0.3 });
-      let w = (Math.random() * TWIST_WORDS.length) | 0;
-      if (w === lastWord) w = (w + 1) % TWIST_WORDS.length;
-      lastWord = w;
-      const side = cw ? 1 : -1;
-      setTimeout(() => fireImpact(TWIST_WORDS[w], e.detail.x + side * 46, e.detail.y - 40, 'red', 'sm'), 260);
+      thock();
     };
 
     const down = () => html.classList.add('cursor-down');
@@ -208,6 +220,10 @@ export default function PressCursor() {
     document.addEventListener('pointerenter', enter);
     window.addEventListener('life:twist', onTwist);
     window.addEventListener('contextmenu', onMenu);
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', soon);
+    window.addEventListener('pointerdown', fix);
+    document.addEventListener('visibilitychange', onFocus);
     gsap.ticker.add(sync);
 
     return () => {
@@ -219,6 +235,10 @@ export default function PressCursor() {
       document.removeEventListener('pointerenter', enter);
       window.removeEventListener('life:twist', onTwist);
       window.removeEventListener('contextmenu', onMenu);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', soon);
+      window.removeEventListener('pointerdown', fix);
+      document.removeEventListener('visibilitychange', onFocus);
       gsap.ticker.remove(sync);
     };
   }, [fine, system]);
@@ -233,12 +253,6 @@ export default function PressCursor() {
         </div>
       </div>
       <div ref={markRef} className="press-cursor-mark">
-        {/* orbit — two arcs round a centre, while you turn the cube */}
-        <svg className="cursor-mark cursor-mark--orbit" viewBox="0 0 56 56">
-          <ellipse cx="28" cy="28" rx="21" ry="9" />
-          <ellipse cx="28" cy="28" rx="9" ry="21" />
-          <circle cx="28" cy="28" r="2.5" />
-        </svg>
         {/* wheel — rim, hub and three spokes, for the car */}
         <svg className="cursor-mark cursor-mark--wheel" viewBox="0 0 56 56">
           <circle cx="28" cy="28" r="20" />
@@ -256,6 +270,8 @@ export default function PressCursor() {
       <svg ref={flickRef} className="cursor-flick" viewBox="-40 -40 80 80">
         <path d="M-21.2 -21.2A30 30 0 0 1 21.2 -21.2" pathLength="1" />
         <path d="M18.9 -29.9 21.2 -21.2 12.5 -23.5" />
+        <path className="flick-trail" d="M-25.9 -26.2A37 37 0 0 1 8 -36.1" pathLength="1" />
+        <path className="flick-trail" d="M-15.5 -17.8A23 23 0 0 1 9 -21.2" pathLength="1" />
         <path className="flick-line" d="M27 -27 34 -33" pathLength="1" />
         <path className="flick-line" d="M30 -18 39 -19" pathLength="1" />
         <path className="flick-line" d="M22 -35 24 -43" pathLength="1" />

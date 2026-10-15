@@ -45,16 +45,22 @@ describe('Director', () => {
     expect(elapsed).toBeGreaterThan(33 * 0.26 - 0.1); // …but never a blur
   });
 
-  it('a jump applies the moves in between at once, in order, and animates the last few', () => {
+  it('a jump speed-solves: every move plays in order, fast, then eases back to the usual pace', () => {
     const d = new Director(SCRAMBLE, SOLVE);
-    d.setTarget(33);
-    const first = d.tick(1 / 60);
-    expect(first.length).toBe(29);
-    first.forEach((c, i) => expect(c.move).toEqual(SOLVE[i]));
-    expect(d.active?.kind).toBe('solve');
-    run(d, 3);
-    expect(d.k).toBe(33);
-    expect(d.state.equals(expected(33))).toBe(true);
+    d.setTarget(62);
+    expect(d.rushing).toBe(true);
+    expect(d.tick(1 / 60)).toEqual([]); // nothing snaps
+    const seen = [];
+    let t = 0;
+    while (d.k < 62 && t < 20) {
+      for (const c of d.tick(1 / 60)) seen.push(c.move);
+      t += 1 / 60;
+    }
+    expect(seen).toEqual(SOLVE.slice(0, 62));
+    expect(t).toBeLessThan(6); // quick…
+    expect(t).toBeGreaterThan(2.5); // …but you see it happen
+    expect(d.rushing).toBe(false);
+    expect(d.state.isSolved()).toBe(true);
   });
 
   it('scrolling back plays the inverse moves', () => {

@@ -102,5 +102,30 @@ export function createNotes(host) {
     el.style.setProperty('--cr', `${cube.r.toFixed(1)}px`);
   }
 
-  return { show, follow, dispose: () => el?.remove() };
+  // while the cube speed-solves after a jump: comic whirl arrows chase round it
+  let whirlEl = null;
+  let spin = 0;
+  function whirl(cube, amount, dt) {
+    if (!host) return;
+    if (!whirlEl) {
+      whirlEl = document.createElement('div');
+      whirlEl.className = 'cube-whirl';
+      whirlEl.innerHTML = `<svg viewBox="-50 -50 100 100">${[0, 120, 240]
+        .map(
+          (a) =>
+            `<g transform="rotate(${a})"><path d="M-40 -10A41 41 0 0 1 -6 -40.6"/><path d="M-13 -46 -5.6 -40.6 -12.4 -34.6"/><path class="cw-trail" d="M-44 2A44 44 0 0 1 -38 -21"/></g>`
+        )
+        .join('')}</svg>`;
+      host.appendChild(whirlEl);
+    }
+    spin += dt * (2 + amount * 7);
+    whirlEl.style.opacity = amount.toFixed(3);
+    if (amount < 0.01) return;
+    const s = cube.r * 2.9;
+    whirlEl.style.width = whirlEl.style.height = `${s.toFixed(0)}px`;
+    whirlEl.style.transform = `translate3d(${(cube.x - s / 2).toFixed(1)}px,${(cube.y - s / 2).toFixed(1)}px,0) rotate(${spin.toFixed(3)}rad) scale(${(0.85 + 0.15 * amount).toFixed(3)})`;
+    whirlEl.dataset.ground = groundAt(cube.y);
+  }
+
+  return { show, follow, whirl, dispose: () => (el?.remove(), whirlEl?.remove()) };
 }

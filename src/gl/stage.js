@@ -68,17 +68,34 @@ export async function startStage(canvas, hitBtn, noteHost) {
 
   let w = 0;
   let h = 0;
+  // The canvas is only as big as a box round the cube (not the whole screen):
+  // the camera still frames the full viewport, but draws just that box
+  // (setViewOffset), and the canvas rides to it. A fraction of the pixels — and
+  // so of the GPU memory — of a full-screen stage. Sizes come in steps so the
+  // drawing buffer is rarely reallocated.
+  let side = 0;
   const resize = () => {
     w = document.documentElement.clientWidth;
     h = window.innerHeight;
     // A 1× display (most external monitors) stair-steps the hairline gaps
     // between cubies even with MSAA, so render those at 2× and let the browser
-    // downsample — supersampling, within a pixel budget for very large screens.
+    // downsample — cheap now the canvas is small.
     const dpr = window.devicePixelRatio || 1;
-    const ss = dpr < 1.5 ? Math.min(2, Math.sqrt(9e6 / Math.max(1, w * h))) : 1;
-    renderer.setPixelRatio(Math.min(Math.max(dpr, ss * dpr), 2));
-    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(dpr < 1.5 ? 2 : Math.min(dpr, 2));
     view.resize(w, h);
+    side = 0;
+  };
+  const frameBox = (st) => {
+    const want = Math.max(96, Math.ceil(((st.r * 2.6 + 48) / 48)) * 48);
+    if (want !== side) {
+      side = want;
+      renderer.setSize(side, side, false);
+      canvas.style.width = canvas.style.height = `${side}px`;
+    }
+    const bx = Math.round(st.x - side / 2);
+    const by = Math.round(st.y - side / 2);
+    canvas.style.transform = `translate3d(${bx}px,${by}px,0)`;
+    view.setCrop(bx, by, side, side);
   };
   resize();
   window.addEventListener('resize', resize);
@@ -119,6 +136,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
   director.instant = prefs.reduced;
 
   let shownOn = true;
+  let rush = 0;
   let solvedOnce = false;
   const frame = (time, deltaMs) => {
     if (document.hidden) return;
@@ -140,6 +158,8 @@ export async function startStage(canvas, hitBtn, noteHost) {
     if (!shownOn) return;
     presence.update(dt);
     notes.follow(presence.state);
+    rush += ((director.rushing ? 1 : 0) - rush) * (1 - Math.exp(-5 * dt));
+    if (!prefs.reduced) notes.whirl(presence.state, rush, dt);
     // milestones, on the way forward only: two layers done, and the solve
     if (done.some((c) => c.kind === 'solve')) {
       if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);
@@ -150,6 +170,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
       }
     }
     view.update();
+    frameBox(presence.state);
     renderer.render(view.scene, view.camera);
   };
   gsap.ticker.add(frame);

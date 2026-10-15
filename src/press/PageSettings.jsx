@@ -6,7 +6,7 @@ import { prefs } from '../life/prefs';
 /**
  * Page settings — a small card that drops from the running head with the
  * things on this page you can play with: your pen, how many icons float on the
- * paper (and a button to make it rain some), whether a click ripples, and
+ * paper, whether a click ripples,
  * whether the cube keeps you company. Nothing here is needed to read the page.
  * Escape, a click elsewhere or the button again closes it.
  */
@@ -48,16 +48,6 @@ export default function PageSettings() {
     };
   }, [open, icons]);
 
-  const rain = () => {
-    const W = document.documentElement.clientWidth;
-    for (let i = 0; i < 7; i++) {
-      setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent('life:burst', { detail: { x: W * (0.1 + 0.8 * Math.random()), y: -30, amount: 0.22 } })
-        );
-      }, i * 140);
-    }
-  };
 
   return (
     <div ref={wrapRef} className={`rh-settings${open ? ' is-open' : ''}`}>
@@ -123,9 +113,6 @@ export default function PageSettings() {
               </button>
             ))}
           </div>
-          <button type="button" className="rh-rain" onClick={rain} disabled={prefs.reduced}>
-            Make it rain icons
-          </button>
         </fieldset>
 
         <fieldset className="rh-opt">
@@ -137,6 +124,10 @@ export default function PageSettings() {
           <label className="rh-switch">
             <input type="checkbox" checked={s.cube} onChange={(e) => setSetting('cube', e.target.checked)} />
             <span>The cube keeps me company</span>
+          </label>
+          <label className="rh-switch">
+            <input type="checkbox" checked={s.sound} onChange={(e) => setSetting('sound', e.target.checked)} />
+            <span>A twist goes thock</span>
           </label>
         </fieldset>
 

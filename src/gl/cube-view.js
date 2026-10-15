@@ -259,6 +259,7 @@ export async function createCubeView(director) {
   const hit = new Vector3();
   let vw = 1;
   let vh = 1;
+  let crop = { x: 0, y: 0, w: 1, h: 1 };
 
   return {
     scene,
@@ -272,6 +273,11 @@ export async function createCubeView(director) {
       camera.position.set(0, 0, h / 2 / Math.tan((camera.fov * Math.PI) / 360));
       camera.updateProjectionMatrix();
     },
+    /** Draw only this box of the full-viewport view (the canvas is that big). */
+    setCrop(x, y, cw, ch) {
+      crop = { x, y, w: cw, h: ch };
+      camera.setViewOffset(vw, vh, x, y, cw, ch);
+    },
     update,
     setEdge(v) {
       uniforms.uEdge.value = v;
@@ -279,7 +285,8 @@ export async function createCubeView(director) {
     /** The face under a viewport point, or null if the ray misses the cube. */
     pick(x, y) {
       if (group.scale.x < 0.01) return null;
-      ndc.set((x / vw) * 2 - 1, -(y / vh) * 2 + 1);
+      // the camera only sees the crop box, so aim relative to it
+      ndc.set(((x - crop.x) / crop.w) * 2 - 1, -((y - crop.y) / crop.h) * 2 + 1);
       ray.setFromCamera(ndc, camera);
       group.updateMatrixWorld();
       inv.copy(group.matrixWorld).invert();

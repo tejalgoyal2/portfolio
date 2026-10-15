@@ -1,7 +1,7 @@
 /**
  * Page settings the visitor can play with (the panel in the running head):
  * how many icons float on the paper, whether a click ripples, whether the cube
- * keeps you company. The cursor lives in ./nib.js. Remembered on this device —
+ * keeps you company, whether the cube makes a sound. The cursor lives in ./nib.js. Remembered on this device —
  * per-viewer conveniences, so plain localStorage, and the page works the same
  * without it.
  */
@@ -12,7 +12,7 @@ export const DRIFT_LEVELS = [
   { v: 2, label: 'Plenty' },
   { v: 3.4, label: 'A flood' },
 ];
-const DEFAULTS = { drift: 1, ripples: true, cube: true };
+const DEFAULTS = { drift: 1, ripples: true, cube: true, sound: true };
 
 export const settings = { ...DEFAULTS };
 try {

@@ -21,7 +21,7 @@ export const NIBS = [
 ];
 export const SYSTEM = { name: 'system', label: 'Your own cursor' };
 /** Pens the page hands you over particular things (not in the chooser). */
-export const LOANERS = [{ name: 'eraser', label: 'Eraser', tip: [5, 19], rot: 106 }];
+export const LOANERS = [{ name: 'rotate-cw', label: 'Turn it', tip: [12, 12], rot: 0 }];
 const KEY = 'press-nib';
 const subs = new Set();
 
