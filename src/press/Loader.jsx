@@ -80,9 +80,11 @@ export default function Loader() {
           .to(root.querySelectorAll('.loader-kicker, .loader-edition, .loader-ghost'), { opacity: 0, y: -8, duration: 0.3, ease: 'power1.in' }, 0)
           // the name is set into the masthead on a blank sheet first…
           .to(plate, { x: dx, y: dy, scale: s, duration: 0.9, ease: 'expo.inOut' }, 0.05)
-          // …then the real nameplate takes over under it, and the page develops round it
-          .add(() => html.classList.remove('np-handoff'), 0.95)
-          .set(plate, { opacity: 0 }, 0.97)
+          // …then the real nameplate takes over under it (a soft crossfade, not a cut),
+          // the ink sweeps across it, and the page develops round it
+          .add(() => html.classList.remove('np-handoff'), 0.88)
+          .to(plate, { opacity: 0, duration: 0.3, ease: 'power1.inOut' }, 0.9)
+          .add(() => window.dispatchEvent(new Event('press:landed')), 0.9)
           .add(loaded, 0.95)
           .to(root, { backgroundColor: 'rgba(0,0,0,0)', duration: 0.5, ease: 'power1.inOut' }, 0.95)
           .fromTo(rules, { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }, 0.95);
@@ -151,7 +153,22 @@ export default function Loader() {
         <span className="loader-kicker">THE PERSONAL PRESS</span>
         <div className="loader-plate-wrap">
           <span className="loader-ghost" aria-hidden="true">TEJAL GOYAL</span>
-          <h1 className="loader-plate">TEJAL GOYAL</h1>
+          {/* set sort by sort exactly like the masthead's nameplate, so the hand-off lines up */}
+          <h1 className="loader-plate" aria-label="Tejal Goyal">
+            <span className="np" aria-hidden="true">
+              {[...'TEJAL GOYAL'].map((ch, i) =>
+                ch === ' ' ? (
+                  <span className="np-space" key={i}>
+                    {' '}
+                  </span>
+                ) : (
+                  <span className="np-sort" key={i}>
+                    {ch}
+                  </span>
+                )
+              )}
+            </span>
+          </h1>
         </div>
         <span className="loader-edition">VOL.&nbsp;I · NO.&nbsp;1 · VICTORIA, BC · EST.&nbsp;2002</span>
       </div>

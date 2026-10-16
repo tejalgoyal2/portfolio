@@ -72,22 +72,18 @@ export function measureMask(pad = 10, decor = true) {
 }
 
 /**
- * The one paper-press listener, and the difference between a click and a hold.
+ * The one paper-press listener: a click, a drag on the cube, or a doodle.
  *
  * - On the cube: a click twists the face under it (clockwise; Shift turns it back);
  *   holding and dragging turns the whole cube to see its other sides (mice
  *   and pens — on touch a drag scrolls the page, so a tap twists).
  * - A quick click on bare paper dispatches `life:press` {x, y, ground}: the
  *   registration mark and the water ripple.
- * - Holding past ~¼ s (a long-press on touch) starts printing instead:
- *   `life:hold` {phase: 'start' | 'end'} drives the ink ring that fills around
- *   the cursor, and letting go dispatches `life:burst` {x, y, ground, amount},
- *   amount 0..1 by how long it was held. The two never both fire.
- * - Moving off before the hold starts (a drag, a text selection, a scroll on
- *   touch) cancels the press; nothing prints.
+ * - Dragging on bare paper (mouse or pen) draws with your pen: `life:doodle`
+ *   {phase: 'start' | 'move' | 'end', x, y} — a stroke of ink that fades away
+ *   a few seconds later (drawn by src/life/iconDrift.js). On touch a drag
+ *   scrolls the page, so nothing is drawn.
  */
-const HOLD_DELAY = { mouse: 230, touch: 420 }; // ms before a press becomes a hold
-const HOLD_FULL = 1.6; // s of holding for the biggest splash
 const SLOP = { mouse: 6, touch: 10 }; // px a press may wander before it's a drag
 
 const emit = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
@@ -101,19 +97,9 @@ export function startPaperPress() {
 
   const end = () => {
     if (!press) return;
-    clearTimeout(press.timer);
-    if (press.holding) emit('life:hold', { phase: 'end' });
-    html.classList.remove('is-holding', 'is-orbiting');
+    if (press.doodling) emit('life:doodle', { phase: 'end', x: press.x, y: press.y });
+    html.classList.remove('is-orbiting', 'is-doodling');
     press = null;
-  };
-
-  const startHold = () => {
-    if (!press) return;
-    press.holding = true;
-    press.holdT0 = performance.now();
-    html.classList.add('is-holding');
-    window.getSelection?.()?.removeAllRanges();
-    emit('life:hold', { phase: 'start', x: press.x, y: press.y, ground: groundAt(press.y) });
   };
 
   window.addEventListener('pointerdown', (e) => {
@@ -131,13 +117,12 @@ export function startPaperPress() {
       x0: e.clientX,
       y0: e.clientY,
       face,
-      holding: false,
       orbiting: false,
+      doodling: false,
       t: performance.now(),
       vx: 0,
       vy: 0,
     };
-    if (!face) press.timer = setTimeout(startHold, HOLD_DELAY[press.kind]);
   });
 
   window.addEventListener('pointermove', (e) => {
@@ -162,33 +147,34 @@ export function startPaperPress() {
       bus.orbit?.(dx, dy);
       return;
     }
-    if (!press.holding && far) end();
+    // a drag on bare paper doodles (not on touch, where it scrolls)
+    if (!press.face && press.kind === 'mouse' && (press.doodling || far)) {
+      if (!press.doodling) {
+        press.doodling = true;
+        html.classList.add('is-doodling');
+        window.getSelection?.()?.removeAllRanges();
+        emit('life:doodle', { phase: 'start', x: press.x0, y: press.y0 });
+      }
+      emit('life:doodle', { phase: 'move', x: press.x, y: press.y });
+      return;
+    }
+    if (far) end();
   });
 
   window.addEventListener('pointerup', (e) => {
     if (!press || e.pointerId !== press.id) return;
     const p = press;
-    if (p.holding) {
-      const held = (performance.now() - p.holdT0) / 1000;
-      emit('life:burst', { x: p.x, y: p.y, ground: groundAt(p.y), amount: Math.min(1, held / HOLD_FULL) });
-    } else if (p.orbiting) {
+    if (p.orbiting) {
       // a flick lets it glide; a slow drag lets it stop where it is
       const still = performance.now() - p.t > 80;
       bus.release?.(still ? 0 : p.vx, still ? 0 : p.vy);
     } else if (p.face) {
       const turns = bus.twist?.(p.face, e.shiftKey);
       emit('life:twist', { x: p.x0, y: p.y0, turns });
-    } else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+    } else if (!p.doodling) emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
     end();
   });
 
   window.addEventListener('pointercancel', end);
   window.addEventListener('blur', end);
-  // a long-press is ours while it's printing: no context menu, no callout
-  window.addEventListener('contextmenu', (e) => {
-    if (press?.holding || press?.kind === 'touch') e.preventDefault();
-  });
 }
-
-/** How full a hold is (0..1), for the ink ring. */
-export const HOLD_SECONDS = HOLD_FULL;

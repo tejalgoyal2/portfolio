@@ -12,8 +12,10 @@ gsap.registerPlugin(ScrollTrigger);
  * to dry behind it — every letter pegged to a sagging string, swinging from
  * its peg.
  *
- * - Brush past a letter and it swings, the way your hand moved; a hard scroll
- *   sets the whole line swaying, each letter a beat behind the last.
+ * - Your cursor passing near is a breeze: its movement is smoothed over a
+ *   moment (so a quick wiggle does nothing much) and pushes the nearby
+ *   letters gently the way it went; a hard scroll sets the whole line swaying.
+ *   The swing is slow and lightly damped, so it dies away over several seconds.
  * - Where the pen touches a letter it soaks up ink, then slowly dries back to
  *   an outline — so you can leave the name half-inked as you go.
  * - The line drifts sideways as the section passes (a slow parallax).
@@ -22,9 +24,9 @@ gsap.registerPlugin(ScrollTrigger);
  * sit behind the content and never take a click; they only run while their
  * section is on screen. Reduced motion: they hang still (the ink still works).
  */
-const K = 16; // spring of the swing
-const DAMP = 1.5; // light: it swings a few times and settles
-const MAX = 0.42; // rad
+const K = 5.5; // a slow swing: about a two-and-a-half second period
+const DAMP = 0.42; // very light: it dies away over several seconds
+const MAX = 0.3; // rad
 const INK_IN = 2.6; // per second while the pen is on it
 const INK_OUT = 0.09; // drying, per second
 
@@ -58,7 +60,7 @@ export function startBanners(root = document) {
       // hang lower in the middle of the line, where the string sags
       const u = n > 1 ? i / (n - 1) : 0.5;
       s.style.setProperty('--sag', `${(Math.sin(u * Math.PI) * 0.09).toFixed(3)}em`);
-      return { el: s, th: 0, w: 0, ink: 0, was: false, written: '' };
+      return { el: s, th: 0, w: 0, ink: 0, written: '' };
     });
 
     const slide = prefs.reduced
@@ -70,12 +72,19 @@ export function startBanners(root = document) {
     const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
     io.observe(section);
     let lastV = 0;
+    let breeze = 0; // smoothed push from the cursor
+    let jolt = 0; // smoothed push from the scroll
 
     const tick = (t, deltaMs) => {
       if (!on || document.hidden) return;
       const dt = Math.min(0.05, deltaMs / 1000);
       const dv = scroll.v - lastV;
       lastV = scroll.v;
+      const box = el.getBoundingClientRect();
+      const inBand = pointer.active && pointer.y > box.top - 40 && pointer.y < box.bottom + 20;
+      const smooth = 1 - Math.exp(-dt / 0.35);
+      breeze += ((inBand ? Math.max(-1600, Math.min(1600, pointer.vx)) : 0) - breeze) * smooth;
+      jolt += (Math.max(-40000, Math.min(40000, dv / Math.max(dt, 1e-3))) - jolt) * smooth;
       for (let i = 0; i < st.length; i++) {
         const s = st[i];
         const r = s.el.getBoundingClientRect();
@@ -86,13 +95,13 @@ export function startBanners(root = document) {
           pointer.y > r.top &&
           pointer.y < r.bottom;
         if (!prefs.reduced) {
-          // the hand brushes it the way it was moving; a scroll jolts the line, letter by letter
-          if (over && !s.was) s.w += Math.max(-2.6, Math.min(2.6, pointer.vx * 0.0011));
-          s.w += dv * 0.00002 * (1 + 0.15 * Math.sin(i * 1.7));
-          s.w += (-K * s.th - DAMP * s.w) * dt;
+          // the breeze is strongest on the letters nearest the cursor
+          const cx = r.left + r.width / 2;
+          const near = Math.exp(-(((pointer.x - cx) / 260) ** 2));
+          const push = breeze * 0.0016 * near + jolt * 0.0000016 * (1 + 0.2 * Math.sin(i * 1.7));
+          s.w += (push - K * s.th - DAMP * s.w) * dt;
           s.th = Math.max(-MAX, Math.min(MAX, s.th + s.w * dt));
         }
-        s.was = over;
         s.ink = over ? Math.min(1, s.ink + INK_IN * dt) : Math.max(0, s.ink - INK_OUT * dt);
         const key = `${s.th.toFixed(3)}|${s.ink.toFixed(2)}`;
         if (key !== s.written) {

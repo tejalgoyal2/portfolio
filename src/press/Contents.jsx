@@ -12,11 +12,11 @@ import PageSettings from './PageSettings';
  * like a newspaper's folio line, with every section in it so the whole
  * structure is always in view.
  *
- * Along its foot runs one long rule, and a tiny pen (the cursor's icon) draws
- * it as you read: from the section you're in towards the next. The section
- * you're in is ringed in the editor's red pen — a loose loop that rises off
- * the rule, goes round the label once and a bit and lifts off. Move on and the
- * old loop is wiped back along itself while the next is drawn.
+ * Along its foot runs one long rule, drawn by a little fountain pen as you
+ * read: from the far left at the top of the page, reaching each label just as
+ * its section begins. There the pen leaves the rule and draws the loop round
+ * the label itself — once round and a bit, in the editor's red — then drops
+ * back onto the rule and carries on. The old loop is wiped back along itself.
  *
  * One click (or Enter) flies you to any section with Lenis. At its end sit two
  * cells: your pen (click to swap it; hover for who drew it) and Page settings.
@@ -90,7 +90,9 @@ export default function Contents() {
   const fillRef = useRef(null);
   const tipRef = useRef(null);
   const itemRefs = useRef([]);
-  const geo = useRef({ centers: [], w: 1, narrow: false });
+  const geo = useRef({ starts: [], w: 1, narrow: false });
+  const looping = useRef(false);
+  const tipX = useRef(0);
   const changedPen = useRef(false);
   const [pen, setPen] = useState(nib());
   const [icons, setIcons] = useState(null);
@@ -105,6 +107,7 @@ export default function Contents() {
     });
   }, []);
   const penSvg = icons?.[pen.tip ? pen.name : 'pencil'] || '';
+  const writerSvg = icons?.['pen-nib'] || '';
 
   // where each label sits along the rule
   const place = useCallback(() => {
@@ -115,7 +118,8 @@ export default function Contents() {
     geo.current = {
       narrow,
       w: Math.max(1, w),
-      centers: itemRefs.current.map((el) => (el ? el.offsetLeft + el.offsetWidth / 2 : 0)),
+      // where the rule reaches each label: the first from the very left edge
+      starts: itemRefs.current.map((el, i) => (i === 0 || !el ? 0 : el.offsetLeft + 4)),
     };
   }, []);
 
@@ -154,20 +158,21 @@ export default function Contents() {
       const b = bounds[i];
       const f = b ? Math.min(1, Math.max(0, (probe - b.top) / Math.max(1, b.bottom - b.top))) : 0;
       // the pen runs from this label towards the next; on a phone, along the whole page
-      const { centers, w, narrow } = geo.current;
+      const { starts, w, narrow } = geo.current;
       let tip;
       if (narrow) {
         const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
         tip = (window.scrollY / max) * w;
       } else {
-        const a = centers[i] ?? 0;
-        const z = i < centers.length - 1 ? centers[i + 1] : w;
+        const a = starts[i] ?? 0;
+        const z = i < starts.length - 1 ? starts[i + 1] : w;
         tip = a + (z - a) * f;
       }
       if (Math.abs(tip - lastTip) > 0.25) {
         lastTip = tip;
         if (fillRef.current) fillRef.current.style.transform = `scaleX(${(tip / w).toFixed(4)})`;
-        if (tipRef.current) tipRef.current.style.transform = `translate3d(${tip.toFixed(1)}px,0,0)`;
+        tipX.current = tip;
+        if (tipRef.current && !looping.current) tipRef.current.style.transform = `translate3d(${tip.toFixed(1)}px,0,0)`;
       }
       // a real change of stock, not a thin band sliding under the glass
       const near = groundAt(30);
@@ -203,22 +208,63 @@ export default function Contents() {
     if (!animate || prefs.reduced) {
       gsap.set(next, { strokeDashoffset: 0, opacity: 1 });
       gsap.set(prev, { strokeDashoffset: 1, opacity: 0 });
+      looping.current = false;
       return;
     }
     gsap.to(prev, { strokeDashoffset: -1, duration: 0.45, ease: 'power2.in' });
-    gsap.fromTo(next, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, duration: 0.85, ease: 'power3.inOut', delay: 0.12 });
+    // the pen itself goes round: it rides the end of the stroke as it's drawn
+    const tipEl = tipRef.current;
+    const len = next.getTotalLength();
+    const lineY = track.clientHeight - 1;
+    const at = (p) => {
+      const pt = next.getPointAtLength(p * len);
+      tipEl.style.transform = `translate3d(${pt.x.toFixed(1)}px,${(pt.y - lineY).toFixed(1)}px,0)`;
+      return pt;
+    };
+    looping.current = true;
+    gsap.set(next, { strokeDashoffset: 1, opacity: 1 });
+    const prog = { p: 0 };
+    gsap.to(
+      prog,
+      {
+        p: 1,
+        duration: 0.95,
+        ease: 'power2.inOut',
+        delay: 0.1,
+        onUpdate() {
+          next.style.strokeDashoffset = (1 - prog.p).toFixed(4);
+          at(prog.p);
+        },
+        onComplete() {
+          // and back down onto the rule, where it carries on
+          const end = at(1);
+          const back = { x: end.x, y: end.y - lineY };
+          gsap.to(back, {
+            x: () => tipX.current,
+            y: 0,
+            duration: 0.45,
+            ease: 'power2.inOut',
+            onUpdate: () => (tipEl.style.transform = `translate3d(${back.x.toFixed(1)}px,${back.y.toFixed(1)}px,0)`),
+            onComplete: () => (looping.current = false),
+          });
+        },
+      }
+    );
   }, []);
   const placedOnce = useRef(false);
   useEffect(() => {
     drawLoop(current, placedOnce.current);
     placedOnce.current = true;
   }, [current, drawLoop]);
+  // on a real resize (and once the fonts land), re-place the loop without drawing it again
+  const currentRef = useRef(current);
+  currentRef.current = current;
   useEffect(() => {
-    const again = () => drawLoop(current, false);
+    const again = () => drawLoop(currentRef.current, false);
     document.fonts?.ready.then(again);
     window.addEventListener('resize', again);
     return () => window.removeEventListener('resize', again);
-  }, [current, drawLoop]);
+  }, [drawLoop]);
 
   const go = useCallback((i) => {
     const el = document.querySelector(`[data-section="${SECTIONS[i].key}"]`);
@@ -331,7 +377,7 @@ export default function Contents() {
           <span ref={lineRef} className="rh-line" aria-hidden="true">
             <span ref={fillRef} className="rh-line-fill" />
             <span ref={tipRef} className="rh-line-tip">
-              <span className="rh-line-pen" dangerouslySetInnerHTML={{ __html: penSvg }} />
+              <span className="rh-line-pen" dangerouslySetInnerHTML={{ __html: writerSvg }} />
             </span>
           </span>
         </div>

@@ -25,6 +25,10 @@ import { settings, onSettings } from './settings';
  * How many icons there are follows Page settings (src/life/settings.js), and
  * ripples can be switched off there.
  *
+ * Drag on bare paper and you draw with your pen (`life:doodle`): a line of
+ * ink, thinner where you went fast, that sits on the page a couple of
+ * seconds and then fades away from where you started.
+ *
  * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
  * Paused while the tab is hidden. Reduced motion: the icons sit still and
  * there are no ripples.
@@ -51,6 +55,9 @@ function springBack(o, dt) {
   }
 }
 const RING_INK = { paper: [213, 30, 34], ink: [254, 67, 62], red: [244, 240, 230] };
+const DOODLE_INK = { paper: [28, 22, 18], ink: [244, 240, 230], red: [244, 240, 230] };
+const DOODLE_HOLD = 2.2; // s a stroke stays fully inked
+const DOODLE_FADE = 1.4; // s it takes to fade
 
 export function startIconDrift(canvas) {
   const ctx = canvas.getContext('2d');
@@ -97,6 +104,7 @@ export function startIconDrift(canvas) {
 
   const target = () => Math.round(Math.max(8, Math.min(14, (W * H) / 110000)) * settings.drift);
   const sparks = [];
+  const doodles = [];
 
   function spawn(fadeIn = true) {
     const sy0 = window.scrollY;
@@ -270,11 +278,39 @@ export function startIconDrift(canvas) {
     }
   }
 
+  function drawDoodles(sy0) {
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let k = doodles.length - 1; k >= 0; k--) {
+      const d = doodles[k];
+      const pts = d.pts;
+      if (d.done && pts.length && clock - pts[pts.length - 1].t > DOODLE_HOLD + DOODLE_FADE) {
+        doodles.splice(k, 1);
+        continue;
+      }
+      const [r, g, b] = DOODLE_INK[d.ground] || DOODLE_INK.paper;
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i - 1];
+        const p1 = pts[i];
+        const age = clock - p1.t;
+        const a = age < DOODLE_HOLD ? 1 : 1 - (age - DOODLE_HOLD) / DOODLE_FADE;
+        if (a <= 0) continue;
+        ctx.strokeStyle = `rgba(${r},${g},${b},${(0.85 * a).toFixed(3)})`;
+        ctx.lineWidth = (p0.w + p1.w) / 2;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y - sy0);
+        ctx.lineTo(p1.x, p1.y - sy0);
+        ctx.stroke();
+      }
+    }
+  }
+
   function draw() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const sy0 = window.scrollY;
     drawRipples(sy0);
+    drawDoodles(sy0);
     for (const sp of sparks) {
       const inks = INKS_FOR[sp.ground] || INKS_FOR.paper;
       const img = sprites[sp.sprite][inks[sp.accent ? 1 : 0]];
@@ -308,7 +344,7 @@ export function startIconDrift(canvas) {
     step(dt);
     if (prefs.reduced) {
       // still icons: repaint only when the page has moved
-      const key = `${Math.round(window.scrollY)}|${icons.length}`;
+      const key = `${Math.round(window.scrollY)}|${icons.length}|${doodles.length ? clock : 0}`;
       if (key === lastDrawKey) return;
       lastDrawKey = key;
     }
@@ -347,6 +383,30 @@ export function startIconDrift(canvas) {
     if (sparks.length > 40) sparks.splice(0, sparks.length - 40);
   };
   window.addEventListener('life:press', onPress);
+  // drawing with the pen
+  const onDoodle = (e) => {
+    const { phase, x, y } = e.detail;
+    const docY = y + window.scrollY;
+    if (phase === 'start') {
+      doodles.push({ pts: [{ x, y: docY, t: clock, w: 2.6 }], ground: groundAtDoc(docY), done: false });
+      if (doodles.length > 12) doodles.shift();
+      return;
+    }
+    const d = doodles[doodles.length - 1];
+    if (!d) return;
+    if (phase === 'end') {
+      d.done = true;
+      return;
+    }
+    const last = d.pts[d.pts.length - 1];
+    const step = Math.hypot(x - last.x, docY - last.y);
+    if (step < 1.5) return;
+    // a pen: thinner when it moves fast, eased so the width doesn't flicker
+    const w = Math.max(1.1, Math.min(3.2, 3.4 - step * 0.09));
+    d.pts.push({ x, y: docY, t: clock, w: last.w + (w - last.w) * 0.35 });
+    if (d.pts.length > 900) d.pts.shift();
+  };
+  window.addEventListener('life:doodle', onDoodle);
   // fewer or more icons, from Page settings: the extras drift off or float in
   const offSettings = onSettings((_, key) => {
     if (key !== 'drift') return;
@@ -370,6 +430,7 @@ export function startIconDrift(canvas) {
     cancelled = true;
     gsap.ticker.remove(tick);
     window.removeEventListener('life:press', onPress);
+    window.removeEventListener('life:doodle', onDoodle);
     window.removeEventListener('resize', resize);
     offSettings();
     offLayout();

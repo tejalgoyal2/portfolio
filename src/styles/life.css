@@ -54,9 +54,10 @@
 /* ── The WebGL stage ─────────────────────────────────────────────────────── */
 .stage-canvas {
   position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
   z-index: 6;
   pointer-events: none;
   opacity: 0;
@@ -82,77 +83,11 @@
   outline-offset: 4px;
 }
 
-/* ── Press-and-hold: the ink ring, the burst, the one-time hint ──────────── */
-.icon-burst {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 8;
-  pointer-events: none;
-}
-html.is-holding,
-html.is-holding * {
+/* drawing on the paper: no text selection while the pen is down */
+html.is-doodling,
+html.is-doodling * {
   -webkit-user-select: none;
   user-select: none;
-  -webkit-touch-callout: none;
-}
-.hold-ring {
-  --ring: var(--red);
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9;
-  margin: -16px 0 0 -16px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.18s var(--ease-set);
-}
-.hold-ring.is-on { opacity: 1; }
-.hold-ring[data-ground="ink"] { --ring: #fe433e; }
-.hold-ring[data-ground="red"] { --ring: var(--paper); }
-.hold-ring svg { display: block; overflow: visible; transition: scale 0.35s var(--ease-stamp); }
-.hold-ink { fill: var(--ring); opacity: 0.9; }
-.hold-track { fill: none; stroke: var(--ring); stroke-width: 1.2; opacity: 0.55; }
-/* brimming: it swells a touch, ready to splash */
-.hold-ring.is-full svg { scale: 1.18; }
-
-.hold-hint {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: var(--font-pen);
-  font-size: 1.35rem;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--red);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.35s var(--ease-set);
-}
-.hold-hint.is-on { opacity: 1; }
-.hold-hint[data-ground="ink"] { color: #fe433e; }
-.hold-hint[data-ground="red"] { color: var(--paper); }
-.hold-hint-ring {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1.5px solid currentColor;
-  background: conic-gradient(currentColor var(--fill, 0%), transparent 0);
-  animation: hint-fill 1.8s var(--ease-set) infinite;
-}
-@property --fill {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
-@keyframes hint-fill {
-  0% { --fill: 0%; }
-  70%, 100% { --fill: 100%; }
 }
 
 /* ── Ink roller ──────────────────────────────────────────────────────────── */
@@ -249,6 +184,18 @@ html.is-holding * {
 .cube-note-crown path { transition-duration: 0.9s !important; transition-delay: 0.7s; }
 .cube-note--stickers { transform: translate3d(calc(var(--cx) + var(--cr) * 1.05), calc(var(--cy) - var(--cr) * 0.35), 0); }
 .cube-note--stickers.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.1 - 10px), calc(var(--cy) - var(--cr) * 0.35), 0) translateX(-100%); }
+.cube-whirl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.cube-whirl svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.cube-whirl .cw-trail { stroke-width: 1.3; stroke-dasharray: 4 5; }
+.cube-whirl[data-ground="ink"] svg { stroke: #fe433e; }
+.cube-whirl[data-ground="red"] svg { stroke: var(--paper); }
 .cube-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .cube-confetti span {
   position: absolute;

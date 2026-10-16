@@ -17,7 +17,13 @@ import { Spring, smoothstep } from '../life/spring';
  * its neighbours. This is the one effect that animates a font axis rather
  * than only a transform; just the letters that changed are written, and
  * nothing runs when the pointer is away. Reduced motion: the plate stays as set.
+ *
+ * When the name first lands on the page (`press:landed`, from the loader — or
+ * straight away if the press already ran this visit), an invisible pen runs
+ * along it from the T to the L, inking each letter as it passes, so the
+ * nameplate settles into the page with one bright pass of ink.
  */
+const SWEEP = 1.15; // seconds, T to L
 const OPSZ_REST = 144;
 const OPSZ_INKED = 28;
 const WGHT_REST = 860;
@@ -70,9 +76,26 @@ export default function Nameplate({ text }) {
     measure();
     const offLayout = onLayout(measure);
 
+    // the landing sweep: a virtual pointer travelling the plate, eased
+    let sweepT = -1;
+    const startSweep = () => {
+      if (prefs.reduced) return;
+      sweepT = 0;
+      awake = true;
+    };
+    window.addEventListener('press:landed', startSweep);
+    const early = sessionStorage.getItem('press-loaded') ? setTimeout(startSweep, 500) : 0;
+
     const tick = (time, deltaMs) => {
       if (prefs.reduced) return;
       const dt = Math.min(0.05, deltaMs / 1000);
+      let sx = null;
+      if (sweepT >= 0) {
+        sweepT += dt / SWEEP;
+        const u = sweepT < 0.5 ? 2 * sweepT * sweepT : 1 - (-2 * sweepT + 2) ** 2 / 2;
+        sx = -reach * 0.6 + (box.w + reach * 1.2) * u;
+        if (sweepT >= 1) sweepT = -1;
+      }
       // read where the plate is now (cheap: one rect, only while a pointer is about)
       const live = pointer.active ? plate.getBoundingClientRect() : null;
       const k = live ? live.width / (box.w || 1) : 1;
@@ -82,16 +105,18 @@ export default function Nameplate({ text }) {
         pointer.x < live.right + reach &&
         pointer.y > live.top - reach &&
         pointer.y < live.bottom + reach;
-      if (!near && !awake) return;
+      if (!near && !awake && sx === null) return;
 
       let moving = false;
       for (let i = 0; i < sorts.length; i++) {
         const c = centres[i];
         const sp = springs[i];
+        sp.target = 0;
         if (near) {
           const d = Math.hypot(pointer.x - (live.left + c.x * k), (pointer.y - (live.top + c.y * k)) * 1.15);
           sp.target = 1 - smoothstep(0, reach, d);
-        } else sp.target = 0;
+        }
+        if (sx !== null) sp.target = Math.max(sp.target, 1 - smoothstep(0, reach * 0.75, Math.abs(sx - c.x)));
         sp.step(dt);
         if (!sp.settled) moving = true;
         const v = Math.max(0, Math.min(1, sp.value));
@@ -101,13 +126,15 @@ export default function Nameplate({ text }) {
           sorts[i].style.transform = v > 0.004 ? `scaleX(${(1 + (squeeze[i] - 1) * v).toFixed(4)})` : '';
         }
       }
-      awake = near || moving;
+      awake = near || moving || sx !== null;
     };
     gsap.ticker.add(tick);
 
     return () => {
       gsap.ticker.remove(tick);
       offLayout();
+      clearTimeout(early);
+      window.removeEventListener('press:landed', startSweep);
       sorts.forEach((s) => {
         s.style.width = '';
         s.style.fontVariationSettings = '';

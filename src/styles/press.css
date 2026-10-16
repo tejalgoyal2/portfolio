@@ -25,14 +25,16 @@
  * the cube and friends; a quarter-turn arrow after a twist. No dot, no ring.
  * Inked for the stock under it (--pen-ink), with a thin halo of the paper so it
  * holds up over type and the cube. */
+/* hidden everywhere, whatever a button or link asks for — a fully transparent
+   image first (sturdier than a bare `none` after the OS has shown a menu) */
 html.cursor-hidden,
 html.cursor-hidden * {
-  cursor: none;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=") 0 0, none !important;
 }
 html.cursor-hidden input,
 html.cursor-hidden textarea,
 html.cursor-hidden select {
-  cursor: text;
+  cursor: text !important;
 }
 .press-cursor.is-system { display: none; }
 .press-pen,
@@ -136,6 +138,7 @@ html.cursor-down .press-pen-icon { scale: 0.88; }
 .cursor-flick[data-ground="red"] { stroke: var(--paper); }
 .cursor-flick path:first-child { stroke-dasharray: 1; }
 .cursor-flick .flick-line { stroke-dasharray: 1; stroke-dashoffset: 1; stroke-width: 2.2; }
+.cursor-flick .flick-trail { stroke-dasharray: 0.55 1; stroke-dashoffset: 1; stroke-width: 1.4; opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .press-cursor-mark[data-state] .cursor-mark { animation: none; }
 }
@@ -203,19 +206,24 @@ html.cursor-down .press-pen-icon { scale: 0.88; }
   }
 }
 
-/* ── Declassify / redaction ──────────────────────────────────────────────── */
-.redacted {
-  position: relative;
+/* ── Split-flap board (Redacted.jsx) ─────────────────────────────────────────
+ * Each character on its own flap, locked to its own width; a flip is a quick
+ * squash through the hinge. Blank flaps are a faint dot. */
+.flapboard { white-space: nowrap; }
+.flap {
   display: inline-block;
-  white-space: nowrap;
+  text-align: center;
+  transform-origin: 50% 55%;
 }
-.redacted-panel {
-  position: absolute;
-  top: -2px;
-  left: -3px;
-  border-radius: 2px;
+.flapboard:not(.is-shown) .flap { opacity: 0.45; }
+.flapboard--red .flap { color: var(--red); }
+[data-ground="ink"] .flapboard--red .flap { color: #fe433e; }
+.flap.is-flip { animation: flap 0.09s linear; }
+@keyframes flap {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.15); }
+  100% { transform: scaleY(1); }
 }
-.redacted.is-revealed { cursor: text; }
 
 /* ── Stamps ──────────────────────────────────────────────────────────────── */
 .press-stamp {
@@ -418,15 +426,21 @@ button.press-stamp {
   width: 18px;
   margin-left: -9px;
   font-family: var(--font-impact);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   line-height: 1;
   text-align: center;
   color: var(--red);
   opacity: 0;
-  scale: 0.4;
-  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-stamp);
+  transform-origin: 50% 100%;
+  pointer-events: none;
 }
-.ridge-yikes.is-on { opacity: 1; scale: 1; }
+/* out of thin air: it swells up on the spot, overshoots, settles */
+.ridge-yikes.is-on { animation: yikes-pop 0.45s var(--ease-stamp) forwards; }
+@keyframes yikes-pop {
+  0% { opacity: 0; transform: scale(0); }
+  55% { opacity: 1; transform: scale(1.35) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
 
 /* ── The wire — newsroom crawl under the nameplate ────────────────────────────
  * A slim ink band that runs a slow dispatch crawl between Hero and About.
@@ -645,9 +659,9 @@ button.press-stamp {
   top: 0;
   width: 20px;
   height: 20px;
-  /* the pencil writes with its tip on the rule */
-  transform-origin: 0 0;
-  transform: translate(-2.9px, -17.4px);
+  /* the fountain pen writes with its nib on the rule, leaning back */
+  transform-origin: 10.1px 18.1px;
+  transform: translate(-10.1px, -18.1px) rotate(34deg);
   color: var(--rh-ink);
 }
 .rh-line-pen svg { width: 100%; height: 100%; overflow: visible; }
