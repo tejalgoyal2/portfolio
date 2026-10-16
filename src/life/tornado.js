@@ -2,30 +2,28 @@ import { gsap } from 'gsap';
 import { prefs } from './prefs';
 import { onLayout } from './layout';
 import { clamp, hash } from './spring';
-import { loadSprites, INKS } from './sprites';
+import { loadSprites } from './sprites';
 
 /**
  * The Skills type case gets its slugs delivered by weather.
  *
- * As the case comes up the page it's empty — just the category labels — and
- * the wind gets up: strokes of air of every sort (long easy gusts, a
- * loop-the-loop, a doubled stroke, a broken one) and leaves of every sort
- * tumbling through. Then the tornado arrives. It doesn't slide in from the
- * side: it comes from far off at the back right, small and hazy, swings round
- * towards you in a wide U and goes out past you at the front left — growing as
- * it comes, leaning back from the way it's going, swaying. It's drawn in ink:
- * spiral strands winding up it, tilted, wobbling rings, curls flung off the
- * top, dust at its foot, and debris climbing it — pencil icons, scraps of
- * paper, the logos of the tools themselves. Every skill is inside it,
- * whirling; as the funnel passes over a skill's slot, the slug is flung out
- * and drops home. Scroll back and it comes back for them.
+ * As the case comes up the page it's empty — just the category labels. Then a
+ * tornado appears far off, up by the headline at the back right: small, hazy,
+ * a smudge of a shadow under it. It comes on in a zig-zag, swinging towards
+ * you and across, growing as it nears, and goes out past you at the front
+ * left, dragging a trail of dust behind it. It's drawn in ink: spiral strands
+ * winding up it, tilted, wobbling rings, curls flung off the top, its height
+ * and shape breathing as it goes — and it's full of the tools of the trade,
+ * their logos whirling round it in their own colours. Every skill is inside
+ * it too; as the funnel passes over a skill's slot, the slug is flung out and
+ * drops home. Scroll back and it comes back for them.
  *
- * Where the tornado is follows the scroll on a critically damped spring (it
- * travels, never jumps); its spin runs on its own clock, so it stays alive
- * while you pause. The funnel and everything in it sit on real 3D geometry,
- * projected: the near side of each ring and strand is drawn on a canvas in
- * front of the slugs, the far side on one behind them, and things further
- * away are smaller and fainter.
+ * Where it is follows the scroll on a critically damped spring with a speed
+ * limit — it travels, it never lurches, however hard the page is flung — and
+ * it turns slowly and steadily on its own clock. The funnel and everything in
+ * it sit on real 3D geometry, projected: the near side of each ring and strand
+ * is drawn on a canvas in front of the slugs, the far side on one behind them,
+ * and things further away are smaller and fainter.
  *
  * Only runs while the section is on screen. Reduced motion (or no JS): the
  * slugs are simply in their places.
@@ -59,7 +57,7 @@ export function startTornado(section) {
   let H = 0;
   let dpr = 1;
   let ground = 0; // the case's foot (section coordinates)
-  let top = 0; // the case's top edge
+  let head = 0; // the headline's top, where it first appears
   let funnelH = 480;
   let homes = [];
   let P = null; // the U the funnel's foot travels along
@@ -67,10 +65,21 @@ export function startTornado(section) {
   // debris: pencil icons, brand marks, paper scraps
   let icons = [];
   let brands = [];
-  loadSprites(40).then((s) => (icons = s.map((set) => set.ink)));
-  import('./brands').then(({ brandSprites }) => brandSprites(48, INKS.ink).then((b) => (brands = b)));
-  const debris = Array.from({ length: 40 }, (_, i) => ({
-    kind: i % 3 === 0 ? 'brand' : i % 3 === 1 ? 'icon' : 'scrap',
+  // debris is loaded the first time the section comes near, a little at a time:
+  // the tools of the trade (a couple of dozen of them), in their own colours
+  let fetched = false;
+  const fetchDebris = () => {
+    if (fetched) return;
+    fetched = true;
+    loadSprites(40).then((s) => (icons = s.map((set) => set.ink)));
+    import('./brands').then(({ BRAND, brandSprites }) => {
+      const all = Object.keys(BRAND);
+      const pick = all.filter((_, i) => hash(i * 4.7) < 28 / all.length);
+      brandSprites(56, null, pick).then((b) => (brands = b));
+    });
+  };
+  const debris = Array.from({ length: 46 }, (_, i) => ({
+    kind: i % 6 === 5 ? 'scrap' : i % 6 === 4 ? 'icon' : 'brand',
     pick: (hash(i * 9.1) * 1000) | 0,
     u0: hash(i * 1.3),
     rise: 0.05 + hash(i * 2.9) * 0.08,
@@ -84,13 +93,14 @@ export function startTornado(section) {
     el,
     h: 0.14 + hash(i * 3.17) * 0.74,
     th: hash(i * 5.3) * Math.PI * 2,
-    w: 1.5 + hash(i * 1.9) * 1.3,
+    w: 0.8 + hash(i * 1.9) * 0.6,
     tilt: (hash(i * 7.7) - 0.5) * 50,
     b: 0,
   }));
 
   const measure = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // sketchy ink lines don't need full Retina: 1.5× is plenty, and a lot lighter
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     slugs.forEach((el) => (el.style.transform = ''));
     const sr = section.getBoundingClientRect();
     W = section.clientWidth;
@@ -102,14 +112,16 @@ export function startTornado(section) {
       c.style.height = `${H}px`;
     }
     const gr = grid.getBoundingClientRect();
-    top = gr.top - sr.top;
+    const hd = section.querySelector('.skills-head')?.getBoundingClientRect() || gr;
+    head = hd.top - sr.top;
     ground = gr.bottom - sr.top + 10;
     funnelH = clamp(gr.height + 140, 360, 620);
-    // from far back right (high on the page, small), round towards you, out at the front left
+    // from far off up by the headline (back right), round towards you, out at the front left
     P = {
-      x: [W + 140, W * 0.66, -W * 0.32],
-      y: [top + 40, ground + 30, ground + 190],
+      x: [W * 0.92, W * 0.62, -W * 0.3],
+      y: [head + funnelH * 0.32, ground + 20, ground + 200],
     };
+    trail.length = 0;
     homes = slugs.map((el) => {
       const r = el.getBoundingClientRect();
       return { x: r.left - sr.left + r.width / 2, y: r.top - sr.top + r.height / 2 };
@@ -117,55 +129,43 @@ export function startTornado(section) {
     frame(0);
   };
 
-  // ---- the weather
-  const WINDS = ['gust', 'loop', 'double', 'gust', 'dash', 'loop', 'gust', 'double', 'dash', 'gust'];
-  const winds = WINDS.map((kind, i) => ({
-    kind,
-    y: hash(i * 2.3),
-    x: hash(i * 4.1) * 1.4 - 0.2,
-    len: 170 + hash(i * 6.6) * 240,
-    sp: 240 + hash(i * 8.8) * 200,
-    ph: hash(i * 1.1) * 10,
-    w: 1.1 + hash(i * 3.3) * 0.9,
-  }));
-  const LEAVES = ['almond', 'round', 'maple', 'long', 'almond', 'oak', 'round', 'long', 'maple', 'almond', 'oak', 'round', 'long'];
-  const leaves = LEAVES.map((shape, i) => ({
-    shape,
-    x: hash(i * 3.3) * 1.2,
-    y: hash(i * 5.5),
-    a: hash(i * 7.1) * 6,
-    s: 6 + hash(i * 2.2) * 7,
-    tone: i % 4 === 0 ? 'red' : i % 5 === 2 ? 'ink' : 'paper',
-    caught: 0,
-    oth: hash(i * 4.4) * 6,
-    oh: 0.2 + hash(i * 6.2) * 0.6,
-  }));
+  // the dust it drags behind it: where its foot has been
+  const trail = [];
+  let trailClock = 0;
 
   let clock = 0;
   let prog = 0;
   let pv = 0;
   let on = false;
 
+  // it shows up as the headline comes on screen, and is through by the time
+  // the case reaches the top
+  const headEl = section.querySelector('.skills-head') || grid;
   const progress = () => {
-    const r = grid.getBoundingClientRect();
+    const r = headEl.getBoundingClientRect();
     const vh = window.innerHeight;
-    return clamp((vh * 1.0 - r.top) / (vh * 0.85), 0, 1);
+    return clamp((vh * 0.85 - r.top) / (vh * 1.05), 0, 1);
   };
 
   /** The funnel at a point of its run: foot position, size (depth), presence. */
   function funnelAt(p) {
-    const q = smoother(clamp((p - 0.16) / 0.76, 0, 1));
-    const gx = bez(P.x[0], P.x[1], P.x[2], q);
-    const gy = bez(P.y[0], P.y[1], P.y[2], q);
-    const s = 0.3 + 1.0 * q ** 1.15;
-    const fade = clamp(q / 0.06, 0, 1) * clamp((gx + W * 0.28) / (W * 0.2), 0, 1);
-    return { q, gx, gy, s, alpha: fade * (0.42 + 0.58 * Math.min(1, s)) };
+    const q = smoother(clamp((p - 0.1) / 0.8, 0, 1));
+    // the U, with a zig-zag on it: swinging across and in and out as it comes
+    const zig = Math.sin(q * Math.PI * 3);
+    const gx = bez(P.x[0], P.x[1], P.x[2], q) + zig * W * 0.07 * (0.4 + q);
+    const gy = bez(P.y[0], P.y[1], P.y[2], q) + zig * 18 * q;
+    const s = 0.18 + 1.2 * q ** 1.2 + zig * 0.07 * q;
+    const fade = clamp(q / 0.05, 0, 1) * clamp((gx + W * 0.26) / (W * 0.2), 0, 1);
+    return { q, gx, gy, s, alpha: fade * (0.32 + 0.68 * Math.min(1, s)) };
   }
 
   // the axis leans back from the way it's going (up and to the right) and sways
-  const axisX = (f, u) => f.gx + (70 * u ** 1.6 + Math.sin(u * 3.1 + clock * 1.25) * 24 * u + Math.sin(clock * 0.6) * 12 * u * u) * f.s;
-  const yAt = (f, u) => f.gy - u * funnelH * f.s;
-  const radius = (f, u) => (14 + 170 * u ** 1.5) * f.s;
+  // and its height and shape breathe as it goes
+  const lean = () => 60 + Math.sin(clock * 0.45) * 24;
+  const axisX = (f, u) => f.gx + (lean() * u ** 1.6 + Math.sin(u * 3.1 + clock * 0.9) * 24 * u + Math.sin(clock * 0.5) * 12 * u * u) * f.s;
+  const tall = () => funnelH * (1 + 0.08 * Math.sin(clock * 0.55));
+  const yAt = (f, u) => f.gy - u * tall() * f.s;
+  const radius = (f, u) => (14 + 170 * u ** (1.5 + 0.22 * Math.sin(clock * 0.4))) * f.s;
 
   function strokeSplit(f, pts, lw, alpha, tint = INK) {
     // pts: [x, y, near(bool), fade]; consecutive runs go to the near or far canvas
@@ -190,7 +190,7 @@ export function startTornado(section) {
       const pts = [];
       const th0 = (k / 7) * Math.PI * 2;
       for (let u = 0.02; u <= 1.0001; u += 0.025) {
-        const a = th0 + u * Math.PI * 4.6 - clock * (3.1 - u * 1.4);
+        const a = th0 + u * Math.PI * 4.6 - clock * (1.5 - u * 0.5);
         const r = radius(f, u) * (0.92 + 0.08 * Math.sin(k * 2.1 + u * 9 + clock));
         const x = axisX(f, u) + Math.cos(a) * r;
         const y = yAt(f, u) + Math.sin(a) * r * 0.26;
@@ -207,7 +207,7 @@ export function startTornado(section) {
       const tilt = Math.atan2(axisX(f, u + 0.04) - axisX(f, u - 0.04), funnelH * f.s * 0.08) * 0.35 + Math.sin(clock * 0.9 + j) * 0.09;
       const cx = axisX(f, u);
       const cy = yAt(f, u);
-      const spin = clock * (3.6 - u * 1.8) + j * 1.7;
+      const spin = clock * (1.7 - u * 0.7) + j * 1.7;
       for (let k = 0; k < 2 + (j % 2); k++) {
         const a0 = spin + k * 2.4 + hash(j * 5 + k) * 0.8;
         const len = 0.9 + hash(j * 11 + k) * 1.4;
@@ -224,7 +224,7 @@ export function startTornado(section) {
     }
     // curls flung off the top
     for (let k = 0; k < 4; k++) {
-      const a0 = clock * 1.6 + k * 1.57;
+      const a0 = clock * 0.9 + k * 1.57;
       const pts = [];
       for (let t = 0; t <= 1; t += 0.06) {
         const a = a0 + t * 2.4;
@@ -236,8 +236,8 @@ export function startTornado(section) {
     // debris climbing the spiral
     for (let i = 0; i < debris.length; i++) {
       const d = debris[i];
-      const u = (d.u0 + clock * d.rise) % 1;
-      const th = d.th + clock * (2.8 - u * 1.3);
+      const u = (d.u0 + clock * d.rise * 0.7) % 1;
+      const th = d.th + clock * (1.3 - u * 0.5);
       const r = radius(f, u) * d.rf;
       const x = axisX(f, u) + Math.cos(th) * r;
       const y = yAt(f, u) + Math.sin(th) * r * 0.26;
@@ -249,7 +249,7 @@ export function startTornado(section) {
       ctx.save();
       ctx.globalAlpha = a;
       ctx.translate(x, y);
-      ctx.rotate(clock * d.spin + th);
+      ctx.rotate(clock * d.spin * 0.4 + th * 0.5);
       const sz = d.size * depth;
       if (d.kind === 'brand' && brands.length) {
         const b = brands[d.pick % brands.length];
@@ -268,6 +268,14 @@ export function startTornado(section) {
       }
       ctx.restore();
     }
+    // its shadow on the ground: soft, wider the nearer it is
+    const sh = fctx.createRadialGradient(axisX(f, 0), f.gy + 6, 0, axisX(f, 0), f.gy + 6, 120 * f.s);
+    sh.addColorStop(0, rgba(INK, 0.12 * f.alpha));
+    sh.addColorStop(1, rgba(INK, 0));
+    bctx.fillStyle = sh;
+    bctx.beginPath();
+    bctx.ellipse(axisX(f, 0), f.gy + 6, 120 * f.s, 22 * f.s, 0, 0, Math.PI * 2);
+    bctx.fill();
     // dust where it touches down
     for (let i = 0; i < 7; i++) {
       const t = (clock * 0.85 + i / 7) % 1;
@@ -280,124 +288,23 @@ export function startTornado(section) {
     }
   }
 
-  function drawWind(amt, f) {
-    if (amt <= 0.01) return;
-    const y0 = top - 70;
-    const y1 = ground - 20;
-    bctx.lineCap = 'round';
-    for (const wd of winds) {
-      const span = W + wd.len * 2;
-      const head = ((wd.x * span + clock * wd.sp) % span) - wd.len;
-      const y = y0 + wd.y * (y1 - y0);
-      const pts = [];
-      for (let q = 0; q <= 1.0001; q += 0.03) {
-        let x = head - q * wd.len;
-        let yy = y + Math.sin(x * 0.011 + wd.ph + clock) * 9;
-        if (wd.kind === 'loop' && q > 0.3 && q < 0.62) {
-          // a loop-the-loop in the middle of the stroke
-          const c = ((q - 0.3) / 0.32) * Math.PI * 2;
-          x += Math.sin(c) * 16;
-          yy -= (1 - Math.cos(c)) * 14;
-        }
-        // the funnel draws the air in towards it
-        const d = x - f.gx;
-        yy += Math.exp(-(d * d) / (70000 * f.s)) * (f.gy - funnelH * f.s * 0.4 - yy) * 0.22 * f.alpha;
-        pts.push([x, yy, q]);
+  function drawTrail(f) {
+    // a dusty wake: puffs and scuffs along the way it came, fading behind it
+    for (let i = 0; i < trail.length; i++) {
+      const t = trail[i];
+      const age = (clock - t.t) / 2.2;
+      if (age >= 1) continue;
+      const a = (1 - age) ** 1.5 * f.alpha * 0.5;
+      const r = (16 + age * 46) * t.s;
+      bctx.strokeStyle = rgba(INK, a * 0.6);
+      bctx.lineWidth = 1.1;
+      bctx.beginPath();
+      bctx.ellipse(t.x + Math.sin(i * 2.3) * 10 * t.s, t.y - age * 22 * t.s, r, r * 0.3, 0, Math.PI * 1.1, Math.PI * 1.9);
+      bctx.stroke();
+      if (i % 3 === 0) {
+        bctx.fillStyle = rgba(INK, a * 0.5);
+        bctx.fillRect(t.x + Math.cos(i * 1.7) * r, t.y - age * 30 * t.s - 4, 2, 2);
       }
-      const passes = wd.kind === 'double' ? [0, 5] : [0];
-      for (const off of passes) {
-        for (let k = 1; k < pts.length; k++) {
-          const [xa, ya] = pts[k - 1];
-          const [xb, yb, q] = pts[k];
-          if (wd.kind === 'dash' && Math.floor(q * 9) % 2) continue;
-          bctx.strokeStyle = rgba(INK, amt * 0.42 * (1 - q) ** 1.3 * (off ? 0.6 : 1));
-          bctx.lineWidth = wd.w * (1 - q * 0.6) * (off ? 0.6 : 1);
-          bctx.beginPath();
-          bctx.moveTo(xa, ya + off);
-          bctx.lineTo(xb, yb + off);
-          bctx.stroke();
-        }
-      }
-    }
-  }
-
-  function leafPath(ctx, shape, s) {
-    ctx.beginPath();
-    if (shape === 'round') ctx.ellipse(0, 0, s * 0.75, s * 0.62, 0, 0, Math.PI * 2);
-    else if (shape === 'long') {
-      ctx.moveTo(-s * 1.4, 0);
-      ctx.quadraticCurveTo(0, -s * 0.4, s * 1.4, 0);
-      ctx.quadraticCurveTo(0, s * 0.4, -s * 1.4, 0);
-    } else if (shape === 'maple') {
-      for (let k = 0; k < 10; k++) {
-        const a = (k / 10) * Math.PI * 2 - Math.PI / 2;
-        const r = k % 2 ? s * 0.45 : s;
-        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-      }
-      ctx.closePath();
-    } else if (shape === 'oak') {
-      ctx.moveTo(-s * 1.1, 0);
-      for (let k = 0; k <= 6; k++) {
-        const x = -s * 1.1 + (k / 6) * s * 2.2;
-        ctx.quadraticCurveTo(x - s * 0.18, -s * (k % 2 ? 0.75 : 0.45), x, -s * 0.3);
-      }
-      for (let k = 6; k >= 0; k--) {
-        const x = -s * 1.1 + (k / 6) * s * 2.2;
-        ctx.quadraticCurveTo(x + s * 0.18, s * (k % 2 ? 0.75 : 0.45), x, s * 0.3);
-      }
-    } else {
-      ctx.moveTo(-s, 0);
-      ctx.quadraticCurveTo(0, -s * 0.75, s, 0);
-      ctx.quadraticCurveTo(0, s * 0.75, -s, 0);
-    }
-  }
-
-  function drawLeaf(ctx, lf, x, y, alpha, scale) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(lf.a);
-    ctx.scale(scale, scale * (0.5 + 0.5 * Math.abs(Math.cos(lf.a * 1.7))));
-    leafPath(ctx, lf.shape, lf.s);
-    ctx.fillStyle =
-      lf.tone === 'red' ? rgba(RED, alpha * 0.55) : lf.tone === 'ink' ? rgba(INK, alpha * 0.7) : `rgba(233,226,210,${(alpha * 0.92).toFixed(3)})`;
-    ctx.fill();
-    ctx.strokeStyle = rgba(lf.tone === 'red' ? RED : INK, alpha * 0.8);
-    ctx.lineWidth = 1 / scale;
-    ctx.stroke();
-    if (lf.shape !== 'round' && lf.shape !== 'maple') {
-      ctx.beginPath();
-      ctx.moveTo(-lf.s * 0.9, 0);
-      ctx.lineTo(lf.s * 1.3, 0);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function stepLeaves(dt, amt, f) {
-    const y0 = top - 50;
-    const y1 = ground - 30;
-    for (const lf of leaves) {
-      const lx = lf.x * W;
-      const ly = y0 + lf.y * (y1 - y0);
-      const near = Math.abs(lx - f.gx) < 240 * f.s + 60 && f.alpha > 0.3;
-      lf.caught += ((near ? 1 : 0) - lf.caught) * (1 - Math.exp(-(near ? 2.5 : 1) * dt));
-      lf.x -= ((80 + lf.s * 9) * amt * dt) / Math.max(1, W);
-      lf.y += Math.sin(clock * 2 + lf.oth) * 0.0008;
-      lf.a += (1.3 + Math.sin(clock + lf.oth)) * dt * (lf.tone === 'red' ? -1 : 1);
-      if (lf.x < -0.08) {
-        lf.x = 1.08;
-        lf.y = Math.random();
-      }
-      lf.oth += dt * (2.8 - lf.oh);
-      const u = lf.oh;
-      const ox = axisX(f, u) + Math.cos(lf.oth) * radius(f, u) * 0.9;
-      const oy = yAt(f, u) + Math.sin(lf.oth) * radius(f, u) * 0.24;
-      const k = lf.caught;
-      const x = lx + (ox - lx) * k;
-      const y = ly + (oy - ly) * k;
-      const alpha = Math.max(amt * (1 - k), f.alpha * k);
-      if (alpha < 0.02) continue;
-      drawLeaf(k > 0.5 && Math.sin(lf.oth) > 0 ? fctx : bctx, lf, x, y, alpha, 1 + (f.s - 1) * k);
     }
   }
 
@@ -409,7 +316,7 @@ export function startTornado(section) {
       const u = s.h;
       // the funnel has passed over this slot: fling the slug home (and back up if it returns)
       const goal = axisX(f, u) < home.x + 30 ? 1 : 0;
-      s.b = dt === 0 ? goal : clamp(s.b + (goal ? 1.5 : -2.2) * dt, 0, 1);
+      s.b = dt === 0 ? goal : clamp(s.b + (goal ? 1.4 : -1.6) * dt, 0, 1);
       s.th += s.w * dt * (1.2 - u * 0.5);
       const r = radius(f, u) * 0.78;
       const depth = Math.sin(s.th);
@@ -444,9 +351,11 @@ export function startTornado(section) {
       prog = target;
       pv = 0;
     } else {
-      // a critically damped spring: it gathers pace and eases in, never jumps
-      const k = 10;
+      // a critically damped spring with a speed limit: it gathers pace and
+      // eases in, and however hard the page is flung it never races
+      const k = 8;
       pv += (k * (target - prog) - 2 * Math.sqrt(k) * pv) * dt;
+      pv = clamp(pv, -0.45, 0.45);
       prog += pv * dt;
     }
     const f = funnelAt(prog);
@@ -454,9 +363,13 @@ export function startTornado(section) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
     }
-    const amt = clamp(prog / 0.12, 0, 1) * (1 - clamp((prog - 0.85) / 0.15, 0, 1));
-    drawWind(amt, f);
-    stepLeaves(dt, amt, f);
+    trailClock += dt;
+    if (trailClock > 0.07 && f.alpha > 0.05) {
+      trailClock = 0;
+      trail.push({ x: axisX(f, 0), y: f.gy, s: f.s, t: clock });
+      if (trail.length > 34) trail.shift();
+    }
+    drawTrail(f);
     drawFunnel(f);
     placeSlugs(dt, f);
   }
@@ -465,7 +378,18 @@ export function startTornado(section) {
     if (!on || document.hidden || !P) return;
     frame(Math.min(0.05, deltaMs / 1000));
   };
-  const io = new IntersectionObserver(([e]) => (on = e.isIntersecting), { rootMargin: '200px 0px' });
+  // the canvases only hold pixels while the section is near the screen
+  const io = new IntersectionObserver(
+    ([e]) => {
+      on = e.isIntersecting;
+      if (on) {
+        fetchDebris();
+        measure();
+      }
+      else for (const c of [back, front]) c.width = c.height = 0;
+    },
+    { rootMargin: '700px 0px' }
+  );
   io.observe(section);
   const offLayout = onLayout(measure);
   window.addEventListener('resize', measure);

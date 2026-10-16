@@ -2,21 +2,33 @@ import { useEffect, useRef } from 'react';
 import { SKILL_NODES } from '../data/skills';
 import KineticHeadline from '../press/KineticHeadline';
 import { startTornado } from '../life/tornado';
+import { startSkillPops } from '../life/skillPop';
 import { afterPrint } from '../life/idle';
 
 /**
  * Skills — a typographic index, readable by construction. Each category is a
- * small-caps label over a wrapping set of type slugs; the whole thing is static
- * (no physics, no canvas), so nothing ever piles into a heap. One restrained
- * signature: hover a slug and it inks — the slug stamps to dark, its neighbours
- * step back — the "pick a slug" feeling, in pure CSS. The slugs are delivered
+ * small-caps label over a wrapping set of type slugs; the layout itself is
+ * static, so nothing ever piles into a heap. Every slug has an icon inside:
+ * point at one and it peeks up, click and it pops out and floats away
+ * (src/life/skillPop.js). The slugs are delivered
  * by a tornado: wind and leaves across the empty case, then the funnel sweeps
  * through and drops every slug in its slot (src/life/tornado.js). Reduced
  * motion is the identical, still layout.
  */
 export default function Skills() {
   const ref = useRef(null);
-  useEffect(() => afterPrint(() => startTornado(ref.current)), []);
+  useEffect(
+    () =>
+      afterPrint(() => {
+        const stopTornado = startTornado(ref.current);
+        const stopPops = startSkillPops(ref.current);
+        return () => {
+          stopTornado();
+          stopPops();
+        };
+      }),
+    []
+  );
 
   return (
     <section ref={ref} className="skills" aria-label="Skills" data-ground="paper" data-section="skills">

@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import KineticHeadline from '../press/KineticHeadline';
 import Postage from '../press/Postage';
+// the marks themselves (src/life/brands, from thesvg — see its README.md), as plain asset URLs
+import gmailIcon from '../life/brands/gmail.svg?url';
+import githubIcon from '../life/brands/github.svg?url';
+import linkedinIcon from '../life/brands/linkedin.svg?url';
 
 /**
  * Let's talk — the oxblood finale, where the cube comes back out of the margin
@@ -65,7 +69,10 @@ export default function Contact() {
 
           <ul className="contact-classified" data-arrive-items="paste">
             <li className="contact-line">
-              <span className="contact-line-label">EMAIL&nbsp;→</span>
+              <span className="contact-line-label">
+                <img src={gmailIcon} alt="" width="22" height="22" />
+                <span className="sr-only">Email</span>
+              </span>
               <a
                 href="mailto:itejalgoyal@gmail.com"
                 className="contact-line-link"
@@ -75,7 +82,10 @@ export default function Contact() {
               </a>
             </li>
             <li className="contact-line">
-              <span className="contact-line-label">GITHUB&nbsp;→</span>
+              <span className="contact-line-label">
+                <img src={githubIcon} alt="" width="22" height="22" />
+                <span className="sr-only">GitHub</span>
+              </span>
               <a
                 href="https://github.com/tejalgoyal2"
                 target="_blank"
@@ -87,7 +97,10 @@ export default function Contact() {
               </a>
             </li>
             <li className="contact-line">
-              <span className="contact-line-label">LINKEDIN&nbsp;→</span>
+              <span className="contact-line-label">
+                <img src={linkedinIcon} alt="" width="22" height="22" />
+                <span className="sr-only">LinkedIn</span>
+              </span>
               <a
                 href="https://www.linkedin.com/in/tejalgoyal"
                 target="_blank"

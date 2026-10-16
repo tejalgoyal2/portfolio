@@ -47,7 +47,7 @@ export const SKILL_NODES = [
     id: "tools", label: "DevOps & Tools",
     items: [
       "Git", "Vite", "Cloudflare Pages", "Vercel",
-      "Linux", "Docker", "Confluence API", "Ollama", "Google Colab",
+      "Linux", "Docker", "Azure DevOps", "Confluence API", "Ollama", "Google Colab",
     ],
   },
 ];
