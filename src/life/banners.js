@@ -4,6 +4,7 @@ import { SECTIONS } from '../data/sections';
 import { prefs } from './prefs';
 import { pointer } from './pointer';
 import { scroll } from './scroll';
+import { onLayout } from './layout';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -68,6 +69,24 @@ export function startBanners(root = document) {
       : gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'top -60%', scrub: 0.6 } });
     slide?.fromTo(el, { xPercent: 10 }, { xPercent: -30, ease: 'none' });
 
+    // where the line and its letters sit, measured when the layout changes —
+    // never per frame (the slide is a known translate, read from gsap's own cache)
+    const geo = { left: 0, top: 0, w: 1, h: 1, at: [] };
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const xp = (gsap.getProperty(el, 'xPercent') || 0) / 100;
+      geo.left = r.left - xp * r.width;
+      geo.top = r.top + scroll.y;
+      geo.w = r.width;
+      geo.h = r.height;
+      geo.at = st.map((s) => {
+        const lr = s.el.getBoundingClientRect();
+        return { x: lr.left - r.left, y: lr.top - r.top, w: lr.width, h: lr.height };
+      });
+    };
+    measure();
+    const offLayout = onLayout(measure);
+
     let on = false;
     const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
     io.observe(section);
@@ -80,23 +99,21 @@ export function startBanners(root = document) {
       const dt = Math.min(0.05, deltaMs / 1000);
       const dv = scroll.v - lastV;
       lastV = scroll.v;
-      const box = el.getBoundingClientRect();
-      const inBand = pointer.active && pointer.y > box.top - 40 && pointer.y < box.bottom + 20;
+      const bx = geo.left + ((gsap.getProperty(el, 'xPercent') || 0) / 100) * geo.w;
+      const by = geo.top - scroll.y;
+      const inBand = pointer.active && pointer.y > by - 40 && pointer.y < by + geo.h + 20;
       const smooth = 1 - Math.exp(-dt / 0.35);
       breeze += ((inBand ? Math.max(-1600, Math.min(1600, pointer.vx)) : 0) - breeze) * smooth;
       jolt += (Math.max(-40000, Math.min(40000, dv / Math.max(dt, 1e-3))) - jolt) * smooth;
       for (let i = 0; i < st.length; i++) {
         const s = st[i];
-        const r = s.el.getBoundingClientRect();
-        const over =
-          pointer.active &&
-          pointer.x > r.left - 10 &&
-          pointer.x < r.right + 10 &&
-          pointer.y > r.top &&
-          pointer.y < r.bottom;
+        const a = geo.at[i];
+        const rl = bx + a.x;
+        const rt = by + a.y;
+        const over = inBand && pointer.x > rl - 10 && pointer.x < rl + a.w + 10 && pointer.y > rt && pointer.y < rt + a.h;
         if (!prefs.reduced) {
           // the breeze is strongest on the letters nearest the cursor
-          const cx = r.left + r.width / 2;
+          const cx = rl + a.w / 2;
           const near = Math.exp(-(((pointer.x - cx) / 260) ** 2));
           const push = breeze * 0.0016 * near + jolt * 0.0000016 * (1 + 0.2 * Math.sin(i * 1.7));
           s.w += (push - K * s.th - DAMP * s.w) * dt;
@@ -114,6 +131,7 @@ export function startBanners(root = document) {
     gsap.ticker.add(tick);
     made.push(() => {
       gsap.ticker.remove(tick);
+      offLayout();
       io.disconnect();
       slide?.revert();
       el.remove();

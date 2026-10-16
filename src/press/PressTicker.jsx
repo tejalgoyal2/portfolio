@@ -54,6 +54,10 @@ export default function PressTicker() {
     document.fonts?.ready.then(recompute);
 
     let paused = false;
+    // off screen it doesn't crawl at all
+    let seen = true;
+    const io = new IntersectionObserver(([e]) => (seen = e.isIntersecting));
+    io.observe(wire);
     const onEnter = () => { paused = true; };
     const onLeave = () => { paused = false; };
     wire.addEventListener('pointerenter', onEnter);
@@ -66,7 +70,7 @@ export default function PressTicker() {
     let x = 0;
 
     const tick = (time, dt) => {
-      if (paused || half <= 0) return;
+      if (paused || !seen || half <= 0) return;
       const lenis = window.__lenis;
       const vel = lenis ? Math.abs(lenis.velocity) : 0;
       const speed = BASE + Math.min(vel * BOOST, MAX_BOOST);
@@ -78,6 +82,7 @@ export default function PressTicker() {
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
+      io.disconnect();
       window.removeEventListener('resize', recompute);
       wire.removeEventListener('pointerenter', onEnter);
       wire.removeEventListener('pointerleave', onLeave);

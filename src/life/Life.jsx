@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
 import { startPointer } from './pointer';
-import { startScroll } from './scroll';
+import { startScroll, scroll } from './scroll';
 import { startGround, groundAt } from './ground';
 import { startPaperPress } from './paper';
 import { startIconDrift } from './iconDrift';
@@ -13,8 +13,7 @@ import { afterPrint } from './idle';
 /**
  * The life layer's persistent pieces, mounted once beside the press layers:
  * the pencil icons drifting on the paper and the ripples a click sends, the
- * registration marks a click leaves on bare paper (a drag doodles with your
- * pen — drawn on the drift canvas), and the ink roller that
+ * registration marks a click leaves on bare paper, and the ink roller that
  * fills along the top edge with page progress. The shared pointer / scroll /
  * ground trackers and the one paper-press listener start here too.
  */
@@ -121,8 +120,7 @@ function InkRoller() {
     let lastP = -1;
     let lastOnRed = null;
     const tick = () => {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      const p = scroll.max > 0 ? Math.min(1, Math.max(0, scroll.y / scroll.max)) : 0;
       if (Math.abs(p - lastP) > 0.0005) {
         lastP = p;
         el.style.transform = `scaleX(${p.toFixed(4)})`;

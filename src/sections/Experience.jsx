@@ -64,6 +64,33 @@ export default function Experience() {
     const CX = 40; // the line's centre inside its strip
     const wave = (y) => CX + Math.sin(y * 0.0105) * 12 + Math.sin(y * 0.0037 + 1) * 7;
     const LOOP = 19; // radius of the little loop before each job
+    let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
+    const bez = (a, b, c, e, t) => {
+      const u = 1 - t;
+      const w0 = u * u * u;
+      const w1 = 3 * u * u * t;
+      const w2 = 3 * u * t * t;
+      const w3 = t * t * t;
+      return [w0 * a[0] + w1 * b[0] + w2 * c[0] + w3 * e[0], w0 * a[1] + w1 * b[1] + w2 * c[1] + w3 * e[1]];
+    };
+    /** The point at length L along the line, and the line's heading there. */
+    const along = (L) => {
+      let lo = 0;
+      let hi = segs.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (segs[mid].at <= L) lo = mid;
+        else hi = mid - 1;
+      }
+      const g = segs[lo];
+      if (!g) return { x: 0, y: 0, a: Math.PI / 2 };
+      const t = Math.min(1, Math.max(0, (L - g.at) / Math.max(1e-6, g.len)));
+      const [x, y] = bez(g.p1, g.c1, g.c2, g.p2, t);
+      // the tangent, smoothed over a little of the line either side
+      const [x0, y0] = bez(g.p1, g.c1, g.c2, g.p2, Math.max(0, t - 0.25));
+      const [x1, y1] = bez(g.p1, g.c1, g.c2, g.p2, Math.min(1, t + 0.25));
+      return { x, y, a: Math.atan2(y1 - y0, x1 - x0) };
+    };
 
     // the line: a meander down the margin with a loop before each job, then
     // round the corner at the bottom and out along the closing rule
@@ -94,26 +121,43 @@ export default function Experience() {
       const ry = H - 1;
       for (let a = Math.PI; a >= Math.PI / 2; a -= Math.PI / 12) raw.push([ex + 28 + Math.cos(a) * 28, ry - 28 + Math.sin(a) * 28]);
       for (let x = ex + 40; x <= Wd - left; x += 24) raw.push([x, ry]);
-      // smooth it (Catmull-Rom), and note how far along each dot is
+      // smooth it (Catmull-Rom → cubic Béziers), keeping each piece so the nib
+      // can ride the curve by plain arithmetic, never by asking the SVG
+      segs = [];
       let d = `M${raw[0][0].toFixed(1)} ${raw[0][1].toFixed(1)}`;
+      let acc = 0;
       for (let k = 0; k < raw.length - 1; k++) {
         const p0 = raw[k - 1] || raw[k];
         const p1 = raw[k];
         const p2 = raw[k + 1];
         const p3 = raw[k + 2] || p2;
-        d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        // its length, from a few points along it
+        let len = 0;
+        let prev = p1;
+        for (let q = 1; q <= 4; q++) {
+          const pt = bez(p1, c1, c2, p2, q / 4);
+          len += Math.hypot(pt[0] - prev[0], pt[1] - prev[1]);
+          prev = pt;
+        }
+        segs.push({ p1, c1, c2, p2, at: acc, len });
+        acc += len;
       }
       path.setAttribute('d', d);
       total = path.getTotalLength();
       path.style.strokeDasharray = `${total}`;
-      // where along the line each dot sits: the running length of the points
-      // we laid down (cheap — no measuring the curve), scaled to the real path
-      const run = [0];
-      for (let k = 1; k < raw.length; k++) run.push(run[k - 1] + Math.hypot(raw[k][0] - raw[k - 1][0], raw[k][1] - raw[k - 1][1]));
-      const scale = total / Math.max(1, run[run.length - 1]);
+      // scale our sums to the browser's own length, so the ink and the nib agree
+      const scale = total / Math.max(1, acc);
+      segs.forEach((g) => {
+        g.at *= scale;
+        g.len *= scale;
+      });
+      // where along the line each dot sits
       const tail = raw.length - Math.ceil((Wd - left - ex) / 24) - 7; // the points before the exit
       marks = at.map((y) => {
-        for (let k = 1; k < tail; k++) if (raw[k][1] >= y - 1) return run[k] * scale;
+        for (let k = 1; k < tail; k++) if (raw[k][1] >= y - 1) return segs[k - 1].at + segs[k - 1].len;
         return total;
       });
       dots.forEach((dot, i) => {
@@ -126,11 +170,9 @@ export default function Experience() {
     const draw = (p, snap = false) => {
       const L = p * total;
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
-      const pt = path.getPointAtLength(L);
-      // the nib's lean follows the line, smoothed over a few px so it never twitches
-      const a0 = path.getPointAtLength(Math.max(0, L - 10));
-      const a1 = path.getPointAtLength(Math.min(total, L + 10));
-      let want = (Math.atan2(a1.y - a0.y, a1.x - a0.x) * 180) / Math.PI - 90;
+      const pt = along(L);
+      // the nib's lean follows the line, eased so it never twitches
+      let want = (pt.a * 180) / Math.PI - 90;
       while (want - ang > 180) want -= 360;
       while (want - ang < -180) want += 360;
       ang = snap ? want : ang + (want - ang) * 0.35;

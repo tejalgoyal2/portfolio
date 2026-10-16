@@ -24,6 +24,9 @@ export function handwrite(list, penSvg) {
   pen.innerHTML = penSvg;
   list.appendChild(pen);
   gsap.set(items, { clipPath: 'inset(-20% 100% -30% 0)' });
+  // set straight onto the pen every frame (a fresh gsap.set each frame would re-read its styles)
+  const penX = gsap.quickSetter(pen, 'x', 'px');
+  const penY = gsap.quickSetter(pen, 'y', 'px');
 
   let tl = null;
   const st = once(list, 'top 80%', () => {
@@ -48,7 +51,8 @@ export function handwrite(list, penSvg) {
             li.style.clipPath = `inset(-20% ${((1 - k) * 100).toFixed(2)}% -30% 0)`;
             // the hand makes letters: a quick up-and-down scribble as it moves along
             const wobble = Math.sin(k * w * 0.42) * 3.2 + Math.sin(k * w * 0.13) * 1.6;
-            gsap.set(pen, { x: x0 + w * k, y: y0 - 4 + wobble });
+            penX(x0 + w * k);
+            penY(y0 - 4 + wobble);
           },
         },
         '>'

@@ -22,6 +22,7 @@ gsap.registerPlugin(ScrollTrigger);
  *
  *   trigger: 'scroll' | 'hover'   tone: 'ink' | 'red'
  */
+const FLIP = [{ transform: 'scaleY(1)' }, { transform: 'scaleY(0.15)' }, { transform: 'scaleY(1)' }];
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const DIGITS = '0123456789';
 const pickFor = (ch) => {
@@ -64,9 +65,8 @@ export default function Redacted({ children, trigger = 'scroll', tone = 'ink' })
         let n = 0;
         const step = () => {
           n++;
-          f.classList.remove('is-flip');
-          void f.offsetWidth;
-          f.classList.add('is-flip');
+          // a flap turning over: squashed flat and back (no reflow to restart it)
+          f.animate(FLIP, 90);
           if (n >= turns) {
             f.textContent = real;
             if (--left <= 0) busy = false;

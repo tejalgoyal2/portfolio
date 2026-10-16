@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { sampleScroll } from '../life/scroll';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,8 +28,12 @@ export function usePressScroll() {
     lenis.on('scroll', ScrollTrigger.update);
 
     // prioritised so Lenis moves the page before anything else reads the
-    // scroll this frame (canvases that track the paper stay in step with it)
-    const raf = (time) => lenis.raf(time * 1000);
+    // scroll this frame (canvases that track the paper stay in step with it),
+    // and the scroll is sampled once, there, for everyone (src/life/scroll.js)
+    const raf = (time, deltaMs) => {
+      lenis.raf(time * 1000);
+      sampleScroll(deltaMs);
+    };
     gsap.ticker.add(raf, false, true);
     gsap.ticker.lagSmoothing(0);
 
