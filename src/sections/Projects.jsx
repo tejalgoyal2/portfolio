@@ -4,6 +4,7 @@ import { PROJECTS } from '../data/projects';
 import { CONNECTIONS, METRICS } from '../data/connections';
 import KineticHeadline from '../press/KineticHeadline';
 import Stamp from '../press/Stamp';
+import Bug from '../press/Bug';
 
 /**
  * Work — a board of project cards. Tier-1 files render their full dossier
@@ -351,6 +352,7 @@ export default function Projects() {
   return (
     <section className="projects" id="work" aria-label="Work — projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
+        <Bug />
         <header className="cf-head" data-depart="lift">
           <span className="kicker">Work</span>
           <KineticHeadline as="h2" font="impact" className="cf-headline">

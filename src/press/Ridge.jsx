@@ -14,10 +14,11 @@ gsap.registerPlugin(ScrollTrigger);
  * Pines stand in clumps along both. A little camper van (surfboard on the
  * roof) drives over the near ridge as the range crosses the screen — and a
  * boulder is rolling after it. It keeps its distance while the van keeps
- * going and gains on it when the van slows — always nearly, never quite —
- * hopping over the bumps as it goes; if the van backs into it, it leaps
- * clean over the roof and carries on from the other side. When they're close
- * a little "!" pops up over the van.
+ * going — but it only rolls so fast, so a quick scroll leaves it behind and
+ * it trundles up again after; it gains when the van slows, always nearly,
+ * never quite. Turn the van round into it and the van's front tosses it up
+ * into the air; it comes down further along and carries on. When they're
+ * close a little "!" pops up over the van.
  *
  * The ridges are drawn for the real width (rounded peaks, eased valleys, from
  * a fixed seed so they're the same every visit). Reduced motion: the range is
@@ -129,51 +130,52 @@ export default function Ridge() {
     const yikes = root.querySelector('.ridge-yikes');
     const car = stopCar.state;
     const R = 15;
-    let side = -1; // which side of the van it's chasing from (along the road)
+    const MAXV = 240; // the boulder rolls at its own pace: a fast scroll leaves it behind
+    const G = 1500; // gravity, px/s², when it's been thrown
+    let side = -1; // which side of the van it's on (along the road)
     let bs = car.s - 140;
     let bv = 0;
     let roll = 0;
-    // a hop: little ones over bumps, a big one over the van
-    let hop = null; // { t, dur, h, from, to }
-    let nextBump = 0.8;
     let prevBs = bs;
+    let air = null; // { vx, vy, h } while it's flying
     const chase = (t, deltaMs) => {
       const dt = Math.min(0.05, deltaMs / 1000);
-      // it keeps its distance at speed, and gains when the van slows — nearly, never quite
-      const gap = 58 + Math.min(110, Math.abs(car.v) * 0.35);
-      // the van turning back towards it: the boulder just keeps coming (and leaps it)
-      const approaching = side * car.v > 20;
-      const goal = approaching ? car.s : car.s + side * gap;
-      let lift = 0;
-      if (prefs.reduced) bs = goal;
-      else if (hop) {
-        hop.t = Math.min(1, hop.t + dt / hop.dur);
-        bs = hop.from + (hop.to() - hop.from) * hop.t;
-        lift = Math.sin(Math.PI * hop.t) * hop.h;
-        if (hop.t >= 1) {
-          if (hop.over) side = -side;
-          hop = null;
-          bv = car.v * 0.6;
+      let h = 0;
+      if (prefs.reduced) {
+        bs = car.s + side * 70;
+      } else if (air) {
+        // thrown: flying on, coming down under gravity, spinning
+        bs += air.vx * dt;
+        air.vy += G * dt;
+        air.h -= air.vy * dt;
+        h = Math.max(0, air.h);
+        if (air.h <= 0) {
+          bv = air.vx * 0.35;
+          air = null;
+          side = bs > car.s ? 1 : -1;
         }
       } else {
-        bv += (4.5 * (goal - bs) - 3 * bv) * dt;
+        // it keeps after the van, never faster than it can roll; when the van
+        // turns back towards it, it just keeps coming
+        const gap = 64 + Math.min(110, Math.abs(car.v) * 0.3);
+        const approaching = side * car.v > 20;
+        const goal = approaching ? car.s : car.s + side * gap;
+        const want = Math.max(-MAXV, Math.min(MAXV, (goal - bs) * 3));
+        bv += (want - bv) * (1 - Math.exp(-3 * dt));
         bs += bv * dt;
-        // backed into: clear the roof and carry on from the other side
-        if (Math.abs(bs - car.s) < 48) {
-          const from = bs;
-          hop = { t: 0, dur: 0.7, h: 58, from, to: () => car.s - side * 70, over: true };
-        } else if (Math.abs(bv) > 110 && (nextBump -= dt) < 0) {
-          nextBump = 0.6 + Math.random() * 0.9;
-          const from = bs;
-          const v0 = bv;
-          hop = { t: 0, dur: 0.28 + Math.random() * 0.12, h: 6 + Math.random() * 8, from, to: () => from + v0 * 0.32 };
+        // the van's front meets it: tossed up into the air, on in the van's direction
+        const contact = 38 * 1.1 + R - 4;
+        if (approaching && Math.abs(bs - car.s) < contact) {
+          const dir = Math.sign(car.v) || -side;
+          air = { vx: dir * (Math.abs(car.v) * 1.15 + 160), vy: -(380 + Math.min(260, Math.abs(car.v) * 0.4)), h: 0.01 };
+          side = dir;
         }
       }
-      roll += (bs - prevBs) / R;
+      roll += (bs - prevBs) / R + (air ? dt * 9 * Math.sign(air.vx) : 0);
       prevBs = bs;
-      const y = ground(bs) + 1.5 - R - lift;
+      const y = ground(bs) + 1.5 - R - h;
       rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;
-      const close = Math.abs(bs - car.s) < 100 && Math.abs(car.v) + Math.abs(bv) > 30;
+      const close = !air && Math.abs(bs - car.s) < 100 && Math.abs(car.v) + Math.abs(bv) > 30;
       if (close !== yikes.classList.contains('is-on')) yikes.classList.toggle('is-on', close);
       yikes.style.left = `${car.x.toFixed(1)}px`;
       yikes.style.top = `${(car.y - 54).toFixed(1)}px`;
