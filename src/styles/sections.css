@@ -77,7 +77,7 @@ html.press-booting { overflow: hidden; }
   /* cut exactly like the masthead's nameplate, so the hand-off is invisible */
   font-variation-settings: "opsz" 144, "wght" 860, "SOFT" 0, "WONK" 0;
   font-size: clamp(2.6rem, 11vw, 8.5rem);
-  line-height: 0.9;
+  line-height: 0.86;
   letter-spacing: -0.025em;
   color: var(--ink);
   white-space: nowrap;
@@ -548,14 +548,32 @@ html.np-handoff .mast-plate { visibility: hidden; }
   transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set),
     opacity 0.16s var(--ease-set), transform 0.16s var(--ease-set);
 }
-/* signature hover: the touched slug inks to dark, its neighbours step back —
-   the "pick a slug" feeling, pure CSS, no physics to pile up */
-.skill-list:hover .skill { opacity: 0.4; }
-.skill-list:hover .skill:hover {
-  opacity: 1;
-  background: var(--ink);
-  color: var(--paper);
-  transform: translateY(-2px);
+/* every slug has an icon inside (src/life/skillPop.js): it peeks up from
+   behind the slug on hover — the hint you can click it — and pops out on click */
+.skill { position: relative; isolation: isolate; cursor: pointer; }
+.skill-peek {
+  position: absolute;
+  z-index: -1;
+  right: 8px;
+  bottom: 30%;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  translate: 0 0;
+  rotate: -8deg;
+  pointer-events: none;
+  transition: translate 0.45s var(--ease-stamp), rotate 0.45s var(--ease-stamp);
+}
+.skill:hover .skill-peek,
+.skill.is-teasing .skill-peek { translate: 0 -95%; rotate: 6deg; }
+.skill-pops { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+.skill-pop {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px oklch(20% 0.02 60 / 0.18));
+  will-change: transform, opacity;
 }
 
 /* the tornado (src/life/tornado.js): weather behind the slugs, the funnel's near side in front */
@@ -998,12 +1016,26 @@ html.np-handoff .mast-plate { visibility: hidden; }
   transform-origin: 50% 0;
 }
 /* the nib that draws the rule, and the dot it presses in at each job */
+.led-ink {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 26px);
+  width: 52px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
 .led-nib {
   position: absolute;
   top: -22px;
-  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 11px);
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 26px - 12px);
   width: 24px;
   height: 24px;
+  transform-origin: 12px 22px;
   opacity: 0;
   transition: opacity 0.3s var(--ease-set);
   pointer-events: none;
@@ -1392,8 +1424,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   filter: drop-shadow(0 6px 10px oklch(15% 0.03 25 / 0.35));
   transition: rotate 0.45s var(--ease-stamp), translate 0.45s var(--ease-stamp);
 }
-.postage:hover .postage-paper,
-.postage:focus-visible .postage-paper { rotate: -1deg; translate: 0 -5px; }
+
 .postage:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
 .postage-face {
   display: flex;
@@ -1404,7 +1435,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   color: var(--red-stock);
   font-family: var(--font-data);
 }
-.postage-top { font-size: 0.46rem; font-weight: 700; letter-spacing: 0.08em; white-space: nowrap; }
+.postage-top { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; white-space: nowrap; }
 .postage-art { width: 100%; height: auto; }
 .postage-art path { stroke: var(--red-stock); stroke-width: 1.4; stroke-linejoin: round; }
 .pa-top { fill: oklch(86% 0.13 90); }
@@ -1434,7 +1465,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   60% { opacity: 0.95; scale: 0.96; rotate: -9deg; }
   100% { opacity: 0.85; scale: 1; rotate: -10deg; }
 }
-.pm-ring-text { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-data); font-size: 7.4px; font-weight: 700; letter-spacing: 0.12em; }
+.pm-ring-text { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-data); font-size: 6.4px; font-weight: 700; letter-spacing: 0.08em; }
 .pm-centre { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-impact); font-size: 14px; letter-spacing: 0.06em; }
 .pm-waves { stroke-linecap: round; }
 .postage-tip {
@@ -1473,7 +1504,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 .contact-line {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1.2rem;
   border-bottom: 1px solid oklch(95.5% 0.014 85 / 0.18);
   padding: 1rem 0;
@@ -1484,16 +1515,21 @@ html.np-handoff .mast-plate { visibility: hidden; }
   padding-bottom: 0;
 }
 .contact-line-label {
-  font-family: var(--font-data);
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--paper);
-  opacity: 0.55;
-  white-space: nowrap;
+  /* the tool's own mark, on a little paper tile so its colours read on the red */
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
-  min-width: 8.5ch;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--paper);
+  box-shadow: 0 2px 0 oklch(20% 0.03 25 / 0.35);
+  rotate: -3deg;
+  transition: rotate 0.4s var(--ease-stamp), scale 0.4s var(--ease-stamp);
 }
+.contact-line-label img { width: 22px; height: 22px; object-fit: contain; }
+.contact-line:nth-child(2) .contact-line-label { rotate: 2deg; }
+.contact-line:hover .contact-line-label { rotate: -10deg; scale: 1.12; }
 .contact-line-link {
   font-family: var(--font-read);
   font-size: clamp(0.95rem, 1.7vw, 1.25rem);

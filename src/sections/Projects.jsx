@@ -86,7 +86,6 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked, arr
       data-arrive={arrive ? (feature ? 'rise' : index % 2 ? 'deal-l' : 'deal-r') : undefined}
       data-depart={arrive ? 'file' : undefined}
       data-name={name}
-      data-pen="set-square"
       onPointerEnter={handleEnter}
       onPointerMove={onPointerMove}
       onPointerLeave={handleLeave}

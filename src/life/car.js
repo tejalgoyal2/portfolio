@@ -9,8 +9,10 @@ import { prefs } from './prefs';
  * car drives there — pulling away, cruising, easing to a stop — on a soft
  * spring, so a flick of the wheel is a burst of speed, not a teleport. The
  * wheels turn with the distance covered, the body squats back when it pulls
- * away and dips when it brakes, it faces the way it's going, and while it's
- * moving it puffs little clouds of exhaust that drift back and fade.
+ * away and dips when it brakes, and when it turns round it swings about with a
+ * little hop (a quick flip through side-on, overshooting a touch) rather than
+ * snapping. While it's moving it puffs little clouds of exhaust that drift
+ * back and fade.
  *
  * Only runs while its host is on screen. Reduced motion: parked, no puffs.
  *
@@ -60,6 +62,9 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   let s = target();
   let v = 0;
   let face = 1;
+  let faceV = 1; // what's drawn: eases through 0 when it turns round
+  let flipFrom = 1;
+  let flipT = 1;
   let spin = 0;
   let pitch = 0;
   let puffClock = 0;
@@ -83,13 +88,27 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
       const want = Math.max(-5, Math.min(5, -accel * 0.004 * face));
       pitch += (want - pitch) * (1 - Math.exp(-10 * dt));
       spin += (v * dt) / (5 * scale);
+      const was = face;
       if (v > 6) face = 1;
       else if (v < -6) face = -1;
+      if (face !== was) {
+        flipFrom = faceV;
+        flipT = 0;
+      }
     }
+    // the turn: through side-on and a touch past, with a hop
+    let hop = 0;
+    if (flipT < 1 && !prefs.reduced && dt > 0) {
+      flipT = Math.min(1, flipT + dt / 0.42);
+      const c = 1.6;
+      const e = 1 + (c + 1) * (flipT - 1) ** 3 + c * (flipT - 1) ** 2; // back.out
+      faceV = flipFrom + (face - flipFrom) * e;
+      hop = Math.sin(Math.PI * flipT) * 7 * scale;
+    } else faceV = face;
     const p = pathAt(s);
     Object.assign(state, { s, v, face, x: p.x, y: p.y, angle: p.angle });
     const k = scale;
-    el.style.transform = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${face})`;
+    el.style.transform = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k - hop).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${faceV.toFixed(3)})`;
     body.setAttribute('transform', `rotate(${(pitch * face).toFixed(2)} 16 22)`);
     const deg = ((spin * 180) / Math.PI).toFixed(1);
     wheels.forEach((w) => w.setAttribute('transform', `rotate(${deg})`));

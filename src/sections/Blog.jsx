@@ -270,7 +270,7 @@ export default function Blog() {
               target="_blank"
               rel="noopener noreferrer"
               className="opdesk-card"
-              data-pen="pen-nib"
+              data-pen="pencil"
               draggable={false}
               onPointerMove={reduced ? undefined : onCardMove}
               onPointerLeave={reduced ? undefined : onCardLeave}

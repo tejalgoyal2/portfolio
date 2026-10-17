@@ -14,8 +14,10 @@ gsap.registerPlugin(ScrollTrigger);
  * Pines stand in clumps along both. A little camper van (surfboard on the
  * roof) drives over the near ridge as the range crosses the screen — and a
  * boulder is rolling after it. It keeps its distance while the van keeps
- * going, gains on it when the van slows, and when they're close a little "!"
- * pops up over the van.
+ * going and gains on it when the van slows — always nearly, never quite —
+ * hopping over the bumps as it goes; if the van backs into it, it leaps
+ * clean over the roof and carries on from the other side. When they're close
+ * a little "!" pops up over the van.
  *
  * The ridges are drawn for the real width (rounded peaks, eased valleys, from
  * a fixed seed so they're the same every visit). Reduced motion: the range is
@@ -58,14 +60,13 @@ function pines(w, at, seed, tall, every) {
       const th = tall * (0.65 + hash(seed + tx * 0.3) * 0.55);
       const base = at(tx) + 3;
       const half = th * 0.26;
-      // three tiers of boughs and a stub of trunk
-      d += `M${(tx - 1).toFixed(1)} ${base}V${(base - th * 0.18).toFixed(1)}`;
+      // three tiers of boughs and a stub of trunk, all wound the same way so it fills solid
       for (let t = 0; t < 3; t++) {
         const y0 = base - th * (0.12 + t * 0.27);
         const hw = half * (1 - t * 0.24);
         d += `M${(tx - hw).toFixed(1)} ${y0.toFixed(1)}L${tx.toFixed(1)} ${(y0 - th * 0.42).toFixed(1)}L${(tx + hw).toFixed(1)} ${y0.toFixed(1)}Z`;
       }
-      d += `M${(tx - 1).toFixed(1)} ${base}h2V${(base - th * 0.2).toFixed(1)}h-2Z`;
+      d += `M${(tx - 1.2).toFixed(1)} ${base}V${(base - th * 0.2).toFixed(1)}h2.4V${base}Z`;
     }
   }
   return d;
@@ -128,28 +129,54 @@ export default function Ridge() {
     const yikes = root.querySelector('.ridge-yikes');
     const car = stopCar.state;
     const R = 15;
+    let side = -1; // which side of the van it's chasing from (along the road)
     let bs = car.s - 140;
     let bv = 0;
     let roll = 0;
-    let face = 1;
+    // a hop: little ones over bumps, a big one over the van
+    let hop = null; // { t, dur, h, from, to }
+    let nextBump = 0.8;
+    let prevBs = bs;
     const chase = (t, deltaMs) => {
       const dt = Math.min(0.05, deltaMs / 1000);
-      if (Math.abs(car.v) > 8) face = car.v > 0 ? 1 : -1;
-      // it keeps its distance at speed, and gains when the van slows
-      const gap = 70 + Math.min(110, Math.abs(car.v) * 0.35);
-      const goal = car.s - face * gap;
+      // it keeps its distance at speed, and gains when the van slows — nearly, never quite
+      const gap = 58 + Math.min(110, Math.abs(car.v) * 0.35);
+      // the van turning back towards it: the boulder just keeps coming (and leaps it)
+      const approaching = side * car.v > 20;
+      const goal = approaching ? car.s : car.s + side * gap;
+      let lift = 0;
       if (prefs.reduced) bs = goal;
-      else {
+      else if (hop) {
+        hop.t = Math.min(1, hop.t + dt / hop.dur);
+        bs = hop.from + (hop.to() - hop.from) * hop.t;
+        lift = Math.sin(Math.PI * hop.t) * hop.h;
+        if (hop.t >= 1) {
+          if (hop.over) side = -side;
+          hop = null;
+          bv = car.v * 0.6;
+        }
+      } else {
         bv += (4.5 * (goal - bs) - 3 * bv) * dt;
         bs += bv * dt;
+        // backed into: clear the roof and carry on from the other side
+        if (Math.abs(bs - car.s) < 48) {
+          const from = bs;
+          hop = { t: 0, dur: 0.7, h: 58, from, to: () => car.s - side * 70, over: true };
+        } else if (Math.abs(bv) > 110 && (nextBump -= dt) < 0) {
+          nextBump = 0.6 + Math.random() * 0.9;
+          const from = bs;
+          const v0 = bv;
+          hop = { t: 0, dur: 0.28 + Math.random() * 0.12, h: 6 + Math.random() * 8, from, to: () => from + v0 * 0.32 };
+        }
       }
-      roll += (bv * dt) / R;
-      const bump = Math.abs(Math.sin(bs * 0.045)) * Math.min(1, Math.abs(bv) / 200) * 4;
-      const y = ground(bs) + 1.5 - R - bump;
+      roll += (bs - prevBs) / R;
+      prevBs = bs;
+      const y = ground(bs) + 1.5 - R - lift;
       rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;
-      const close = Math.abs(bs - car.s) < 105 && Math.abs(car.v) + Math.abs(bv) > 30;
-      yikes.classList.toggle('is-on', close);
-      yikes.style.transform = `translate3d(${car.x.toFixed(1)}px,${(car.y - 52).toFixed(1)}px,0)`;
+      const close = Math.abs(bs - car.s) < 100 && Math.abs(car.v) + Math.abs(bv) > 30;
+      if (close !== yikes.classList.contains('is-on')) yikes.classList.toggle('is-on', close);
+      yikes.style.left = `${car.x.toFixed(1)}px`;
+      yikes.style.top = `${(car.y - 54).toFixed(1)}px`;
     };
     gsap.ticker.add(chase);
 

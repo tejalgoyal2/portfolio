@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import { prefs } from '../life/prefs';
 
 /**
  * Let's talk is a letter, so it gets a stamp: perforated edges, a little
- * line-drawn cube for the picture, the value in the corner. Point at any of
- * the ways to reach me (or the stamp) and a postmark is struck across it —
- * a ring with the town and this month, and the wavy cancellation lines — so
- * the letter's ready to go. Click the stamp and it copies my email, and the
- * postmark says so.
+ * line-drawn cube for the picture, first class, the value in the corner.
+ * Point at it and it spins — flung round fast, slowing to a stop, never at
+ * one dull speed. Point at any of the ways to reach me (or the stamp) and a
+ * postmark is struck across it — a ring with the press's name and this month,
+ * and the wavy cancellation lines — so the letter's ready to go. Click the
+ * stamp and it copies my email, and the postmark says so.
  *
  * Reduced motion: the postmark just appears.
  */
@@ -31,6 +33,19 @@ export default function Postage() {
     };
   }, []);
 
+  // a spin: quick off the mark, a long slow coast to a stop, alternating ways
+  const spins = useRef(0);
+  const spin = () => {
+    setStruck(true);
+    const paper = ref.current?.querySelector('.postage-paper');
+    if (!paper || prefs.reduced || paper.getAnimations().length) return;
+    const dir = spins.current++ % 2 ? -1 : 1;
+    paper.animate([{ rotate: '-5deg' }, { rotate: `${-5 + dir * 360}deg` }], {
+      duration: 1700,
+      easing: 'cubic-bezier(0.12, 0.85, 0.22, 1)',
+    });
+  };
+
   const copy = async () => {
     setStruck(true);
     try {
@@ -47,14 +62,14 @@ export default function Postage() {
       ref={ref}
       type="button"
       className={`postage${struck ? ' is-struck' : ''}${copied ? ' is-copied' : ''}`}
-      onPointerEnter={() => setStruck(true)}
+      onPointerEnter={spin}
       onClick={copy}
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >
       <span className="postage-paper" aria-hidden="true">
         <span className="postage-face">
-          <span className="postage-top">VICTORIA · BC</span>
+          <span className="postage-top">FIRST CLASS</span>
           <svg className="postage-art" viewBox="0 0 60 60">
             {/* a little cube, in three faces */}
             <path className="pa-top" d="M30 8 52 19 30 30 8 19Z" />
@@ -63,7 +78,7 @@ export default function Postage() {
             <path className="pa-grid" d="M15.3 15.3 37.3 26.3M22.7 11.7 44.7 22.7M15.3 22.7 37.3 11.7M22.7 26.3 44.7 15.3M8 27 30 38M8 35 30 46M15.3 22.7V46.7M22.7 26.3V50.3M52 27 30 38M52 35 30 46M44.7 22.7V46.7M37.3 26.3V50.3" />
           </svg>
           <span className="postage-value">
-            42<small>¢</small>
+            67<small>¢</small>
           </span>
         </span>
       </span>
@@ -75,7 +90,7 @@ export default function Postage() {
         <circle cx="45" cy="45" r="25" />
         <text className="pm-ring-text">
           <textPath href="#pm-ring" startOffset="2%">
-            VICTORIA BC · {month} {year} ·
+            THE PERSONAL PRESS · {month} {year} ·
           </textPath>
         </text>
         <text className="pm-centre" x="45" y="50" textAnchor="middle">

@@ -1,179 +1,125 @@
-import { useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { gsap } from 'gsap';
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Scratch-off. The words are printed under a panel of ink you can rub away
- * with the pen: drag across it and it comes off where you went, in pen-wide
- * strokes, until enough is gone and the rest flakes off on its own. Nothing
- * pops up, nothing covers anything else — it's your hand that does it.
+ * A split-flap board, like an old station departures sign. The words sit on
+ * blank flaps; when it's their turn each flap clatters through a few random
+ * characters — letters for letters, digits for digits — and lands on the
+ * real one, left to right, so the word arrives with a little rattle rather
+ * than being uncovered. Each character keeps exactly its own width the whole
+ * time, so nothing around it moves.
  *
- * - trigger 'scroll' (a stat, a word in a bullet): if you don't scratch it,
- *   the panel scratches itself away a couple of seconds after it comes into
- *   view, so nobody misses what's under it.
- * - trigger 'hover' (the punchline in a blog title): it only comes off when
- *   you scratch it; on touch, a tap scrubs it away.
+ * - trigger 'scroll' (a stat, a word in a bullet): flips as it comes into view.
+ * - trigger 'hover' (the punchline in a blog title): waits blank until you
+ *   point at it (on touch, a moment after it's on screen); point again for
+ *   another rattle.
  *
- * The text is always in the DOM for screen readers; the panel is a canvas
- * marked aria-hidden. Reduced motion: the panel simply fades when it's due.
+ * The real text is always there for screen readers. Reduced motion: the
+ * words are simply shown.
  *
  *   trigger: 'scroll' | 'hover'   tone: 'ink' | 'red'
  */
-const PEN = 9; // px radius of the scratch
-const DONE = 0.5; // share cleared before the rest flakes off
-const TONES = { ink: ['#1c140e', '#3a2e24'], red: ['#c41d21', '#e0443f'] };
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+const pickFor = (ch) => {
+  const pool = /\d/.test(ch) ? DIGITS : /[a-z]/i.test(ch) ? LETTERS : null;
+  if (!pool) return ch;
+  const c = pool[(Math.random() * pool.length) | 0];
+  return ch === ch.toLowerCase() ? c.toLowerCase() : c;
+};
 
 export default function Redacted({ children, trigger = 'scroll', tone = 'ink' }) {
+  const text = String(children);
   const wrapRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [revealed, setRevealed] = useState(false);
+
+  // lock each flap to its character's own width, measured with the real text in place
+  useLayoutEffect(() => {
+    const flaps = [...wrapRef.current.querySelectorAll('.flap')];
+    flaps.forEach((f) => (f.style.width = ''));
+    flaps.forEach((f) => (f.style.width = `${f.getBoundingClientRect().width.toFixed(2)}px`));
+    flaps.forEach((f, i) => {
+      if (!/\s/.test(text[i])) f.textContent = '·';
+    });
+  }, [text]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
-    const canvas = canvasRef.current;
-    if (!wrap || !canvas) return;
+    const flaps = [...wrap.querySelectorAll('.flap')];
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    let w = 0;
-    let h = 0;
-    let dpr = 1;
-    let done = false;
-    let last = null;
-    let strokes = 0;
-    let auto = 0;
+    const timers = new Set();
+    let busy = false;
 
-    const paint = () => {
-      const r = wrap.getBoundingClientRect();
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = Math.ceil(r.width + 6);
-      h = Math.ceil(r.height + 4);
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const [a, b] = TONES[tone] || TONES.ink;
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = a;
-      ctx.fillRect(0, 0, w, h);
-      // the panel's tooth: fine diagonal scuffs, like a scratch card's foil
-      ctx.strokeStyle = b;
-      ctx.lineWidth = 0.7;
-      for (let x = -h; x < w; x += 3.2) {
-        ctx.beginPath();
-        ctx.moveTo(x, h);
-        ctx.lineTo(x + h, 0);
-        ctx.stroke();
+    const flip = () => {
+      if (busy) return;
+      busy = true;
+      wrap.classList.add('is-shown');
+      if (reduced) {
+        flaps.forEach((f, i) => (f.textContent = text[i]));
+        busy = false;
+        return;
       }
-    };
-    paint();
-
-    const finish = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(auto);
-      gsap.to(canvas, {
-        opacity: 0,
-        duration: reduced ? 0.3 : 0.45,
-        ease: 'power1.out',
-        onComplete: () => setRevealed(true),
-      });
-    };
-
-    const cleared = () => {
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      let gone = 0;
-      let n = 0;
-      for (let i = 3; i < data.length; i += 4 * 7) {
-        n++;
-        if (data[i] < 40) gone++;
-      }
-      return gone / Math.max(1, n);
-    };
-
-    const scratch = (x, y) => {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineCap = 'round';
-      ctx.lineWidth = PEN * 2;
-      ctx.beginPath();
-      ctx.moveTo(last ? last.x : x, last ? last.y : y);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      last = { x, y };
-      if (++strokes % 6 === 0 && cleared() > DONE) finish();
-    };
-
-    const local = (e) => {
-      const r = canvas.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
-    };
-    const onMove = (e) => {
-      if (done) return;
-      if (e.pointerType === 'touch' && !e.buttons) return;
-      clearTimeout(auto);
-      const p = local(e);
-      scratch(p.x, p.y);
-    };
-    const onLeave = () => (last = null);
-    const onTap = (e) => {
-      if (e.pointerType === 'touch') selfScratch();
-    };
-
-    // when nobody scratches: the pen scrubs it off by itself, in quick zigzags
-    const selfScratch = () => {
-      if (done) return;
-      if (reduced) return finish();
-      const pass = { t: 0 };
-      last = null;
-      gsap.to(pass, {
-        t: 1,
-        duration: 0.7,
-        ease: 'power1.inOut',
-        onUpdate: () => {
-          const x = pass.t * (w + PEN);
-          const y = h / 2 + Math.sin(pass.t * Math.PI * 7) * (h / 2);
-          scratch(x, y);
-        },
-        onComplete: finish,
+      let left = flaps.length;
+      flaps.forEach((f, i) => {
+        const real = text[i];
+        if (/\s/.test(real)) {
+          left--;
+          return;
+        }
+        const turns = 5 + ((Math.random() * 5) | 0);
+        let n = 0;
+        const step = () => {
+          n++;
+          f.classList.remove('is-flip');
+          void f.offsetWidth;
+          f.classList.add('is-flip');
+          if (n >= turns) {
+            f.textContent = real;
+            if (--left <= 0) busy = false;
+            return;
+          }
+          f.textContent = pickFor(real);
+          const t = setTimeout(step, 42 + n * 6);
+          timers.add(t);
+        };
+        const t = setTimeout(step, i * 38);
+        timers.add(t);
       });
     };
 
     let st = null;
-    if (trigger === 'scroll') {
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    if (trigger === 'scroll' || coarse) {
       st = ScrollTrigger.create({
         trigger: wrap,
-        start: 'top 78%',
+        start: 'top 85%',
         once: true,
-        onEnter: () => (auto = setTimeout(selfScratch, reduced ? 400 : 2200)),
+        onEnter: () => {
+          const t = setTimeout(flip, trigger === 'scroll' ? 150 : 900);
+          timers.add(t);
+        },
       });
     }
-
-    wrap.addEventListener('pointermove', onMove);
-    wrap.addEventListener('pointerleave', onLeave);
-    wrap.addEventListener('pointerdown', onTap);
-    const ro = new ResizeObserver(() => !done && paint());
-    ro.observe(wrap);
+    if (trigger === 'hover') wrap.addEventListener('pointerenter', flip);
     return () => {
-      clearTimeout(auto);
       st?.kill();
-      ro.disconnect();
-      wrap.removeEventListener('pointermove', onMove);
-      wrap.removeEventListener('pointerleave', onLeave);
-      wrap.removeEventListener('pointerdown', onTap);
+      wrap.removeEventListener('pointerenter', flip);
+      timers.forEach(clearTimeout);
     };
-  }, [trigger, tone]);
+  }, [text, trigger]);
 
   return (
-    <span
-      ref={wrapRef}
-      className={`redacted${revealed ? ' is-revealed' : ''}`}
-      data-scratch={trigger}
-      data-pen={revealed ? undefined : 'eraser'}
-    >
-      <span className="redacted-text">{children}</span>
-      {!revealed && <canvas ref={canvasRef} className="redacted-panel" aria-hidden="true" />}
+    <span ref={wrapRef} className={`flapboard flapboard--${tone}`}>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {[...text].map((ch, i) => (
+          <span className="flap" key={i}>
+            {ch === ' ' ? '\u00a0' : ch}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }
