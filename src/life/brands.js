@@ -1,7 +1,6 @@
 // Brand marks of the tools I use — from thesvg (@thesvg/icons 3.3.9, MIT; how
 // to add one is in ./brands/README.md) — as raw SVG strings, imported lazily by
-// whatever draws them: the skills' pop-out icons, the tornado's debris, the
-// contact links. In their own colours, or as a flat ink silhouette.
+// whatever draws them: the skills flying in, the contact links. In their own colours, or as a flat ink silhouette.
 const files = import.meta.glob('./brands/*.svg', { query: '?raw', import: 'default', eager: true });
 
 /** slug → SVG string */

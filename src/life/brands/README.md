@@ -1,7 +1,7 @@
 # Brand marks
 
 The logos of tools and companies, used where the page talks about them
-(the skills' pop-out icons, the tornado's debris, the contact links).
+(the skills flying in and showing their icons, the contact links).
 
 - **Source:** [thesvg](https://github.com/glincker/thesvg), npm package
   `@thesvg/icons` **3.3.9**, MIT (see `LICENSE`). The marks belong to their
