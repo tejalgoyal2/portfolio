@@ -197,6 +197,14 @@ export function turnCurve(p) {
   return p * p * p * (p * (p * 6 - 15) + 10);
 }
 
+/** A turn you made: quick, and it clicks home — a touch past, and back. */
+export function snapCurve(p) {
+  if (p >= 1) return 1;
+  if (p <= 0) return 0;
+  const c = 1.5;
+  return 1 + (c + 1) * (p - 1) ** 3 + c * (p - 1) ** 2;
+}
+
 export async function createCubeView(director) {
   const gltf = await new GLTFLoader().loadAsync('/models/cubie.glb');
   let geo = null;
@@ -210,7 +218,7 @@ export async function createCubeView(director) {
     uEdge: { value: 0 },
     uEdgeCol: { value: new Color(EDGE) },
   };
-  const material = stickerless(new MeshStandardMaterial({ color: '#ffffff', roughness: 0.62, metalness: 0 }), uniforms);
+  const material = stickerless(new MeshStandardMaterial({ color: '#ffffff', roughness: 0.5, metalness: 0 }), uniforms);
 
   const cubies = new InstancedMesh(geo, material, 27);
   cubies.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -220,15 +228,17 @@ export async function createCubeView(director) {
   const group = new Group();
   group.add(cubies);
   scene.add(group);
-  // soft studio light: a big warm sky, a gentle key from the upper left, a fill
-  scene.add(new HemisphereLight('#fffaf0', '#8a7f72', 1.7));
-  const key = new DirectionalLight('#fffaf2', 1.55);
+  // bright, even studio light — crisp plastic, no deep shadowy sides: a big
+  // warm sky with a light floor bounce, a modest key, a generous fill
+  scene.add(new HemisphereLight('#fffaf0', '#c4baac', 2.0));
+  const key = new DirectionalLight('#fffaf2', 1.25);
   key.position.set(-0.45, 0.8, 0.6);
-  const fill = new DirectionalLight('#f1ece4', 0.85);
+  const fill = new DirectionalLight('#f1ece4', 1.05);
   fill.position.set(0.8, -0.2, 0.55);
   scene.add(key, fill);
   // one model unit ≈ one CSS pixel at z = 0 once resize() places the camera
-  const camera = new PerspectiveCamera(24, 1, 10, 40000);
+  // a long lens: little perspective, so the cube reads crisp and flat-faced
+  const camera = new PerspectiveCamera(13, 1, 10, 80000);
 
   const cubieM = Array.from({ length: 27 }, () => new Matrix4());
   const layerRot = new Matrix4();
@@ -242,7 +252,7 @@ export async function createCubeView(director) {
       layerFor = a;
       layer = new Set(a ? director.state.layer(a.move.face) : []);
     }
-    if (a) layerRot.makeRotationAxis(axisV[FACE_AXIS[a.move.face].axis], ((moveQuarterTurns(a.move) * Math.PI) / 2) * turnCurve(director.progress));
+    if (a) layerRot.makeRotationAxis(axisV[FACE_AXIS[a.move.face].axis], ((moveQuarterTurns(a.move) * Math.PI) / 2) * (a.kind === 'visitor' ? snapCurve : turnCurve)(director.progress));
     for (const c of director.state.cubies) {
       const m = cubieM[c.id].copy(m4(c.rot, c.pos));
       if (a && layer.has(c.id)) m.premultiply(layerRot);

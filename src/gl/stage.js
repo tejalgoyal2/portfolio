@@ -108,6 +108,7 @@ export async function startStage(canvas, hitBtn, noteHost) {
   bus.twist = (face, back = false) => {
     const turns = back ? 3 : 1;
     director.click(face, turns);
+    presence.kick(1);
     heldAt = window.scrollY;
     return turns;
   };

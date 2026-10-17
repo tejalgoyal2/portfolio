@@ -9,7 +9,10 @@
 //   cube and look at it from any side (it keeps the view, with a little glide);
 // - at the end it comes back out of the margin into its own spot in Let's talk,
 //   big again, so the last moves of the solve play where you can see them;
-// - touch: a tap twists a face. Reduced motion: no turn.
+// - it's fidgety: it leans a little towards the cursor when you're near, gives
+//   a small twitch every few seconds when left alone, and jolts when a face
+//   snaps round — all on a quick spring, so it wobbles and settles;
+// - touch: a tap twists a face. Reduced motion: no turn, no fidget.
 import { Euler, Quaternion, Vector3 } from 'three';
 import { gsap } from 'gsap';
 import { pointer } from '../life/pointer';
@@ -127,6 +130,15 @@ export function createPresence(view, hitBtn) {
   }
   const state = { x: 0, y: 0, r: 0 };
 
+  // the fidget: a small wobble on a quick spring (x and y tilt), kicked by twitches and twists
+  const jig = { x: 0, y: 0, vx: 0, vy: 0 };
+  let twitchIn = 3;
+  const kick = (amt = 1) => {
+    jig.vx += (Math.random() - 0.5) * 3.2 * amt;
+    jig.vy += (Math.random() - 0.5) * 3.2 * amt;
+  };
+  const jigQ = new Quaternion();
+  const jigE = new Euler();
   const q = new Quaternion();
   const qSpin = new Quaternion();
   const baseQ = new Quaternion().setFromEuler(new Euler(0.5, -0.7, 0, 'XYZ'));
@@ -224,7 +236,22 @@ export function createPresence(view, hitBtn) {
     g.scale.setScalar(Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show) * pop.v));
     turnQ.setFromAxisAngle(turnAxis, reduced ? TURN_REST : turn);
     qSpin.setFromAxisAngle(upAxis, spin.v);
-    q.copy(orbitQ).multiply(qSpin).multiply(baseQ).multiply(turnQ);
+    // fidget: lean towards a nearby cursor, twitch now and then, wobble back
+    if (!reduced) {
+      const lean = near && !dragging ? 0.13 : 0;
+      const tx = lean * clamp((pointer.y - cy) / Math.max(40, rad * 2), -1, 1);
+      const ty = lean * clamp((pointer.x - cx) / Math.max(40, rad * 2), -1, 1);
+      jig.vx += (60 * (tx - jig.x) - 7 * jig.vx) * dt;
+      jig.vy += (60 * (ty - jig.y) - 7 * jig.vy) * dt;
+      jig.x += jig.vx * dt;
+      jig.y += jig.vy * dt;
+      if (!dragging && (twitchIn -= dt) <= 0) {
+        twitchIn = 2.5 + Math.random() * 3.5;
+        kick(0.6);
+      }
+    }
+    jigQ.setFromEuler(jigE.set(jig.x, jig.y, 0));
+    q.copy(orbitQ).multiply(jigQ).multiply(qSpin).multiply(baseQ).multiply(turnQ);
     g.quaternion.copy(q);
     first = false;
 
@@ -264,5 +291,5 @@ export function createPresence(view, hitBtn) {
     bus.cursorHint = null;
   }
 
-  return { update, celebrate, reveal, dispose, orbit, release, state };
+  return { update, celebrate, reveal, dispose, orbit, release, kick, state };
 }

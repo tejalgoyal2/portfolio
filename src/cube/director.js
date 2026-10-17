@@ -124,7 +124,8 @@ export class Director {
 
   next() {
     const click = this.clicks.shift();
-    if (click) return { move: { face: click.face, turns: click.turns }, kind: 'visitor', duration: this.duration(this.base), elapsed: 0 };
+    // your own twists are quick (and click home with a little overshoot, in the view)
+    if (click) return { move: { face: click.face, turns: click.turns }, kind: 'visitor', duration: this.instant ? 0 : Math.max(0.22, this.duration(this.base) * 0.62), elapsed: 0 };
 
     if (this.target !== this.k) {
       const top = this.visitor[this.visitor.length - 1];
