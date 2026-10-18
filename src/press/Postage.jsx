@@ -4,11 +4,11 @@ import { prefs } from '../life/prefs';
 /**
  * Let's talk is a letter, so it gets a stamp: perforated edges, a little
  * line-drawn cube for the picture, first class, the value in the corner.
- * Point at it and it spins — flung round fast, slowing to a stop, never at
- * one dull speed. Point at any of the ways to reach me (or the stamp) and a
- * postmark is struck across it — a ring with the press's name and this month,
- * and the wavy cancellation lines — so the letter's ready to go. Click the
- * stamp and it copies my email, and the postmark says so.
+ * Click it and it spins — flung round fast, slowing gradually to a stop,
+ * never at one dull speed — and copies my email. Point at any of the ways to
+ * reach me (or the stamp) and a postmark is struck across it — a ring with the press's name and this month,
+ * and the wavy cancellation lines — so the letter's ready to go; once you've
+ * copied the email it says so.
  *
  * Reduced motion: the postmark just appears.
  */
@@ -40,9 +40,9 @@ export default function Postage() {
     const paper = ref.current?.querySelector('.postage-paper');
     if (!paper || prefs.reduced || paper.getAnimations().length) return;
     const dir = spins.current++ % 2 ? -1 : 1;
-    paper.animate([{ rotate: '-5deg' }, { rotate: `${-5 + dir * 360}deg` }], {
-      duration: 1700,
-      easing: 'cubic-bezier(0.12, 0.85, 0.22, 1)',
+    paper.animate([{ rotate: '-5deg' }, { rotate: `${-5 + dir * 720}deg` }], {
+      duration: 2200,
+      easing: 'cubic-bezier(0.08, 0.82, 0.17, 1)',
     });
   };
 
@@ -62,8 +62,11 @@ export default function Postage() {
       ref={ref}
       type="button"
       className={`postage${struck ? ' is-struck' : ''}${copied ? ' is-copied' : ''}`}
-      onPointerEnter={spin}
-      onClick={copy}
+      onPointerEnter={() => setStruck(true)}
+      onClick={() => {
+        spin();
+        copy();
+      }}
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >

@@ -5,17 +5,17 @@ import { gsap } from 'gsap';
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * A split-flap board, like an old station departures sign. The words sit on
- * blank flaps; when it's their turn each flap clatters through a few random
- * characters — letters for letters, digits for digits — and lands on the
- * real one, left to right, so the word arrives with a little rattle rather
- * than being uncovered. Each character keeps exactly its own width the whole
- * time, so nothing around it moves.
+ * A split-flap board, like an old station departures sign. The words are
+ * always there to read — nothing covers them — but now and then they rattle:
+ * each flap clatters through a few random characters (letters for letters,
+ * digits for digits) and lands back on the real one, left to right. Each
+ * character keeps exactly its own width the whole time, so nothing around it
+ * moves, and it's a handful of text changes, nothing heavier.
  *
- * - trigger 'scroll' (a stat, a word in a bullet): flips as it comes into view.
- * - trigger 'hover' (the punchline in a blog title): waits blank until you
- *   point at it (on touch, a moment after it's on screen); point again for
- *   another rattle.
+ * - trigger 'scroll' (a stat, a word in a bullet): rattles once as it comes
+ *   into view.
+ * - trigger 'hover' (the punchline in a blog title): rattles when you point
+ *   at it (on touch, once as it comes on screen).
  *
  * The real text is always there for screen readers. Reduced motion: the
  * words are simply shown.
@@ -40,9 +40,6 @@ export default function Redacted({ children, trigger = 'scroll', tone = 'ink' })
     const flaps = [...wrapRef.current.querySelectorAll('.flap')];
     flaps.forEach((f) => (f.style.width = ''));
     flaps.forEach((f) => (f.style.width = `${f.getBoundingClientRect().width.toFixed(2)}px`));
-    flaps.forEach((f, i) => {
-      if (!/\s/.test(text[i])) f.textContent = '·';
-    });
   }, [text]);
 
   useEffect(() => {
@@ -54,13 +51,8 @@ export default function Redacted({ children, trigger = 'scroll', tone = 'ink' })
 
     const flip = () => {
       if (busy) return;
+      if (reduced) return;
       busy = true;
-      wrap.classList.add('is-shown');
-      if (reduced) {
-        flaps.forEach((f, i) => (f.textContent = text[i]));
-        busy = false;
-        return;
-      }
       let left = flaps.length;
       flaps.forEach((f, i) => {
         const real = text[i];

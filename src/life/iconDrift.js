@@ -25,9 +25,9 @@ import { settings, onSettings } from './settings';
  * How many icons there are follows Page settings (src/life/settings.js), and
  * ripples can be switched off there.
  *
- * Drag on bare paper and you draw with your pen (`life:doodle`): a line of
- * ink, thinner where you went fast, that sits on the page a couple of
- * seconds and then fades away from where you started.
+ * Drag on bare paper and you draw with your pen (`life:doodle`): a smooth
+ * line of ink that sits on the page a couple of seconds after you lift the
+ * pen and then fades away, all of a piece.
  *
  * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
  * Paused while the tab is hidden. Reduced motion: the icons sit still and
@@ -279,29 +279,33 @@ export function startIconDrift(canvas) {
   }
 
   function drawDoodles(sy0) {
+    // each stroke is one smooth path (no overlapping segments to show as dots
+    // when it fades), and it fades as a whole a while after you lift the pen
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (let k = doodles.length - 1; k >= 0; k--) {
       const d = doodles[k];
       const pts = d.pts;
-      if (d.done && pts.length && clock - pts[pts.length - 1].t > DOODLE_HOLD + DOODLE_FADE) {
+      const age = d.done ? clock - d.end : 0;
+      const a = age < DOODLE_HOLD ? 1 : 1 - (age - DOODLE_HOLD) / DOODLE_FADE;
+      if (a <= 0) {
         doodles.splice(k, 1);
         continue;
       }
+      if (pts.length < 2) continue;
       const [r, g, b] = DOODLE_INK[d.ground] || DOODLE_INK.paper;
-      for (let i = 1; i < pts.length; i++) {
-        const p0 = pts[i - 1];
-        const p1 = pts[i];
-        const age = clock - p1.t;
-        const a = age < DOODLE_HOLD ? 1 : 1 - (age - DOODLE_HOLD) / DOODLE_FADE;
-        if (a <= 0) continue;
-        ctx.strokeStyle = `rgba(${r},${g},${b},${(0.85 * a).toFixed(3)})`;
-        ctx.lineWidth = (p0.w + p1.w) / 2;
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y - sy0);
-        ctx.lineTo(p1.x, p1.y - sy0);
-        ctx.stroke();
+      ctx.strokeStyle = `rgba(${r},${g},${b},${(0.85 * a).toFixed(3)})`;
+      ctx.lineWidth = 2.4 * (0.75 + 0.25 * a);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y - sy0);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y - sy0, mx, my - sy0);
       }
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last.x, last.y - sy0);
+      ctx.stroke();
     }
   }
 
@@ -396,6 +400,7 @@ export function startIconDrift(canvas) {
     if (!d) return;
     if (phase === 'end') {
       d.done = true;
+      d.end = clock;
       return;
     }
     const last = d.pts[d.pts.length - 1];

@@ -131,13 +131,6 @@ export default function PageSettings() {
           </label>
         </fieldset>
 
-        <p className="rh-panel-foot">
-          Saved on this device. Icons by{' '}
-          <a href="https://github.com/matita-dev/icons" target="_blank" rel="noopener noreferrer">
-            matita-dev
-          </a>
-          .
-        </p>
       </div>
     </div>
   );

@@ -548,39 +548,34 @@ html.np-handoff .mast-plate { visibility: hidden; }
   transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set),
     opacity 0.16s var(--ease-set), transform 0.16s var(--ease-set);
 }
-/* every slug has an icon inside (src/life/skillPop.js): it peeks up from
-   behind the slug on hover — the hint you can click it — and pops out on click */
-.skill { position: relative; isolation: isolate; cursor: pointer; }
-.skill-peek {
-  position: absolute;
-  z-index: -1;
-  right: 8px;
-  bottom: 30%;
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  translate: 0 0;
-  rotate: -8deg;
-  pointer-events: none;
-  transition: translate 0.45s var(--ease-stamp), rotate 0.45s var(--ease-stamp);
-}
-.skill:hover .skill-peek,
-.skill.is-teasing .skill-peek { translate: 0 -95%; rotate: 6deg; }
-.skill-pops { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
-.skill-pop {
+/* the arrival (src/life/skillArrive.js): slugs wait unseen until their icon lands */
+.skill { position: relative; cursor: pointer; }
+.skills-await .skill:not(.is-landed) { opacity: 0; }
+.skill-flyers { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.skill-flyer {
   position: absolute;
   width: 36px;
   height: 36px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px oklch(20% 0.02 60 / 0.18));
   will-change: transform, opacity;
 }
-
-/* the tornado (src/life/tornado.js): weather behind the slugs, the funnel's near side in front */
-.tornado-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
-.tornado-canvas--back { z-index: -1; }
-.tornado-canvas--front { z-index: 4; }
-.has-tornado .skill { transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set); }
+/* a click: the slug turns into its icon for a moment */
+.skill-face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  object-fit: contain;
+  opacity: 0;
+  scale: 0.3;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-set), scale 0.45s var(--ease-stamp);
+}
+.skill { transition: color 0.2s var(--ease-set); }
+.skill.is-icon { color: transparent; }
+.skill.is-icon .skill-face { opacity: 1; scale: 1; }
 
 @media (max-width: 1024px) {
   .about-grid {
@@ -603,6 +598,49 @@ html.np-handoff .mast-plate { visibility: hidden; }
   max-width: 60ch;
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
 }
+/* the bug loose in the paper beside the headline (Bug.jsx) */
+.cf-bugzone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 42%;
+  height: clamp(14rem, 34vh, 22rem);
+  z-index: 2;
+  pointer-events: none;
+}
+.cf-bug {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  color: var(--ink);
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+}
+.cf-bug svg { width: 100%; height: 100%; transition: scale 0.18s var(--ease-stamp), opacity 0.6s var(--ease-set) 1s; }
+.cf-bug.is-squashed svg { scale: 1.25 0.3; opacity: 0; color: var(--red); }
+.cf-bug-note {
+  position: absolute;
+  font-family: var(--font-pen);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--red);
+  white-space: nowrap;
+  translate: -50% -50%;
+  rotate: -8deg;
+  opacity: 0;
+}
+.cf-bug-note.is-on { animation: bug-note 2.2s var(--ease-set) forwards; }
+@keyframes bug-note {
+  0% { opacity: 0; scale: 0.4; }
+  15% { opacity: 1; scale: 1.1; }
+  25% { scale: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; translate: -50% -90%; }
+}
+@media (max-width: 720px) { .cf-bugzone { display: none; } }
 .cf-headline {
   font-size: clamp(2.4rem, 7vw, 6rem);
   line-height: 0.9;
@@ -1019,8 +1057,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .led-ink {
   position: absolute;
   top: 0;
-  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 26px);
-  width: 52px;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 40px);
+  width: 80px;
   overflow: visible;
   fill: none;
   stroke: var(--red);
@@ -1032,7 +1070,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .led-nib {
   position: absolute;
   top: -22px;
-  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 26px - 12px);
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 40px - 12px);
   width: 24px;
   height: 24px;
   transform-origin: 12px 22px;
@@ -1515,21 +1553,16 @@ html.np-handoff .mast-plate { visibility: hidden; }
   padding-bottom: 0;
 }
 .contact-line-label {
-  /* the tool's own mark, on a little paper tile so its colours read on the red */
+  /* the tool's own mark, just as it is */
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
-  background: var(--paper);
-  box-shadow: 0 2px 0 oklch(20% 0.03 25 / 0.35);
-  rotate: -3deg;
-  transition: rotate 0.4s var(--ease-stamp), scale 0.4s var(--ease-stamp);
+  width: 26px;
+  height: 26px;
 }
-.contact-line-label img { width: 22px; height: 22px; object-fit: contain; }
-.contact-line:nth-child(2) .contact-line-label { rotate: 2deg; }
-.contact-line:hover .contact-line-label { rotate: -10deg; scale: 1.12; }
+.contact-line-label img { width: 24px; height: 24px; object-fit: contain; }
+/* GitHub's mark is black; on the red it's printed in its white version */
+.contact-line:nth-child(2) .contact-line-label img { filter: brightness(0) invert(0.96); }
 .contact-line-link {
   font-family: var(--font-read);
   font-size: clamp(0.95rem, 1.7vw, 1.25rem);
