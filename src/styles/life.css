@@ -1,0 +1,277 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * The life layer — everything that answers the visitor (src/life, src/gl).
+ * Stacking, bottom to top: the paper → sections → ripples and drifting icons →
+ * registration marks → the WebGL stage (cube) → the icon burst → the hold
+ * ring → the ink roller and the running head → impacts → cursor → loader.
+ * Every canvas ignores the pointer.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* ── Drifting icons and the ripples a click sends ────────────────────────── */
+.icon-drift {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-set);
+}
+.icon-drift.is-ready { opacity: 1; }
+
+/* ── Registration marks — printed on the paper where you click ─────────────── */
+.reg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.reg-mark {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.4;
+  transform: translate(-50%, -50%) rotate(var(--rot));
+  animation: reg-print 0.9s var(--ease-set) forwards;
+}
+.reg-mark .reg-dot { fill: currentColor; stroke: none; }
+.reg-mark--paper { color: var(--red); stroke: var(--red); mix-blend-mode: multiply; }
+.reg-mark--ink { color: #fe433e; stroke: #fe433e; }
+.reg-mark--red { color: var(--paper); stroke: var(--paper); }
+@keyframes reg-print {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--rot) - 14deg)) scale(1.6); }
+  16% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.92); }
+  30% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(calc(var(--rot) + 8deg)) scale(0.7); }
+}
+/* reduced motion: Life.jsx swaps the stamp-in for a plain Web Animations fade */
+
+/* ── The WebGL stage ─────────────────────────────────────────────────────── */
+.stage-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-set);
+}
+.stage-canvas.is-ready { opacity: 1; }
+
+/* the cube's keyboard handle rides over it; invisible until focused */
+.cube-handle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 7;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+.cube-handle:focus-visible {
+  opacity: 1;
+  outline: 2px dashed var(--red);
+  outline-offset: 4px;
+}
+
+/* drawing on the paper: no text selection while the pen is down */
+html.is-doodling,
+html.is-doodling * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Ink roller ──────────────────────────────────────────────────────────── */
+.ink-roller {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 9000;
+  pointer-events: none;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+.ink-roller.is-on-red { background: var(--paper); }
+
+/* ── The cube's milestone notes (src/gl/notes.js) ─────────────────────────────
+ * A pen note scribbled beside the cube: the words write in letter by letter,
+ * the arrow (or, for the solve, a ring round the cube) draws itself on like a
+ * pen stroke, then the note fades. Inked for its ground. */
+.cube-notes {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.cube-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  --ink: var(--red);
+  color: var(--ink);
+  transform: translate3d(calc(var(--cx) + var(--cr) * 0.9), calc(var(--cy) - var(--cr) * 1.15), 0);
+}
+.cube-note.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.35 - 10px), calc(var(--cy) - var(--cr) * 1.15), 0) translateX(-100%); }
+.cube-note[data-ground="ink"] { --ink: #fe433e; }
+.cube-note[data-ground="red"] { --ink: var(--paper); }
+.cube-note-text {
+  margin: 0;
+  font-family: var(--font-pen);
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  rotate: -5deg;
+}
+.cube-note-text span {
+  display: inline-block;
+  opacity: 0;
+  translate: 0 0.3em;
+  transition: opacity 0.2s var(--ease-set), translate 0.35s var(--ease-stamp);
+  transition-delay: calc(var(--i) * 45ms + 250ms);
+}
+.cube-note.is-on .cube-note-text span { opacity: 1; translate: 0 0; }
+.cube-note svg {
+  position: absolute;
+  overflow: visible;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cube-note svg path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.65s var(--ease-bleed);
+}
+.cube-note.is-on svg path { stroke-dashoffset: 0; }
+/* the arrow points back from the words to the cube */
+.cube-note-arrow {
+  width: 76px;
+  height: 40px;
+  top: 100%;
+  left: -34px;
+  rotate: 180deg;
+  scale: 1 -1;
+}
+.cube-note.is-left .cube-note-arrow { left: auto; right: -34px; rotate: 0deg; scale: 1 -1; }
+/* the solve: it's yours — a bigger hand, crowned */
+.cube-note--stickers .cube-note-text { font-size: clamp(2.2rem, 3.6vw, 3.4rem); rotate: -6deg; }
+.cube-note-crown {
+  position: relative !important;
+  display: block;
+  width: 64px;
+  height: 36px;
+  margin: 0 0 0.3rem 0.6rem;
+  rotate: -10deg;
+  stroke-width: 2.6 !important;
+}
+.cube-note--stickers.is-left .cube-note-crown { margin-left: auto; margin-right: 1.2rem; }
+.cube-note-crown path { transition-duration: 0.9s !important; transition-delay: 0.7s; }
+.cube-note--stickers { transform: translate3d(calc(var(--cx) + var(--cr) * 1.05), calc(var(--cy) - var(--cr) * 0.35), 0); }
+.cube-note--stickers.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.1 - 10px), calc(var(--cy) - var(--cr) * 0.35), 0) translateX(-100%); }
+.cube-whirl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.cube-whirl svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.cube-whirl .cw-trail { stroke-width: 1.3; stroke-dasharray: 4 5; }
+.cube-whirl[data-ground="ink"] svg { stroke: #fe433e; }
+.cube-whirl[data-ground="red"] svg { stroke: var(--paper); }
+.cube-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cube-confetti span {
+  position: absolute;
+  border-radius: 22%;
+  box-shadow: inset 0 0 0 1px oklch(20% 0.02 60 / 0.18);
+}
+.cube-note.is-off { opacity: 0; transition: opacity 0.6s var(--ease-set); }
+.cube-note.is-still .cube-note-text span,
+.cube-note.is-still svg path { transition: none; }
+
+/* dragging the cube round */
+html.is-orbiting,
+html.is-orbiting * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Page settings: the cube switched off */
+html.cube-off .stage-canvas,
+html.cube-off .cube-handle,
+html.cube-off .cube-notes { visibility: hidden; }
+
+/* the little car (src/life/car.js): line-drawn, paper-bodied, a red stripe */
+.press-car {
+  --car-scale: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: calc(64px * var(--car-scale));
+  height: calc(30px * var(--car-scale));
+  transform-origin: calc(32px * var(--car-scale)) calc(27px * var(--car-scale));
+  pointer-events: none;
+  will-change: transform;
+}
+.car-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.car-svg * { vector-effect: non-scaling-stroke; }
+.car-shell { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.car-glass { fill: color-mix(in oklch, var(--ink) 10%, var(--paper)); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.car-stripe { stroke: var(--red); stroke-width: 2.2; stroke-linecap: round; }
+.car-lamp { fill: var(--red); }
+.car-board { fill: var(--red); stroke: var(--ink); stroke-width: 1.1; stroke-linejoin: round; }
+.car-pipe { stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; }
+.car-spin circle { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+.car-spin path { stroke: var(--paper); stroke-width: 1.1; stroke-linecap: round; }
+.car-puff {
+  position: absolute;
+  z-index: 1;
+  border-radius: 50%;
+  border: 1.2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  background: color-mix(in oklch, var(--paper) 60%, transparent);
+  pointer-events: none;
+}
+
+/* reading with a highlighter: any inked line you hover gets a swipe of
+   marker behind it, which fades a moment after you move on (src/life/inkLines.js
+   splits the lines; this never moves them) */
+.ink-line { position: relative; width: fit-content; isolation: isolate; }
+@media (pointer: fine) {
+  .ink-line::after {
+    content: "";
+    position: absolute;
+    left: -0.15em;
+    right: -0.15em;
+    bottom: 0.12em;
+    height: 0.5em;
+    z-index: -1;
+    border-radius: 0.2em 0.35em 0.15em 0.4em;
+    background: color-mix(in oklch, var(--red) 15%, transparent);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 0.5s var(--ease-set) 1.4s, opacity 0.5s var(--ease-set) 1.4s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ink-line:hover::after { transform: scaleX(1); opacity: 1; transition: transform 0.35s var(--ease-set), opacity 0.1s; }
+  [data-ground="ink"] .ink-line::after { background: color-mix(in oklch, #fe433e 22%, transparent); }
+  [data-ground="red"] .ink-line::after { background: color-mix(in oklch, var(--paper) 18%, transparent); }
+}

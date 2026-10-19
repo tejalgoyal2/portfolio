@@ -1,65 +1,117 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { gsap } from 'gsap';
-import { fireImpact } from './PressImpacts';
+
+gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Declassify reveal — text loads under an ink bar; the bar wipes away to the
- * right to un-redact. This is the press's "leaked source" mechanic: primary
- * treatment for the Blog (hover) and security bullets (scroll). On reveal a
- * faint STAMP impact lands over the word. Reduced-motion reveals instantly.
+ * A split-flap board, like an old station departures sign. The words are
+ * always there to read — nothing covers them — but now and then they rattle:
+ * each flap clatters through a few random characters (letters for letters,
+ * digits for digits) and lands back on the real one, left to right. Each
+ * character keeps exactly its own width the whole time, so nothing around it
+ * moves, and it's a handful of text changes, nothing heavier.
+ *
+ * - trigger 'scroll' (a stat, a word in a bullet): rattles once as it comes
+ *   into view.
+ * - trigger 'hover' (the punchline in a blog title): rattles when you point
+ *   at it (on touch, once as it comes on screen).
+ *
+ * The real text is always there for screen readers. Reduced motion: the
+ * words are simply shown.
  *
  *   trigger: 'scroll' | 'hover'   tone: 'ink' | 'red'
  */
-export default function Redacted({ children, trigger = 'scroll', tone = 'ink', stamp = true }) {
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+const pickFor = (ch) => {
+  const pool = /\d/.test(ch) ? DIGITS : /[a-z]/i.test(ch) ? LETTERS : null;
+  if (!pool) return ch;
+  const c = pool[(Math.random() * pool.length) | 0];
+  return ch === ch.toLowerCase() ? c.toLowerCase() : c;
+};
+
+export default function Redacted({ children, trigger = 'scroll', tone = 'ink' }) {
+  const text = String(children);
   const wrapRef = useRef(null);
-  const barRef = useRef(null);
-  const [revealed, setRevealed] = useState(false);
 
-  const reveal = () => {
-    if (revealed) return;
-    setRevealed(true);
-    const bar = barRef.current;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const fire = () => {
-      if (!stamp) return;
-      const r = wrapRef.current.getBoundingClientRect();
-      fireImpact('STAMP', r.left + r.width / 2, r.top + r.height / 2, tone);
-    };
-
-    if (reduced) {
-      gsap.set(bar, { clipPath: 'inset(0 0 0 100%)' });
-      fire();
-      return;
-    }
-    gsap.to(bar, {
-      clipPath: 'inset(0 0 0 100%)',
-      duration: 0.45,
-      ease: 'power3.inOut',
-      onComplete: fire,
-    });
-  };
+  // lock each flap to its character's own width, measured with the real text in place
+  useLayoutEffect(() => {
+    const flaps = [...wrapRef.current.querySelectorAll('.flap')];
+    flaps.forEach((f) => (f.style.width = ''));
+    flaps.forEach((f) => (f.style.width = `${f.getBoundingClientRect().width.toFixed(2)}px`));
+  }, [text]);
 
   useEffect(() => {
-    if (trigger !== 'scroll') return;
-    const el = wrapRef.current;
-    const st = gsap.to({}, {
-      duration: 0.01,
-      scrollTrigger: { trigger: el, start: 'top 75%', once: true, onEnter: reveal },
-    });
-    return () => st.scrollTrigger?.kill();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trigger]);
+    const wrap = wrapRef.current;
+    const flaps = [...wrap.querySelectorAll('.flap')];
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timers = new Set();
+    let busy = false;
+
+    const flip = () => {
+      if (busy) return;
+      if (reduced) return;
+      busy = true;
+      let left = flaps.length;
+      flaps.forEach((f, i) => {
+        const real = text[i];
+        if (/\s/.test(real)) {
+          left--;
+          return;
+        }
+        const turns = 5 + ((Math.random() * 5) | 0);
+        let n = 0;
+        const step = () => {
+          n++;
+          f.classList.remove('is-flip');
+          void f.offsetWidth;
+          f.classList.add('is-flip');
+          if (n >= turns) {
+            f.textContent = real;
+            if (--left <= 0) busy = false;
+            return;
+          }
+          f.textContent = pickFor(real);
+          const t = setTimeout(step, 42 + n * 6);
+          timers.add(t);
+        };
+        const t = setTimeout(step, i * 38);
+        timers.add(t);
+      });
+    };
+
+    let st = null;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    if (trigger === 'scroll' || coarse) {
+      st = ScrollTrigger.create({
+        trigger: wrap,
+        start: 'top 85%',
+        once: true,
+        onEnter: () => {
+          const t = setTimeout(flip, trigger === 'scroll' ? 150 : 900);
+          timers.add(t);
+        },
+      });
+    }
+    if (trigger === 'hover') wrap.addEventListener('pointerenter', flip);
+    return () => {
+      st?.kill();
+      wrap.removeEventListener('pointerenter', flip);
+      timers.forEach(clearTimeout);
+    };
+  }, [text, trigger]);
 
   return (
-    <span
-      ref={wrapRef}
-      className={`redacted ${revealed ? 'is-revealed' : ''}`}
-      onPointerEnter={trigger === 'hover' ? reveal : undefined}
-      data-magnetic={trigger === 'hover' ? '' : undefined}
-    >
-      <span className="redacted-text">{children}</span>
-      <span ref={barRef} className={`redacted-bar redacted-bar--${tone}`} aria-hidden="true" />
+    <span ref={wrapRef} className={`flapboard flapboard--${tone}`}>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {[...text].map((ch, i) => (
+          <span className="flap" key={i}>
+            {ch === ' ' ? '\u00a0' : ch}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }

@@ -4,6 +4,13 @@
  * scaffolding lives at the top, then: loader · hero/masthead.
  * ──────────────────────────────────────────────────────────────────────── */
 
+/* main is its own stacking context, so every fixed layer sits above the page */
+main {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
 /* ── Shared scaffolding ──────────────────────────────────────────────────── */
 .press-container {
   width: 100%;
@@ -67,10 +74,11 @@ html.press-booting { overflow: hidden; }
   margin: 0;
   font-family: var(--font-name);
   font-weight: 900;
-  font-variation-settings: "opsz" 144, "SOFT" 0, "WONK" 0;
+  /* cut exactly like the masthead's nameplate, so the hand-off is invisible */
+  font-variation-settings: "opsz" 144, "wght" 860, "SOFT" 0, "WONK" 0;
   font-size: clamp(2.6rem, 11vw, 8.5rem);
-  line-height: 0.9;
-  letter-spacing: -0.02em;
+  line-height: 0.86;
+  letter-spacing: -0.025em;
   color: var(--ink);
   white-space: nowrap;
 }
@@ -99,6 +107,10 @@ html.press-booting { overflow: hidden; }
   opacity: 0;
 }
 
+/* while the loader's plate is flying into the masthead, the real one waits under it */
+html.np-handoff .mast-plate { visibility: hidden; }
+.mast-band .mast-rule { transform-origin: 50% 50%; }
+
 /* ── Hero — the front page / masthead ────────────────────────────────────── */
 .hero {
   position: relative;
@@ -111,6 +123,8 @@ html.press-booting { overflow: hidden; }
   display: flex;
   flex-direction: column;
   padding-block: clamp(1.25rem, 3vw, 2.5rem);
+  /* room for the running head (Menu.jsx) above the nameplate */
+  padding-top: calc(2.4rem + clamp(0.75rem, 2vw, 1.5rem));
 }
 
 /* nameplate band */
@@ -137,6 +151,42 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--ink);
 }
+/* the status line: a terminal thinking out loud */
+.thinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55em;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+.thinking-glyph {
+  display: inline-block;
+  width: 1.1em;
+  text-align: center;
+  color: var(--red);
+  font-size: 1.15em;
+  font-weight: 400;
+}
+.thinking-word { display: inline-flex; color: var(--ink); }
+.thinking-word span {
+  display: inline-block;
+  white-space: pre;
+  /* each letter lands, then a lighter band sweeps across them */
+  animation: think-in 0.42s var(--ease-stamp) calc(var(--i) * 18ms) both,
+    think-shimmer 2.2s ease-in-out calc(0.5s + var(--i) * 55ms) infinite;
+}
+@keyframes think-in {
+  from { opacity: 0; translate: 0 0.55em; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes think-shimmer {
+  0%, 30%, 100% { color: var(--ink); }
+  12% { color: var(--red-wet); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thinking-word span { animation: none; }
+}
 .mast-plate {
   margin: 0;
   padding-block: clamp(0.5rem, 1.4vw, 1.1rem);
@@ -152,33 +202,69 @@ html.press-booting { overflow: hidden; }
   will-change: clip-path;
 }
 
-/* lead story */
-.mast-lead {
-  margin-top: clamp(2.25rem, 6vw, 4.5rem);
-  max-width: 64rem;
+/* the nameplate's sorts — Nameplate.jsx locks each one's width to its resting
+   advance so an inked (wider) letter spills into its gutter, never reflows */
+.np { display: inline; }
+.np-sort {
+  display: inline-block;
+  text-align: center;
 }
+.np-space { display: inline-block; width: 0.22em; }
+
+/* see main.jsx — only the two-column lead re-wraps badly on a font swap */
+@media (min-width: 721px) {
+  html.fonts-pending .mast-lead { visibility: hidden; }
+}
+
+/* lead story — the copy on the left, the cube's slot on the right */
+.mast-lead {
+  margin-top: clamp(2rem, 5vw, 4rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  /* top-aligned: a late font swap then only nudges what's below the headline */
+  align-items: start;
+}
+.mast-copy { min-width: 0; }
 .mast-headline {
-  font-size: clamp(2.6rem, 8vw, 7rem);
+  font-size: clamp(2.6rem, 6.4vw, 6.6rem);
   line-height: 0.92;
   letter-spacing: 0.005em;
   text-transform: uppercase;
 }
-.mast-byline {
+.mast-byline-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.75rem;
   margin-top: clamp(1.25rem, 2.5vw, 2rem);
+  opacity: 0;
+}
+.mast-byline {
   font-family: var(--font-data);
   font-size: clamp(0.74rem, 1vw, 0.86rem);
   letter-spacing: 0.06em;
   color: var(--red);
-  opacity: 0;
 }
 .mast-deck {
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
   max-width: 52ch;
   font-family: var(--font-read);
   font-size: clamp(1.05rem, 1.5vw, 1.3rem);
   line-height: 1.5;
   color: var(--ink-soft);
   opacity: 0;
+}
+/* an empty square the WebGL cube is drawn into — sized here, filled by the stage */
+.mast-cube {
+  justify-self: center;
+  width: min(100%, 30rem, 52svh);
+  aspect-ratio: 1;
+}
+
+@media (max-width: 720px) {
+  .mast-lead { grid-template-columns: 1fr; }
+  .mast-cube { width: min(64vw, 17rem); }
 }
 
 .mast-cue {
@@ -327,6 +413,63 @@ html.press-booting { overflow: hidden; }
   line-height: 1.05;
   color: var(--red-deep);
 }
+/* written in by the pencil (src/life/writeIn.js handwrite) */
+.about-margin { position: relative; }
+.hw-pen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  margin: -22.6px 0 0 -3.8px;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+.hw-pen svg { width: 100%; height: 100%; overflow: visible; }
+
+/* the editor's red pen over the copy (src/life/markup.js) */
+.markup-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  z-index: 2;
+}
+.markup-layer path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.markup-note {
+  position: absolute;
+  z-index: 3;
+  padding: 0.15em 0.45em 0.2em;
+  font-family: var(--font-pen);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--red);
+  white-space: nowrap;
+  background: var(--paper);
+  box-shadow: 0 2px 6px oklch(20% 0.02 60 / 0.16), 0 0 0 1px oklch(56% 0.2 27 / 0.18);
+  rotate: -5deg;
+  translate: 0 -100%;
+  opacity: 0;
+  scale: 0.6;
+  transform-origin: 10% 100%;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-set), scale 0.35s var(--ease-stamp);
+}
+.markup-note.is-on { opacity: 1; scale: 1; }
+[data-mark] { cursor: default; }
+
+/* the little car on the rule (src/life/car.js) */
+.about-grid { position: relative; }
+
 .about-margin li:nth-child(odd) { transform: rotate(-1.6deg); transform-origin: left; }
 .about-margin li:nth-child(even) { transform: rotate(1.2deg); transform-origin: left; margin-left: 0.6rem; }
 
@@ -405,15 +548,34 @@ html.press-booting { overflow: hidden; }
   transition: color 0.16s var(--ease-set), background 0.16s var(--ease-set),
     opacity 0.16s var(--ease-set), transform 0.16s var(--ease-set);
 }
-/* signature hover: the touched slug inks to dark, its neighbours step back —
-   the "pick a slug" feeling, pure CSS, no physics to pile up */
-.skill-list:hover .skill { opacity: 0.4; }
-.skill-list:hover .skill:hover {
-  opacity: 1;
-  background: var(--ink);
-  color: var(--paper);
-  transform: translateY(-2px);
+/* the arrival (src/life/skillArrive.js): slugs wait unseen until their icon lands */
+.skill { position: relative; cursor: pointer; }
+.skills-await .skill:not(.is-landed) { opacity: 0; }
+.skill-flyers { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.skill-flyer {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  will-change: transform, opacity;
 }
+/* a click: the slug turns into its icon for a moment */
+.skill-face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  object-fit: contain;
+  opacity: 0;
+  scale: 0.3;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease-set), scale 0.45s var(--ease-stamp);
+}
+.skill { transition: color 0.2s var(--ease-set); }
+.skill.is-icon { color: transparent; }
+.skill.is-icon .skill-face { opacity: 1; scale: 1; }
 
 @media (max-width: 1024px) {
   .about-grid {
@@ -436,6 +598,49 @@ html.press-booting { overflow: hidden; }
   max-width: 60ch;
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
 }
+/* the bug loose in the paper beside the headline (Bug.jsx) */
+.cf-bugzone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 42%;
+  height: clamp(14rem, 34vh, 22rem);
+  z-index: 2;
+  pointer-events: none;
+}
+.cf-bug {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  color: var(--ink);
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+}
+.cf-bug svg { width: 100%; height: 100%; transition: scale 0.18s var(--ease-stamp), opacity 0.6s var(--ease-set) 1s; }
+.cf-bug.is-squashed svg { scale: 1.25 0.3; opacity: 0; color: var(--red); }
+.cf-bug-note {
+  position: absolute;
+  font-family: var(--font-pen);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--red);
+  white-space: nowrap;
+  translate: -50% -50%;
+  rotate: -8deg;
+  opacity: 0;
+}
+.cf-bug-note.is-on { animation: bug-note 2.2s var(--ease-set) forwards; }
+@keyframes bug-note {
+  0% { opacity: 0; scale: 0.4; }
+  15% { opacity: 1; scale: 1.1; }
+  25% { scale: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; translate: -50% -90%; }
+}
+@media (max-width: 720px) { .cf-bugzone { display: none; } }
 .cf-headline {
   font-size: clamp(2.4rem, 7vw, 6rem);
   line-height: 0.9;
@@ -463,6 +668,59 @@ html.press-booting { overflow: hidden; }
   gap: clamp(1rem, 2vw, 1.4rem);
 }
 
+/* The wraparound display (Projects.jsx CurvedRows): three full-bleed rows,
+   each a strip of cards on the inside of a cylinder — real CSS 3D. */
+.cf-rows {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.4vh, 1.6rem);
+  width: 100vw;
+  margin: clamp(2rem, 4vh, 3rem) 0 0 calc(50% - 50vw);
+}
+.cf-rows { --cf-card: min(340px, 76vw); }
+.cf-row {
+  position: relative;
+  height: 250px;
+  perspective: 1300px;
+  perspective-origin: 50% 50%;
+}
+.cf-track {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.cf-slot {
+  position: absolute;
+  top: 12px;
+  left: calc(50% - var(--cf-card) / 2);
+  width: var(--cf-card);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+.cf-row .case-file {
+  width: var(--cf-card);
+  padding: 1.15rem 1.3rem 1.2rem;
+}
+.cf-row .cf-name { font-size: 1.55rem; }
+.cf-row .cf-deck {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.98rem;
+  min-height: calc(1.4em * 3);
+}
+.cf-row .cf-filed { flex-wrap: nowrap; max-width: 100%; overflow: hidden; mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.cf-row .cf-tag { flex-shrink: 0; white-space: nowrap; }
+.cf-row .cf-foot { flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+/* now and then, a card is ringed in red */
+.case-file.is-flagged {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1.5px var(--red), 3px 4px 0 oklch(56% 0.2 27 / 0.18);
+}
+.case-file.is-flagged .cf-no { text-decoration: underline wavy var(--red); text-underline-offset: 3px; }
+
 /* A case file. Rest = cream sheet. Hover inverts to ink, tilts in REAL CSS 3D
    toward the cursor (perspective + rotateX/Y driven by JS custom props), and a
    warm desk-lamp glow tracks the pointer. overflow:hidden clips that glow to
@@ -479,15 +737,13 @@ html.press-booting { overflow: hidden; }
   box-shadow: 3px 4px 0 oklch(20% 0.02 60 / 0.12);
   transform: perspective(1100px) translateY(var(--lift, 0px))
     rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
-    transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
+  transition: transform 0.5s var(--ease-set), box-shadow 0.4s var(--ease-set),
     border-color 0.3s var(--ease-set);
 }
 /* while the pointer is over the card, the tilt tracks it crisply (short, linear)
    — on leave the class drops and transform eases home over the longer 0.5s */
 .case-file.is-tilt {
-  transition: background 0.4s var(--ease-set), color 0.4s var(--ease-set),
-    transform 0.1s linear, box-shadow 0.4s var(--ease-set),
+  transition: transform 0.1s linear, box-shadow 0.4s var(--ease-set),
     border-color 0.3s var(--ease-set);
 }
 /* lift the card's own content above the glow layer */
@@ -495,36 +751,41 @@ html.press-booting { overflow: hidden; }
 .cf-features .case-file { padding: clamp(1.6rem, 3vw, 2.6rem); }
 
 .case-file:hover {
-  background: var(--ink);
-  color: var(--paper);
-  --lift: -5px;
-  box-shadow: 7px 14px 0 oklch(20% 0.02 60 / 0.2),
-    0 22px 46px oklch(20% 0.02 60 / 0.28);
+  /* stays on paper: the card lifts, its border and title take the press red,
+     and a faint warm ink wash spreads from the cursor (.cf-glow) */
+  --lift: -6px;
+  border-color: var(--red);
+  box-shadow: 6px 10px 0 oklch(56% 0.2 27 / 0.16),
+    0 22px 44px oklch(20% 0.02 60 / 0.18);
   z-index: 3;
 }
+.case-file:hover .cf-name { color: var(--red); }
 .case-file.is-linked {
   border-color: var(--red);
   box-shadow: 0 0 0 2px var(--red), 4px 6px 0 oklch(56% 0.2 27 / 0.2);
 }
 
-/* the desk-lamp — a warm radial pool that follows the cursor (--mx/--my set on
-   pointermove). Screened over the inked card it reads as light falling on the
-   page; hidden until hover so the cream rest state stays clean. */
+/* the ink wash — a soft pool of press red that spreads out from wherever the
+   cursor entered and keeps under it (--mx/--my set on pointermove). Multiplied
+   onto the cream, so it reads as ink soaking into the stock. Transform and
+   opacity only. */
 .cf-glow {
   position: absolute;
-  inset: 0;
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
   z-index: 0;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
   pointer-events: none;
+  background: radial-gradient(closest-side, oklch(56% 0.214 27 / 0.12), oklch(56% 0.214 27 / 0.04) 55%, transparent);
+  mix-blend-mode: multiply;
   opacity: 0;
-  background: radial-gradient(
-    220px circle at var(--mx, 50%) var(--my, 50%),
-    oklch(88% 0.13 78 / 0.55),
-    transparent 65%
-  );
-  mix-blend-mode: screen;
-  transition: opacity 0.35s var(--ease-set);
+  transform: scale(0.15);
+  transition: opacity 0.35s var(--ease-set), transform 0.9s var(--ease-set);
 }
-.case-file:hover .cf-glow { opacity: 1; }
+.case-file:hover .cf-glow { opacity: 1; transform: scale(1); }
 
 @media (prefers-reduced-motion: reduce) {
   .case-file { transform: none; }
@@ -552,8 +813,6 @@ html.press-booting { overflow: hidden; }
 .cf-features .cf-name { font-size: clamp(1.9rem, 4vw, 3.4rem); }
 
 /* stamps must flip with the page — switch to a light screen on the inked card */
-.case-file:hover .press-stamp { mix-blend-mode: screen; }
-.case-file:hover .press-stamp--ink { color: var(--paper); }
 
 .cf-deck {
   font-family: var(--font-read);
@@ -563,7 +822,6 @@ html.press-booting { overflow: hidden; }
   margin: 0.9rem 0 0;
   color: var(--ink-soft);
 }
-.case-file:hover .cf-deck { color: oklch(88% 0.014 85); }
 
 /* An editor's scribble — my own hand on the one file I sink the most weekends
    into. Caveat in wet red, kicked off-axis so it reads as a margin note and not
@@ -617,7 +875,6 @@ html.press-booting { overflow: hidden; }
   text-transform: uppercase;
   color: var(--ink-ghost);
 }
-.case-file:hover .cf-metric-l { color: oklch(72% 0.012 70); }
 
 .cf-notes {
   font-family: var(--font-read);
@@ -627,7 +884,6 @@ html.press-booting { overflow: hidden; }
   margin: 1.3rem 0 0;
   color: var(--ink-soft);
 }
-.case-file:hover .cf-notes { color: oklch(86% 0.014 85); }
 
 .cf-foot {
   display: flex;
@@ -651,7 +907,6 @@ html.press-booting { overflow: hidden; }
   color: var(--ink-ghost);
   margin-right: 0.3rem;
 }
-.case-file:hover .cf-filed-label { color: oklch(70% 0.012 70); }
 .cf-tag {
   font-family: var(--font-data);
   font-size: 0.66rem;
@@ -675,7 +930,6 @@ html.press-booting { overflow: hidden; }
   transition: border-color 0.2s, color 0.2s;
 }
 .cf-link:hover { border-color: currentColor; }
-.case-file:hover .cf-link { color: var(--red-wet); }
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Experience — The Ledger / On the Record (first ink spread)
@@ -683,13 +937,11 @@ html.press-booting { overflow: hidden; }
 .experience {
   position: relative;
   z-index: 1;
-  /* Owns its dark ground so the bright text is legible regardless of scroll —
-     no scrubbed fixed layer to desync. The seam above sells the cream→dark turn;
-     from here down the sheet is deep red-ink (--ground), the dark end of the
-     press red, so it belongs to the same family as the cream and the finale. */
+  /* Its own sheet of solid ink (--ground, the warm ink-black of the body text):
+     cream type, red accents. The torn edge above sells the cream→ink turn. */
   background: var(--ground);
   color: var(--paper);
-  /* on the dark-red ground, lift the red accents so kickers/marks stay vivid */
+  /* on the ink ground, lift the red accents so kickers and marks stay vivid */
   --red: oklch(66% 0.224 27);
   padding: clamp(9vh, 14vh, 16vh) 0 clamp(6rem, 12vh, 9rem);
 }
@@ -791,6 +1043,81 @@ html.press-booting { overflow: hidden; }
   left: 0;
   color: var(--red);
 }
+/* the margin rule — Experience.jsx scrubs its scaleY down the ledger */
+.led-rule {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem));
+  width: 2px;
+  background: var(--red);
+  transform-origin: 50% 0;
+}
+/* the nib that draws the rule, and the dot it presses in at each job */
+.led-ink {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 40px);
+  width: 80px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.led-nib {
+  position: absolute;
+  top: -22px;
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 40px - 12px);
+  width: 24px;
+  height: 24px;
+  transform-origin: 12px 22px;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-set);
+  pointer-events: none;
+}
+.led-nib.is-on { opacity: 1; }
+.led-nib svg { width: 100%; height: 100%; fill: var(--ground); stroke: var(--paper); stroke-width: 1.3; stroke-linejoin: round; }
+.led-nib svg path:last-child { fill: none; }
+.led-dot-mark {
+  position: absolute;
+  top: calc(clamp(1.4rem, 3vh, 2.2rem) + 0.4rem);
+  left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 5px);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ground);
+  border: 2px solid var(--red);
+  scale: 0;
+  transition: scale 0.45s var(--ease-stamp);
+}
+.led-dot-mark.is-in { scale: 1; }
+.led-dot-mark.is-in::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1.5px solid var(--red);
+  animation: led-ring 0.7s var(--ease-set) forwards;
+}
+@keyframes led-ring {
+  from { opacity: 0.8; scale: 0.4; }
+  to { opacity: 0; scale: 1.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .led-dot-mark { scale: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .led-rule { transform: none; }
+}
+.count-up {
+  display: inline-block;
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: left;
+}
+
 /* redaction sits on the ink spread — keep revealed text legible on ink */
 .experience .redacted { color: var(--paper); }
 
@@ -814,12 +1141,9 @@ html.press-booting { overflow: hidden; }
 .opdesk {
   position: relative;
   z-index: 1;
-  /* Continues the dark sheet from Experience on the same deep red-ink ground, so
-     the lower page is one warm family (cream → dark-red → vivid red) instead of
-     turning to mud. Owns its ground so the cream clippings and light type read
-     regardless of scroll. NB: no blanket --red override here — the clippings are
-     cream cards whose interior reds must stay the true press red; only the kicker
-     (on the dark ground) is lifted, below. */
+  /* Another sheet of solid ink, laid on Experience. NB: no blanket --red
+     override here — the clippings are cream cards whose interior reds must stay
+     the true press red; only the kicker (on the ink) is lifted, below. */
   background: var(--ground);
   padding: clamp(7vh, 11vh, 13vh) 0 clamp(5rem, 9vh, 7rem);
   overflow: hidden;
@@ -834,7 +1158,7 @@ html.press-booting { overflow: hidden; }
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  /* lifted off the dark-red ground (same hue as --ground at L56 would mute) */
+  /* lifted off the ink ground so it stays vivid */
   color: oklch(66% 0.224 27);
   margin-bottom: 0.9rem;
 }
@@ -1008,25 +1332,36 @@ html.press-booting { overflow: hidden; }
  * ──────────────────────────────────────────────────────────────────────── */
 .contact {
   position: relative;
-  background: var(--red);
+  /* printed red stock: a deep oxblood, with the paper's grain over it */
+  background: var(--red-stock);
   color: var(--paper);
   padding: clamp(10vh, 15vh, 18vh) clamp(1.5rem, 5vw, 6rem) clamp(5rem, 9vh, 7rem);
   overflow: hidden;
 }
-/* Subtle newsprint grain on red gives the ink-print feel */
-.contact::before {
+/* The paper's grain shows through the ink: a coarse tooth (overlay, so it both
+   lifts and deepens the red) and the fine fibre from the cream sheets above */
+.contact::before,
+.contact::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 140px 140px;
-  opacity: 0.04;
-  mix-blend-mode: multiply;
   pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.contact::before {
+  background-size: 220px 220px;
+  opacity: 0.26;
+  mix-blend-mode: overlay;
+}
+.contact::after {
+  background-size: 120px 120px;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
 }
 
 .contact-inner {
   position: relative;
+  z-index: 1;
   max-width: 860px;
 }
 
@@ -1073,6 +1408,27 @@ html.press-booting { overflow: hidden; }
   opacity: 0.8;
 }
 
+/* the cube's last stop: its own square to the right of the finale */
+.contact-cube {
+  position: absolute;
+  right: clamp(1.5rem, 6vw, 7rem);
+  top: 46%;
+  width: min(27vw, 25rem);
+  aspect-ratio: 1;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+@media (max-width: 1100px) {
+  .contact-cube {
+    position: relative;
+    right: auto;
+    top: auto;
+    translate: none;
+    width: min(56vw, 15rem);
+    margin: 0 auto clamp(2rem, 5vh, 3rem);
+  }
+}
+
 /* ── Classified CTAs ─────────────────────────────────────────────────────── */
 .contact-body {
   display: flex;
@@ -1084,6 +1440,90 @@ html.press-booting { overflow: hidden; }
   flex-shrink: 0;
   padding-top: 0.6rem;
 }
+/* the postage stamp (Postage.jsx): perforated, a little cube, a postmark struck on hover */
+.postage {
+  position: relative;
+  display: block;
+  width: 108px;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.postage-paper {
+  display: block;
+  padding: 7px;
+  background: var(--paper);
+  rotate: -5deg;
+  /* perforations: holes all round the edge, solid inside */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle 3.6px at 50% 50%, #0000 96%, #000) -6px -6px / 12px 12px round;
+  -webkit-mask-composite: source-over;
+  mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle 3.6px at 50% 50%, #0000 96%, #000) -6px -6px / 12px 12px round;
+  mask-composite: add;
+  filter: drop-shadow(0 6px 10px oklch(15% 0.03 25 / 0.35));
+  transition: rotate 0.45s var(--ease-stamp), translate 0.45s var(--ease-stamp);
+}
+
+.postage:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
+.postage-face {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 7px 6px;
+  border: 1.5px solid var(--red-stock);
+  color: var(--red-stock);
+  font-family: var(--font-data);
+}
+.postage-top { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; white-space: nowrap; }
+.postage-art { width: 100%; height: auto; }
+.postage-art path { stroke: var(--red-stock); stroke-width: 1.4; stroke-linejoin: round; }
+.pa-top { fill: oklch(86% 0.13 90); }
+.pa-left { fill: oklch(62% 0.15 150); }
+.pa-right { fill: oklch(52% 0.17 260); }
+.pa-grid { fill: none; stroke-width: 0.9 !important; }
+.postage-value { align-self: flex-end; font-family: var(--font-impact); font-size: 1.4rem; line-height: 1; }
+.postage-value small { font-size: 0.7em; }
+.postage-mark {
+  position: absolute;
+  top: 30px;
+  left: 50px;
+  width: 190px;
+  height: 114px;
+  overflow: visible;
+  fill: none;
+  stroke: oklch(16% 0.02 40 / 0.8);
+  stroke-width: 2.2;
+  pointer-events: none;
+  opacity: 0;
+  rotate: -14deg;
+  scale: 1.35;
+}
+.postage.is-struck .postage-mark { animation: pm-strike 0.42s var(--ease-stamp) forwards; }
+@keyframes pm-strike {
+  0% { opacity: 0; scale: 1.35; rotate: -14deg; }
+  60% { opacity: 0.95; scale: 0.96; rotate: -9deg; }
+  100% { opacity: 0.85; scale: 1; rotate: -10deg; }
+}
+.pm-ring-text { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-data); font-size: 6.4px; font-weight: 700; letter-spacing: 0.08em; }
+.pm-centre { fill: oklch(16% 0.02 40 / 0.78); stroke: none; font-family: var(--font-impact); font-size: 14px; letter-spacing: 0.06em; }
+.pm-waves { stroke-linecap: round; }
+.postage-tip {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: -4px;
+  font-family: var(--font-pen);
+  font-size: 1.1rem;
+  white-space: nowrap;
+  color: var(--paper);
+  opacity: 0;
+  translate: 0 -4px;
+  transition: opacity 0.25s var(--ease-set), translate 0.3s var(--ease-stamp);
+}
+.postage:hover .postage-tip,
+.postage.is-copied .postage-tip { opacity: 0.85; translate: 0 0; }
+@media (prefers-reduced-motion: reduce) {
+  .postage.is-struck .postage-mark { animation: none; opacity: 0.85; scale: 1; rotate: -10deg; }
+}
+
 /* Stamp on red ground: override to paper color, no multiply blend */
 .contact-stamp-row .press-stamp {
   color: var(--paper) !important;
@@ -1102,7 +1542,7 @@ html.press-booting { overflow: hidden; }
 }
 .contact-line {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1.2rem;
   border-bottom: 1px solid oklch(95.5% 0.014 85 / 0.18);
   padding: 1rem 0;
@@ -1113,16 +1553,16 @@ html.press-booting { overflow: hidden; }
   padding-bottom: 0;
 }
 .contact-line-label {
-  font-family: var(--font-data);
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--paper);
-  opacity: 0.55;
-  white-space: nowrap;
+  /* the tool's own mark, just as it is */
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
-  min-width: 8.5ch;
+  width: 26px;
+  height: 26px;
 }
+.contact-line-label img { width: 24px; height: 24px; object-fit: contain; }
+/* GitHub's mark is black; on the red it's printed in its white version */
+.contact-line:nth-child(2) .contact-line-label img { filter: brightness(0) invert(0.96); }
 .contact-line-link {
   font-family: var(--font-read);
   font-size: clamp(0.95rem, 1.7vw, 1.25rem);
@@ -1165,7 +1605,7 @@ html.press-booting { overflow: hidden; }
  * boundary was a fake seam on continuous paper — it read as an unfinished smudge.
  * Cohesion across the cream run comes from shared rhythm (kicker + kinetic head +
  * the registration cursor), not a drawn divider. The only real turns left are
- * cream→dark-red and dark-red→red, and those are torn deckle edges (below). */
+ * cream→ink and ink→red, and those are torn deckle edges (below). */
 
 /* Op-Ed Desk hint — use paper-at-opacity on ink ground so it reads */
 .opdesk-hint {

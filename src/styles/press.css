@@ -20,67 +20,126 @@
   mix-blend-mode: overlay;
 }
 
-/* ── Registration cursor ─────────────────────────────────────────────────── */
+/* ── The pen cursor (PressCursor.jsx) ─────────────────────────────────────────
+ * One pointy pencil icon, its tip on the pointer; a small mark beside it for
+ * the cube and friends; a quarter-turn arrow after a twist. No dot, no ring.
+ * Inked for the stock under it (--pen-ink), with a thin halo of the paper so it
+ * holds up over type and the cube. */
+/* hidden everywhere, whatever a button or link asks for — a fully transparent
+   image first (sturdier than a bare `none` after the OS has shown a menu) */
 html.cursor-hidden,
 html.cursor-hidden * {
-  cursor: none;
+  cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=") 0 0, none !important;
 }
-html.cursor-hidden input,
-html.cursor-hidden textarea,
-html.cursor-hidden select {
-  cursor: text;
+html.cursor-hidden input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]),
+html.cursor-hidden textarea {
+  cursor: text !important;
 }
-.press-cursor-dot,
-.press-cursor-ring {
+.press-cursor.is-system { display: none; }
+.press-pen,
+.press-cursor-mark,
+.cursor-flick {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 9999;
   pointer-events: none;
-  mix-blend-mode: difference;
   will-change: transform;
 }
-.press-cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  background: var(--paper);
-  border-radius: 50%;
+.press-pen {
+  --pen-ink: var(--ink);
+  width: 0;
+  height: 0;
+  opacity: 0;
+  color: var(--pen-ink);
+  transition: opacity 0.2s var(--ease-set), color 0.35s var(--ease-set);
 }
-.press-cursor-ring {
-  width: 38px;
-  height: 38px;
-  margin: -19px 0 0 -19px;
-  transition: width 0.2s var(--ease-set), height 0.2s var(--ease-set),
-    margin 0.2s var(--ease-set);
-}
-.press-cross {
+.press-pen.is-on { opacity: 1; }
+.press-pen-lean { width: 0; height: 0; }
+.press-pen-icon {
   position: absolute;
-  background: var(--paper);
-}
-.press-cross--h {
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  margin-top: -0.5px;
-}
-.press-cross--v {
   top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  margin-left: -0.5px;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  transform-origin: 0 0;
+  transform: rotate(var(--rot, 0deg)) translate(var(--tx, 0px), var(--ty, 0px));
+  filter: drop-shadow(0 0 1.5px color-mix(in oklch, var(--paper) 70%, transparent));
+  transition: scale 0.32s var(--ease-stamp), opacity 0.25s var(--ease-set);
 }
-.press-cursor-ring.is-locked {
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
+.press-pen-icon svg { width: 100%; height: 100%; overflow: visible; }
+.press-pen-icon svg path { stroke-width: 1.15; }
+/* over something you can click, the pen lifts off the paper a little */
+html.cursor-over-link .press-pen-icon { scale: 1.16; }
+html.cursor-down .press-pen-icon { scale: 0.88; }
+
+/* per-target marks, riding beside the tip: a twist arc for the cube, orbit
+   while turning it, a steering wheel for the car, a nib for the gratitude input */
+.press-cursor-mark {
+  width: 30px;
+  height: 30px;
+  color: var(--ink);
 }
-.press-cursor-ring.is-down {
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
+.cursor-mark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(0.6) rotate(-40deg);
+  transition: opacity 0.18s var(--ease-set), transform 0.3s var(--ease-stamp);
+}
+.press-cursor-mark[data-state="twist"] .cursor-mark--twist,
+.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit,
+.press-cursor-mark[data-state="wheel"] .cursor-mark--wheel,
+.press-cursor-mark[data-state="nib"] .cursor-mark--nib {
+  opacity: 1;
+  transform: none;
+}
+.press-cursor-mark[data-state] { color: var(--red); }
+.press-cursor-mark[data-ground="ink"][data-state] { color: var(--red-wet); }
+.press-cursor-mark[data-ground="red"][data-state] { color: var(--paper); }
+/* the twist arc keeps hinting a quarter turn while you hover the cube */
+.press-cursor-mark[data-state="twist"] .cursor-mark--twist {
+  animation: cursor-twist 4.8s var(--ease-set) infinite;
+}
+/* four quarter turns, a beat between each — like a face being turned */
+@keyframes cursor-twist {
+  0%, 14% { transform: rotate(0deg); }
+  25%, 39% { transform: rotate(90deg); }
+  50%, 64% { transform: rotate(180deg); }
+  75%, 89% { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit { animation: cursor-orbit 2.4s linear infinite; }
+@keyframes cursor-orbit { to { transform: rotate(360deg); } }
+
+/* the flick: a quarter-turn arrow drawn round the point, the way a face just turned */
+.cursor-flick {
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  overflow: visible;
+}
+.cursor-flick[data-ground="ink"] { stroke: var(--red-wet); }
+.cursor-flick[data-ground="red"] { stroke: var(--paper); }
+.cursor-flick path:first-child { stroke-dasharray: 1; }
+.cursor-flick .flick-line { stroke-dasharray: 1; stroke-dashoffset: 1; stroke-width: 2.2; }
+.cursor-flick .flick-trail { stroke-dasharray: 0.55 1; stroke-dashoffset: 1; stroke-width: 1.4; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .press-cursor-mark[data-state] .cursor-mark { animation: none; }
 }
 
 /* ── Onomatopoeia impacts ────────────────────────────────────────────────── */
@@ -106,6 +165,17 @@ html.cursor-hidden select {
 }
 .press-impact--red {
   color: var(--red);
+}
+/* the small comic tag a cube twist makes: a word on a jagged red burst */
+.press-impact--sm {
+  padding: 0.55em 0.75em 0.5em;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--paper);
+  background: var(--red);
+  text-shadow: none;
+  clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 32%, 100% 38%, 80% 54%, 96% 76%, 70% 72%, 64% 100%, 50% 80%, 34% 100%, 30% 72%, 4% 78%, 20% 54%, 0 36%, 24% 32%, 16% 8%, 40% 22%);
+  animation-duration: 620ms;
 }
 @keyframes impact-pop {
   0% {
@@ -135,24 +205,22 @@ html.cursor-hidden select {
   }
 }
 
-/* ── Declassify / redaction ──────────────────────────────────────────────── */
-.redacted {
-  position: relative;
+/* ── Split-flap board (Redacted.jsx) ─────────────────────────────────────────
+ * Each character on its own flap, locked to its own width; a flip is a quick
+ * squash through the hinge. */
+.flapboard { white-space: nowrap; }
+.flap {
   display: inline-block;
-  white-space: nowrap;
+  text-align: center;
+  transform-origin: 50% 55%;
 }
-.redacted-bar {
-  position: absolute;
-  inset: -0.05em -0.14em;
-  background: var(--ink);
-  clip-path: inset(0 0 0 0);
-  will-change: clip-path;
-}
-.redacted-bar--red {
-  background: var(--red);
-}
-.redacted.is-revealed {
-  cursor: text;
+.flapboard--red .flap { color: var(--red); }
+[data-ground="ink"] .flapboard--red .flap { color: #fe433e; }
+.flap.is-flip { animation: flap 0.09s linear; }
+@keyframes flap {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(0.15); }
+  100% { transform: scaleY(1); }
 }
 
 /* ── Stamps ──────────────────────────────────────────────────────────────── */
@@ -294,10 +362,17 @@ button.press-stamp {
   /* clip the reveal slide so the dropping sheet never spills into the spread above */
   overflow: hidden;
 }
-/* The torn lower sheet. A real element (not ::before) so Seam.jsx can drop it
-   into place as the seam scrolls in — like a fresh sheet hitting the press bed.
-   Its default state is the FINAL torn edge (opacity 1), so with no JS or under
-   reduced motion the seam is simply a crisp torn boundary. */
+/* The torn lower sheet, cut into vertical strips so Seam.jsx can rip it across
+   as you scroll: each strip is clipped to its slice (1px of overlap hides any
+   hairline) and carries a full-width copy of the torn shape, so the slices line
+   up into one edge. Default state is the FINAL torn edge, so with no JS or
+   under reduced motion the seam is simply a crisp torn boundary. */
+.seam-strip {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc(100% - (var(--i) + 1) * 100% / var(--n) - 1px) 0 calc(var(--i) * 100% / var(--n)));
+  will-change: transform;
+}
 .seam-tear {
   position: absolute;
   inset: 0;
@@ -305,8 +380,6 @@ button.press-stamp {
   /* a thread of wet press-red glistens along the torn edge; below it the upper
      sheet's edge drops a soft shadow onto the sheet beneath — reads freshly run */
   filter: drop-shadow(0 -1px 0 oklch(62% 0.23 27)) drop-shadow(0 2px 1px rgba(15, 10, 8, 0.3));
-  opacity: 1;
-  will-change: transform, opacity;
 }
 /* cream → dark-red: band is transparent up top so the cream backdrop (grain and
    all) shows through the torn gaps; the torn lower shape is the dark-red ground */
@@ -315,7 +388,57 @@ button.press-stamp {
 /* dark-red → red: the upper stays the dark ground, the torn lower shape is the
    press red. Mirror the tear so the two seams aren't an obvious copy of each. */
 .seam--ink-red { background: var(--ground); }
-.seam--ink-red .seam-tear { background: var(--red); transform: scaleX(-1); }
+.seam--ink-red .seam-tear { background: color-mix(in oklch, var(--red-stock), white 2.5%); transform: scaleX(-1); }
+
+/* ── The ridge — the ink spread rising as mountains (Ridge.jsx) ───────────── */
+.ridge {
+  position: relative;
+  z-index: 1;
+  height: clamp(120px, 12vw, 190px);
+  margin-bottom: -1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ridge-land { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ridge-far { fill: color-mix(in oklch, var(--ground) 16%, transparent); }
+.ridge-near { fill: var(--ground); }
+.ridge .press-car { z-index: 2; }
+.ridge-boulder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  overflow: visible;
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  will-change: transform;
+}
+.ridge-crack { fill: none; stroke-width: 1.1; stroke-linecap: round; }
+.ridge-yikes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 18px;
+  margin-left: -9px;
+  font-family: var(--font-impact);
+  font-size: 1.2rem;
+  line-height: 1;
+  text-align: center;
+  color: var(--red);
+  opacity: 0;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+/* out of thin air: it swells up on the spot, overshoots, settles */
+.ridge-yikes.is-on { animation: yikes-pop 0.45s var(--ease-stamp) forwards; }
+@keyframes yikes-pop {
+  0% { opacity: 0; transform: scale(0); }
+  55% { opacity: 1; transform: scale(1.35) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
 
 /* ── The wire — newsroom crawl under the nameplate ────────────────────────────
  * A slim ink band that runs a slow dispatch crawl between Hero and About.
@@ -383,3 +506,527 @@ button.press-stamp {
      static dispatch strip with no transform applied */
   .wire-track { transform: none; }
 }
+
+/* ── Running head (Contents.jsx, PageSettings.jsx) ───────────────────────────
+ * A band of glass across the top, ruled off like a folio line: every section
+ * in it, one long rule along its foot that a tiny pen draws as you read, the
+ * current section in a red cell made of the same ink (it sinks into the rule
+ * and rises at the next one). Two cells at the end: your pen, Page settings.
+ * Re-inks for the stock beneath, fading over half a second. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+[data-section]:focus { outline: none; }
+
+.running-head {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9100;
+  height: 46px;
+  --rh-ink: var(--ink);
+  --rh-glass: oklch(97.5% 0.012 85 / 0.62);
+  --rh-rule: oklch(20% 0.02 60 / 0.14);
+  color: var(--rh-ink);
+  background: var(--rh-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
+  transition: color 0.6s var(--ease-set), background-color 0.6s var(--ease-set);
+  font-family: var(--font-data);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.running-head[data-ground="ink"] {
+  --rh-ink: var(--paper);
+  --rh-glass: oklch(21% 0.015 60 / 0.66);
+  --rh-rule: oklch(100% 0 0 / 0.14);
+}
+.running-head[data-ground="red"] {
+  --rh-ink: var(--paper);
+  --rh-glass: oklch(33% 0.1 25 / 0.66);
+  --rh-rule: oklch(100% 0 0 / 0.18);
+}
+.rh-bar {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  /* edge to edge: the whole width of the screen */
+  padding-inline: clamp(14px, 2vw, 32px);
+}
+
+.rh-here { display: none; align-items: center; margin: 0 0.75rem 0 0; overflow: hidden; white-space: nowrap; }
+.rh-label { display: inline-block; animation: rh-roll 0.5s var(--ease-set); }
+@keyframes rh-roll {
+  from { transform: translateY(110%); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.rh-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.4em;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  padding: 0 0.7rem;
+  cursor: pointer;
+}
+
+.rh-track { position: relative; flex: 1; display: flex; }
+/* the editor's loop round the current section */
+.rh-loops {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.rh-loops path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.running-head[data-ground="ink"] .rh-loops { stroke: var(--red-wet); }
+.running-head[data-ground="red"] .rh-loops { stroke: var(--paper); }
+.rh-list {
+  position: relative;
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rh-list li { display: flex; }
+.rh-list button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 0.85rem 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  opacity: 0.66;
+  cursor: pointer;
+  transition: opacity 0.25s var(--ease-set), color 0.3s var(--ease-set) 0.25s;
+}
+.rh-list button:hover { opacity: 1; }
+.rh-list button:focus-visible { opacity: 1; outline: 2px solid var(--red); outline-offset: -2px; }
+.rh-list .is-current button { opacity: 1; color: var(--red); }
+.running-head[data-ground="ink"] .rh-list .is-current button { color: var(--red-wet); }
+.running-head[data-ground="red"] .rh-list .is-current button { color: var(--paper); }
+
+/* the rule along the foot, and the pen drawing it */
+.rh-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--rh-rule);
+  pointer-events: none;
+}
+.rh-line-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+.running-head[data-ground="red"] .rh-line-fill { background: var(--paper); }
+.rh-line-tip { position: absolute; left: 0; top: 1px; width: 0; height: 0; }
+.rh-line-bead {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--red) 18%, transparent);
+}
+.running-head[data-ground="red"] .rh-line-bead { background: var(--paper); box-shadow: 0 0 0 3px oklch(100% 0 0 / 0.18); }
+
+/* the cells at the end */
+.rh-cells { display: flex; align-items: stretch; margin-left: 0.6rem; }
+.rh-cells > * { position: relative; display: flex; align-items: center; border-left: 1px solid var(--rh-rule); }
+.rh-pen-wrap { padding: 0 0.35rem; }
+.rh-pen {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 3px;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-set), scale 0.25s var(--ease-stamp);
+}
+.rh-pen:hover { background: color-mix(in oklch, currentColor 10%, transparent); }
+.rh-pen:active { scale: 0.9; }
+.rh-pen:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.rh-pen-icon { width: 20px; height: 20px; }
+.rh-pen-icon svg { width: 100%; height: 100%; }
+@media (pointer: coarse) { .rh-pen-wrap { display: none !important; } }
+
+.rh-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 0 0.2rem 0 0.85rem;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease-set);
+}
+.rh-settings-btn:hover,
+.rh-settings.is-open .rh-settings-btn { opacity: 1; }
+.rh-settings-btn:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+.rh-settings-glyph {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.rh-settings-glyph circle { fill: var(--rh-glass); transition: transform 0.4s var(--ease-stamp); }
+.rh-settings-btn:hover .rh-settings-glyph circle:first-of-type { transform: translateX(-5px); }
+.rh-settings-btn:hover .rh-settings-glyph circle:last-of-type { transform: translateX(5px); }
+@media (max-width: 1180px) { .rh-settings-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+
+/* comic bubbles: the credit on hover, the hint now and then */
+.rh-bubble {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -6px;
+  width: max-content;
+  max-width: 17.5rem;
+  margin: 0;
+  padding: 0.6rem 0.85rem 0.65rem;
+  font-family: var(--font-pen);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  rotate: -2deg;
+  transform-origin: calc(100% - 22px) -12px;
+}
+/* the tail, up to the pen */
+.rh-bubble::before,
+.rh-bubble::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  border-style: solid;
+}
+.rh-bubble::before { top: -15px; border-width: 0 0 15px 13px; border-color: transparent transparent var(--ink) transparent; }
+.rh-bubble::after { top: -10px; right: 20.5px; border-width: 0 0 11px 9px; border-color: transparent transparent var(--paper) transparent; }
+.rh-bubble a { color: var(--red); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+.rh-bubble--credit {
+  max-width: 15.5rem;
+  font-size: 1.08rem;
+  opacity: 0;
+  visibility: hidden;
+  scale: 0.9;
+  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-stamp), visibility 0s 0.2s;
+}
+.rh-pen-wrap:hover .rh-bubble--credit,
+.rh-pen-wrap:focus-within .rh-bubble--credit {
+  opacity: 1;
+  visibility: visible;
+  scale: 1;
+  transition: opacity 0.18s var(--ease-set) 0.3s, scale 0.35s var(--ease-stamp) 0.3s, visibility 0s 0.3s;
+}
+.rh-bubble--hint {
+  color: var(--paper);
+  background: var(--red);
+  border-color: var(--ink);
+  animation: rh-pop 0.6s var(--ease-stamp) both, rh-nudge 2.4s ease-in-out 0.8s 2;
+  pointer-events: none;
+}
+.rh-bubble--hint::after { border-color: transparent transparent var(--red) transparent; }
+@keyframes rh-pop {
+  0% { opacity: 0; scale: 0.3; rotate: -14deg; }
+  60% { opacity: 1; scale: 1.08; rotate: 1deg; }
+  100% { opacity: 1; scale: 1; rotate: -2deg; }
+}
+@keyframes rh-nudge {
+  0%, 100% { translate: 0 0; }
+  12% { translate: 0 -5px; }
+  24% { translate: 0 0; }
+  32% { translate: 0 -3px; }
+  40% { translate: 0 0; }
+}
+
+/* the settings card */
+.rh-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 20rem;
+  padding: 1rem 1.1rem 0.9rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  box-shadow: 5px 5px 0 var(--ink);
+  letter-spacing: 0.14em;
+  animation: rh-panel-in 0.32s var(--ease-stamp);
+}
+.rh-panel[hidden] { display: none; }
+@keyframes rh-panel-in {
+  from { opacity: 0; translate: 0 -8px; rotate: 0.6deg; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; }
+}
+.rh-panel-title {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-name);
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.rh-opt { margin: 0 0 0.9rem; padding: 0; border: 0; }
+.rh-opt legend { margin-bottom: 0.5rem; padding: 0; font-size: 0.6rem; opacity: 0.7; }
+.rh-pens { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.35rem; margin-bottom: 0.55rem; }
+.rh-pen-pick {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--ink) 25%, transparent);
+  border-radius: 3px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, scale 0.25s var(--ease-stamp);
+}
+.rh-pen-pick span { width: 22px; height: 22px; }
+.rh-pen-pick svg { width: 100%; height: 100%; }
+.rh-pen-pick:hover { scale: 1.08; border-color: var(--ink); }
+.rh-pen-pick[aria-pressed="true"] { color: var(--red); border-color: var(--red); background: color-mix(in oklch, var(--red) 8%, transparent); }
+.rh-pen-pick:focus-visible,
+.rh-seg button:focus-visible,
+.rh-rain:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rh-seg { display: flex; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
+.rh-seg button {
+  flex: 1;
+  padding: 0.5rem 0.2rem;
+  font: inherit;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+.rh-seg button + button { border-left: 1px solid var(--ink); }
+.rh-seg button[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+.rh-rain {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  font-size: 0.56rem;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--red);
+  border: 1px dashed var(--red);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.rh-rain:hover { background: color-mix(in oklch, var(--red) 8%, transparent); }
+.rh-rain:disabled { opacity: 0.4; cursor: default; }
+.rh-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  font-family: var(--font-read);
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+.rh-switch input {
+  appearance: none;
+  flex-shrink: 0;
+  position: relative;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.25s var(--ease-set);
+}
+.rh-switch input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: translate 0.3s var(--ease-stamp), background-color 0.25s;
+}
+.rh-switch input:checked { background: var(--red); border-color: var(--red); }
+.rh-switch input:checked::after { translate: 13px 0; background: var(--paper); }
+.rh-switch input:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rh-panel-foot {
+  margin: 0.2rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 20%, transparent);
+  font-size: 0.55rem;
+  opacity: 0.75;
+}
+.rh-panel-foot a { color: var(--red); }
+
+@media (max-width: 900px) {
+  .running-head { height: 44px; }
+  .rh-bar { max-width: none; padding: 0 0 0 14px; }
+  .rh-here,
+  .rh-toggle { display: inline-flex; }
+  .rh-toggle { white-space: nowrap; margin-left: auto; }
+  .rh-loops { display: none; }
+  .rh-track { position: static; flex: 0; }
+  .rh-line-bead { display: none; }
+  .rh-cells { margin-left: 0; }
+  .rh-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 8px;
+    flex-direction: column;
+    height: auto;
+    min-width: 12.5rem;
+    padding: 0.4rem;
+    border-radius: 4px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set), visibility 0s 0.25s;
+  }
+  .running-head.is-open .rh-list {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.2s var(--ease-set), transform 0.25s var(--ease-set);
+  }
+  .rh-list li { display: block; }
+  .rh-list button { display: flex; width: 100%; padding: 0.7rem 0.9rem; font-size: 0.72rem; opacity: 0.8; transition: none; }
+  .rh-list .is-current button,
+  .running-head[data-ground="red"] .rh-list .is-current button { color: var(--paper); background: var(--red); opacity: 1; }
+  .rh-panel { right: 8px; width: min(20rem, calc(100vw - 24px)); }
+  .rh-settings-btn { padding: 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-bubble--hint { animation: none; }
+}
+
+/* ── Arrivals and exits (src/life/arrive.js) ──────────────────────────────────
+ * The scrubbed paste-up moves drive these variables; composed through the
+ * individual transform properties so they stack on top of a block's own
+ * transform (a card's hover tilt, a note's resting slant) instead of replacing
+ * it. At rest every variable is its identity, so with no JS (or reduced
+ * motion) the page simply sits as laid out. */
+[data-arrive],
+[data-depart],
+[data-arrive-items] > *,
+[data-depart-items] > * {
+  translate: calc(var(--ax, 0px) + var(--dx, 0px)) calc(var(--ay, 0px) + var(--dy, 0px));
+  rotate: calc(var(--ar, 0deg) + var(--dr, 0deg));
+  scale: calc(var(--as, 1) * var(--ds, 1));
+  opacity: calc(var(--ao, 1) * var(--do, 1));
+}
+
+/* the section banners (src/life/banners.js): the name in huge wood type, each
+   letter pegged to a sagging string and swinging from its peg; touched letters
+   soak up ink (--ink) and dry back to an outline. Every section is its own
+   stacking context so the banner sits on its own stock. */
+[data-section] { isolation: isolate; }
+.folio {
+  --folio-ink: oklch(20% 0.018 60);
+  --folio-line: 0.2;
+  --folio-wash: 0.11;
+  position: absolute;
+  top: clamp(1.2rem, 3.6vw, 3rem);
+  left: 2vw;
+  z-index: -1;
+  display: flex;
+  font-family: var(--font-impact);
+  font-size: clamp(7rem, 22vw, 22rem);
+  line-height: 0.85;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.folio-string {
+  position: absolute;
+  top: -0.05em;
+  left: -0.2em;
+  width: calc(100% + 0.4em);
+  height: 0.16em;
+  overflow: visible;
+  fill: none;
+  stroke: color-mix(in oklch, var(--folio-ink) 30%, transparent);
+  stroke-width: 1.2;
+}
+.folio-sort {
+  --ink: 0;
+  position: relative;
+  display: inline-block;
+  translate: 0 var(--sag, 0);
+  transform-origin: 50% -0.04em;
+  color: color-mix(in oklch, var(--folio-ink) calc(var(--ink) * var(--folio-wash) * 100%), transparent);
+  -webkit-text-stroke: 1.5px color-mix(in oklch, var(--folio-ink) calc(var(--folio-line) * 100%), transparent);
+  will-change: rotate;
+}
+/* the peg: a little clothes-peg over the string */
+.folio-sort::before {
+  content: "";
+  position: absolute;
+  top: -0.06em;
+  left: 50%;
+  width: 0.024em;
+  height: 0.075em;
+  translate: -50% 0;
+  border-radius: 0.008em;
+  background: color-mix(in oklch, var(--red) 45%, transparent);
+}
+[data-ground="ink"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.15; --folio-wash: 0.12; }
+[data-ground="red"] > .folio { --folio-ink: oklch(95.5% 0.014 85); --folio-line: 0.22; --folio-wash: 0.16; }

@@ -20,7 +20,6 @@ const WIRE = [
   { t: 'still reading the docs, probably', pen: true },
   { t: 'BASED IN VICTORIA, BC' },
   { t: 'OPEN TO INTERESTING PROBLEMS' },
-  { t: 'BREAKING THINGS TO BUILD BETTER ONES' },
   { t: 'will bake you a loaf', pen: true },
   { t: 'F1 ON WEEKENDS' },
 ];
@@ -86,7 +85,7 @@ export default function PressTicker() {
   }, []);
 
   return (
-    <div className="wire" role="presentation" aria-hidden="true" ref={wireRef}>
+    <div className="wire" role="presentation" aria-hidden="true" ref={wireRef} data-ground="ink">
       <div className="wire-track" ref={trackRef}>
         <Run />
         <Run />

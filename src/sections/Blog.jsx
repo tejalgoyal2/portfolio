@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { scroll } from '../life/scroll';
 import { BLOG_POSTS } from '../data/blog';
 import KineticHeadline from '../press/KineticHeadline';
 import Redacted from '../press/Redacted';
@@ -11,7 +12,11 @@ import Redacted from '../press/Redacted';
  * composed with the static sine scatter — so the strip feels tactile, not flat.
  * Punchline words are redacted; hover reveals them. Drag or horizontal-scroll to
  * browse. Reduced motion → a flat static grid, no marquee, no tilt.
+ *
+ * The strip feels the page move: scroll speed quickens the crawl (smoothly), which
+ * settles back to its idle pace as the page stops.
  */
+const CRAWL = 27; // px/s at rest
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The one word per title we redact. Readers lean in, hover to reveal.
@@ -48,7 +53,7 @@ function RedactedTitle({ title }) {
   return (
     <>
       {title.slice(0, idx)}
-      <Redacted trigger="hover" tone="ink" stamp={false}>
+      <Redacted trigger="hover" tone="ink">
         {word}
       </Redacted>
       {title.slice(idx + word.length)}
@@ -89,12 +94,31 @@ export default function Blog() {
     });
 
     // Ticker: runs on GSAP's shared rAF — one loop to rule them all
-    const tick = () => {
-      if (hoverRef.current || dragRef.current.active || wheelRef.current || !visibleRef.current) return;
+    let wrote = '';
+    // the crawl's speed rides a soft spring: it eases to a stop when you hover,
+    // pulls away (a little past its cruise) when you leave, and a scroll of the
+    // page quickens it smoothly instead of kicking it
+    let v = CRAWL;
+    let a = 0;
+    let boost = 0;
+    const tick = (time, deltaMs) => {
+      if (!visibleRef.current) return;
+      const dt = Math.min(0.05, deltaMs / 1000);
       const half = strip.scrollWidth / 2;
       if (half <= 0) return;
-      offsetRef.current = (offsetRef.current + 0.45) % half;
-      strip.style.transform = `translateX(${-offsetRef.current}px)`;
+      const held = hoverRef.current || dragRef.current.active || wheelRef.current;
+      boost += (Math.min(Math.abs(scroll.v) * 0.22, 320) - boost) * (1 - Math.exp(-2.5 * dt));
+      const target = held ? 0 : CRAWL + boost;
+      const [k, c] = held ? [10, 6.4] : [4, 2.2];
+      a += (k * (target - v) - c * a) * dt;
+      v = Math.max(0, v + a * dt);
+      if (held && v < 0.4) v = a = 0;
+      if (!dragRef.current.active && !wheelRef.current) offsetRef.current = (offsetRef.current + v * dt) % half;
+      const next = `translateX(${(-offsetRef.current).toFixed(2)}px)`;
+      if (next !== wrote) {
+        wrote = next;
+        strip.style.transform = next;
+      }
     };
 
     // Pause when section leaves viewport (battery / CPU relief)
@@ -214,8 +238,8 @@ export default function Blog() {
   };
 
   return (
-    <section className="opdesk" id="blog">
-      <header className="opdesk-header">
+    <section className="opdesk" id="blog" data-ground="ink" data-section="writing">
+      <header className="opdesk-header" data-depart="lift">
         <p className="opdesk-kicker">Writing</p>
         <KineticHeadline as="h2" font="impact" className="opdesk-title">
           THINGS I WROTE DOWN
@@ -238,7 +262,7 @@ export default function Blog() {
         onPointerLeave={reduced ? undefined : onPointerUp}
         onClickCapture={reduced ? undefined : onClickCapture}
       >
-        <div ref={stripRef} className="opdesk-strip">
+        <div ref={stripRef} className="opdesk-strip" data-arrive-items="drop">
           {displayPosts.map((post, i) => (
             <a
               key={`${post.title}-${i}`}
@@ -246,6 +270,7 @@ export default function Blog() {
               target="_blank"
               rel="noopener noreferrer"
               className="opdesk-card"
+              data-pen="pencil"
               draggable={false}
               onPointerMove={reduced ? undefined : onCardMove}
               onPointerLeave={reduced ? undefined : onCardLeave}

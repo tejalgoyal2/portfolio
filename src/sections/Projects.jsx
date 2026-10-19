@@ -1,13 +1,20 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 import { PROJECTS } from '../data/projects';
 import { CONNECTIONS, METRICS } from '../data/connections';
 import KineticHeadline from '../press/KineticHeadline';
 import Stamp from '../press/Stamp';
+import Bug from '../press/Bug';
 
 /**
  * Work — a board of project cards. Tier-1 files render their full dossier
- * always (deck + metrics + notes + links); the rest are a denser, always-
- * complete index. Nothing expands on hover, so siblings never reflow.
+ * always (deck + metrics + notes + links). The rest run past on three curved
+ * rows, like a wraparound display: real CSS 3D, each card turned to face you
+ * as it comes round from the side, the rows running in alternating directions
+ * slowly enough to read. Hover a row and it eases to a stop; leave and it
+ * pulls away, a touch quicker, then settles back to its cruise. Now and then a
+ * card is ringed in red, just because. Nothing expands on hover, so siblings
+ * never reflow. Reduced motion: the rest are a plain, still index.
  *
  * Hover is tactile: each card tilts in real CSS 3D toward the cursor and a warm
  * desk-lamp highlight tracks the pointer (custom props set on a rAF-throttled
@@ -23,7 +30,7 @@ const TILT_MAX = 7; // degrees of rotate at the card's edge
 // — detect the non-numeric ones so CSS sizes them as descriptors, not giants.
 const isNumericMetric = (v) => /^[\d.,]+[%+]?$/.test(String(v).trim());
 
-function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
+function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked, arrive = true, ...rest }) {
   const { name, status, desc, long, note, tech, links } = project;
   const metrics = METRICS[name] || [];
   const linkEntries = Object.entries(links || {});
@@ -76,10 +83,14 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
     <article
       ref={elRef}
       className={`case-file case-file--${variant}${linked ? ' is-linked' : ''}`}
+      // features are laid down from below; the index is dealt in from alternate sides
+      data-arrive={arrive ? (feature ? 'rise' : index % 2 ? 'deal-l' : 'deal-r') : undefined}
+      data-depart={arrive ? 'file' : undefined}
       data-name={name}
       onPointerEnter={handleEnter}
       onPointerMove={onPointerMove}
       onPointerLeave={handleLeave}
+      {...rest}
     >
       <span className="cf-glow" aria-hidden="true" />
 
@@ -95,7 +106,7 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
         />
       </div>
 
-      <p className="cf-deck">{desc}</p>
+      <p className="cf-deck" data-ink>{desc}</p>
 
       {feature && note && <p className="cf-pen">{note}</p>}
 
@@ -115,7 +126,7 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
               ))}
             </div>
           )}
-          <p className="cf-notes">{long}</p>
+          <p className="cf-notes" data-ink>{long}</p>
         </>
       )}
 
@@ -148,6 +159,181 @@ function CaseFile({ project, index, variant, tilt, onEnter, onLeave, linked }) {
   );
 }
 
+const ROWS = 2;
+const GAP = 64; // px between cards, measured along the curve
+const CRUISE = [27, 32]; // px per second, slow enough to read
+
+// the cards of a project row stay fixed for the page's life
+const TIER1 = PROJECTS.filter((p) => p.tier === 1);
+const REST = PROJECTS.filter((p) => p.tier !== 1);
+
+/**
+ * How fast a row runs, as a function of time since it was last held or let
+ * go — smooth everywhere, so nothing ever lurches:
+ * - held: it eases to a stop (a critically damped fall from whatever speed it had);
+ * - let go: it pulls away quickly, swells a little past its cruise (a bell
+ *   bump that rises fast and fades slowly), and settles to a steady crawl.
+ */
+function speedAt(held, t, from, cruise) {
+  const settle = (tau) => Math.exp(-t / tau) * (1 + t / tau); // 1 → 0, flat at both ends
+  if (held) return from * settle(0.19);
+  const rise = 1 - settle(0.32);
+  const bump = 0.85 * (t / 0.55) * Math.exp(1 - t / 0.55) * rise;
+  return from * settle(0.32) + cruise * (rise + bump);
+}
+
+/**
+ * The wraparound display. Each row is a strip of cards on the inside of a
+ * cylinder, and you're standing at its centre: every card is the same
+ * distance from you, turned to face you, evenly spaced round the curve — so
+ * the ones coming in from the sides are foreshortened, never crowded or
+ * overlapping. Real CSS 3D (a perspective as deep as the cylinder's radius).
+ * Cards fade in and out at the edges of the view.
+ */
+function CurvedRows({ projects, first, tilt, onEnter, onLeave, linkedSet }) {
+  const ref = useRef(null);
+  const rows = Array.from({ length: ROWS }, (_, r) => projects.map((p, i) => ({ p, i })).filter(({ i }) => i % ROWS === r));
+  // enough copies round each row that the visible arc is always full, but no more
+  const copies = rows.map((items) => Math.max(2, Math.ceil(5 / Math.max(1, items.length))));
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const state = [...root.querySelectorAll('.cf-row')].map((row, r) => ({
+      row,
+      track: row.querySelector('.cf-track'),
+      slots: [...row.querySelectorAll('.cf-slot')],
+      dir: r % 2 ? -1 : 1,
+      cruise: CRUISE[r % CRUISE.length],
+      off: r * 170,
+      v: CRUISE[r % CRUISE.length],
+      held: false,
+      since: 10,
+      from: CRUISE[r % CRUISE.length],
+      w: 340,
+      R: 1200,
+      W: 1200,
+    }));
+    const measure = () => {
+      for (const s of state) {
+        const card = s.slots[0]?.firstElementChild;
+        if (!card) continue;
+        s.w = card.offsetWidth;
+        s.W = s.row.clientWidth;
+        s.R = Math.max(1300, s.W * 1.5); // deep enough that the sides curve in without stretching
+        s.row.style.perspective = `${s.R.toFixed(0)}px`;
+        s.row.style.height = `${Math.max(...s.slots.map((el) => el.firstElementChild.offsetHeight)) + 26}px`;
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    document.fonts?.ready.then(measure);
+
+    const holds = state.map((s) => {
+      const set = (held) => () => {
+        if (s.held === held) return;
+        s.from = s.v;
+        s.since = 0;
+        s.held = held;
+      };
+      const on = set(true);
+      const off = set(false);
+      s.row.addEventListener('pointerenter', on);
+      s.row.addEventListener('pointerleave', off);
+      s.row.addEventListener('focusin', on);
+      s.row.addEventListener('focusout', off);
+      return () => {
+        s.row.removeEventListener('pointerenter', on);
+        s.row.removeEventListener('pointerleave', off);
+        s.row.removeEventListener('focusin', on);
+        s.row.removeEventListener('focusout', off);
+      };
+    });
+
+    let visible = false;
+    const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { rootMargin: '120px 0px' });
+    io.observe(root);
+
+    const place = (s, dt) => {
+      s.since += dt;
+      s.v = speedAt(s.held, s.since, s.from, s.cruise);
+      s.off += s.v * s.dir * dt;
+      const pitch = s.w + GAP;
+      const total = s.slots.length * pitch;
+      const view = s.W / 2 + s.w; // how far round the curve is still on screen
+      s.slots.forEach((el, k) => {
+        // arc length from the middle of the view
+        const a = ((((k * pitch + s.off) % total) + total) % total) - total / 2;
+        const seen = Math.abs(a) < view;
+        if (!seen) {
+          if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden';
+          return;
+        }
+        if (el.style.visibility) el.style.visibility = '';
+        const th = a / s.R;
+        // stand at the centre: out to the wall, turned to face you
+        el.style.transform = `translateZ(${s.R.toFixed(0)}px) rotateY(${th.toFixed(4)}rad) translateZ(${(-s.R).toFixed(0)}px)`;
+        const edge = 1 - Math.min(1, Math.max(0, (Math.abs(a) - (view - s.w * 1.1)) / (s.w * 1.1)));
+        el.style.opacity = edge.toFixed(3);
+      });
+    };
+    const tick = (t, deltaMs) => {
+      if (!visible || document.hidden) return;
+      const dt = Math.min(0.05, deltaMs / 1000);
+      state.forEach((s) => place(s, dt));
+    };
+    state.forEach((s) => place(s, 0));
+    gsap.ticker.add(tick);
+
+    // now and then, a card is ringed in red
+    const cards = [...root.querySelectorAll('.cf-slot > .case-file')];
+    const flagged = [];
+    const flag = setInterval(() => {
+      if (!visible) return;
+      const c = cards[(Math.random() * cards.length) | 0];
+      if (!c || flagged.includes(c)) return;
+      c.classList.add('is-flagged');
+      flagged.push(c);
+      if (flagged.length > 2) flagged.shift().classList.remove('is-flagged');
+    }, 2600);
+
+    return () => {
+      gsap.ticker.remove(tick);
+      clearInterval(flag);
+      io.disconnect();
+      holds.forEach((f) => f());
+      window.removeEventListener('resize', measure);
+    };
+  }, [projects]);
+
+  return (
+    <div ref={ref} className="cf-rows">
+      {rows.map((items, r) => (
+        <div className="cf-row" key={r} data-arrive={r % 2 ? 'deal-r' : 'deal-l'}>
+          <div className="cf-track">
+            {Array.from({ length: copies[r] }, (_, copy) =>
+              items.map(({ p, i }) => (
+                <div className="cf-slot" key={`${copy}-${p.name}`} aria-hidden={copy > 0 || undefined} inert={copy > 0 || undefined}>
+                  <CaseFile
+                    project={p}
+                    index={first + i}
+                    variant="index"
+                    tilt={tilt}
+                    arrive={false}
+                    onEnter={onEnter}
+                    onLeave={onLeave}
+                    linked={linkedSet?.has(p.name) || false}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Projects() {
   const [active, setActive] = useState(null);
   const tilt = !(
@@ -155,22 +341,22 @@ export default function Projects() {
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 
-  const tier1 = PROJECTS.filter((p) => p.tier === 1);
-  const rest = PROJECTS.filter((p) => p.tier !== 1);
+  const tier1 = TIER1;
+  const rest = REST;
 
   const onEnter = (name) => setActive(name);
   const onLeave = () => setActive(null);
 
   const linkedSet = active ? new Set(CONNECTIONS[active] || []) : null;
-  let counter = 0;
 
   return (
-    <section className="projects" id="work" aria-label="Work — projects">
+    <section className="projects" id="work" aria-label="Work — projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
-        <header className="cf-head">
+        <Bug />
+        <header className="cf-head" data-depart="lift">
           <span className="kicker">Work</span>
           <KineticHeadline as="h2" font="impact" className="cf-headline">
-            Eleven things built. Some broke.
+            Things I&rsquo;ve built. Some broke.
           </KineticHeadline>
           <p className="cf-sub">
             Hover a file — the cases it&rsquo;s related to light up alongside it.
@@ -178,13 +364,12 @@ export default function Projects() {
         </header>
 
         <div className="cf-features">
-          {tier1.map((p) => {
-            counter += 1;
+          {tier1.map((p, i) => {
             return (
               <CaseFile
                 key={p.name}
                 project={p}
-                index={counter}
+                index={i + 1}
                 variant="feature"
                 tilt={tilt}
                 onEnter={onEnter}
@@ -195,23 +380,33 @@ export default function Projects() {
           })}
         </div>
 
-        <div className="cf-index">
-          {rest.map((p) => {
-            counter += 1;
-            return (
-              <CaseFile
-                key={p.name}
-                project={p}
-                index={counter}
-                variant="index"
-                tilt={tilt}
-                onEnter={onEnter}
-                onLeave={onLeave}
-                linked={linkedSet?.has(p.name) || false}
-              />
-            );
-          })}
-        </div>
+        {tilt ? (
+          <CurvedRows
+            projects={rest}
+            first={tier1.length + 1}
+            tilt={tilt}
+            onEnter={onEnter}
+            onLeave={onLeave}
+            linkedSet={linkedSet}
+          />
+        ) : (
+          <div className="cf-index">
+            {rest.map((p, i) => {
+              return (
+                <CaseFile
+                  key={p.name}
+                  project={p}
+                  index={tier1.length + i + 1}
+                  variant="index"
+                  tilt={tilt}
+                  onEnter={onEnter}
+                  onLeave={onLeave}
+                  linked={linkedSet?.has(p.name) || false}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
