@@ -1,4 +1,5 @@
 import { onLayout } from './layout';
+import { scroll } from './scroll';
 
 /**
  * Which stock the press is printing on at a given height: 'paper' (cream),
@@ -31,7 +32,7 @@ export function groundAtDoc(docY) {
   return 'paper';
 }
 
-export const groundAt = (clientY) => groundAtDoc(clientY + window.scrollY);
+export const groundAt = (clientY) => groundAtDoc(clientY + scroll.y);
 
 /** The document bands, for modules that walk them (the type field). */
 export const groundBands = () => bands;

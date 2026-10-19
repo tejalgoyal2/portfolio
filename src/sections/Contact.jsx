@@ -16,6 +16,12 @@ import linkedinIcon from '../life/brands/linkedin.svg?url';
  * red screen. The headline uses KineticHeadline's `inview` mode for the same
  * reason.
  */
+const LINKS = [
+  { name: 'Email', href: 'mailto:itejalgoyal@gmail.com', text: 'itejalgoyal@gmail.com', icon: gmailIcon },
+  { name: 'GitHub', href: 'https://github.com/tejalgoyal2', text: 'github.com/tejalgoyal2', icon: githubIcon, external: true },
+  { name: 'LinkedIn', href: 'https://www.linkedin.com/in/tejalgoyal', text: 'linkedin.com/in/tejalgoyal', icon: linkedinIcon, external: true },
+];
+
 export default function Contact() {
   const rootRef = useRef(null);
 
@@ -68,49 +74,30 @@ export default function Contact() {
           </div>
 
           <ul className="contact-classified" data-arrive-items="paste">
-            <li className="contact-line">
-              <span className="contact-line-label">
-                <img src={gmailIcon} alt="" width="22" height="22" />
-                <span className="sr-only">Email</span>
-              </span>
-              <a
-                href="mailto:itejalgoyal@gmail.com"
-                className="contact-line-link"
-                data-pen="rocket"
-              >
-                itejalgoyal@gmail.com
-              </a>
-            </li>
-            <li className="contact-line">
-              <span className="contact-line-label">
-                <img src={githubIcon} alt="" width="22" height="22" />
-                <span className="sr-only">GitHub</span>
-              </span>
-              <a
-                href="https://github.com/tejalgoyal2"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="contact-line-link"
-                data-pen="rocket"
-              >
-                github.com/tejalgoyal2
-              </a>
-            </li>
-            <li className="contact-line">
-              <span className="contact-line-label">
-                <img src={linkedinIcon} alt="" width="22" height="22" />
-                <span className="sr-only">LinkedIn</span>
-              </span>
-              <a
-                href="https://www.linkedin.com/in/tejalgoyal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="contact-line-link"
-                data-pen="rocket"
-              >
-                linkedin.com/in/tejalgoyal
-              </a>
-            </li>
+            {LINKS.map(({ name, href, text, icon, external }) => (
+              <li className="contact-line" key={name}>
+                {/* the mark is a way in too (the text link carries the name for screen readers) */}
+                <a
+                  href={href}
+                  className="contact-line-label"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  data-pen="rocket"
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                >
+                  <img src={icon} alt="" width="22" height="22" loading="lazy" />
+                </a>
+                <a
+                  href={href}
+                  className="contact-line-link"
+                  data-pen="rocket"
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                >
+                  <span className="sr-only">{name}: </span>
+                  {text}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
 

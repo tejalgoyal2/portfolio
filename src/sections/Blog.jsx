@@ -98,13 +98,16 @@ export default function Blog() {
     // the crawl's speed rides a soft spring: it eases to a stop when you hover,
     // pulls away (a little past its cruise) when you leave, and a scroll of the
     // page quickens it smoothly instead of kicking it
+    // the strip's length, measured when it changes size (never per frame)
+    let half = strip.scrollWidth / 2;
+    const sized = new ResizeObserver(() => (half = strip.scrollWidth / 2));
+    sized.observe(strip);
     let v = CRAWL;
     let a = 0;
     let boost = 0;
     const tick = (time, deltaMs) => {
       if (!visibleRef.current) return;
       const dt = Math.min(0.05, deltaMs / 1000);
-      const half = strip.scrollWidth / 2;
       if (half <= 0) return;
       const held = hoverRef.current || dragRef.current.active || wheelRef.current;
       boost += (Math.min(Math.abs(scroll.v) * 0.22, 320) - boost) * (1 - Math.exp(-2.5 * dt));
@@ -135,7 +138,6 @@ export default function Blog() {
     let wheelIdle;
     const onWheel = (e) => {
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical → let the page scroll
-      const half = strip.scrollWidth / 2;
       if (half <= 0) return;
       e.preventDefault();
       offsetRef.current = (((offsetRef.current + e.deltaX) % half) + half) % half;
@@ -150,6 +152,7 @@ export default function Blog() {
     return () => {
       gsap.ticker.remove(tick);
       io.disconnect();
+      sized.disconnect();
       container.removeEventListener('wheel', onWheel);
       clearTimeout(wheelIdle);
       if (tiltFrame.current) cancelAnimationFrame(tiltFrame.current);

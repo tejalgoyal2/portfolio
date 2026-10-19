@@ -127,7 +127,7 @@ export default function PageSettings() {
           </label>
           <label className="rh-switch">
             <input type="checkbox" checked={s.sound} onChange={(e) => setSetting('sound', e.target.checked)} />
-            <span>A twist goes thock</span>
+            <span>A twist clicks</span>
           </label>
         </fieldset>
 

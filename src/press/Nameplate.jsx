@@ -4,6 +4,7 @@ import { pointer } from '../life/pointer';
 import { prefs } from '../life/prefs';
 import { onLayout } from '../life/layout';
 import { Spring, smoothstep } from '../life/spring';
+import { scroll } from '../life/scroll';
 
 /**
  * The nameplate letters, set as separate sorts so each can take more ink.
@@ -96,8 +97,13 @@ export default function Nameplate({ text }) {
         sx = -reach * 0.6 + (box.w + reach * 1.2) * u;
         if (sweepT >= 1) sweepT = -1;
       }
-      // read where the plate is now (cheap: one rect, only while a pointer is about)
-      const live = pointer.active ? plate.getBoundingClientRect() : null;
+      // read where the plate is now — one rect, and only while a pointer is
+      // about somewhere near where the plate sits (judged from its cached box,
+      // so further down the page nothing is read at all)
+      const top = box.y - scroll.y;
+      const roughly =
+        pointer.active && pointer.y > top - reach * 2 && pointer.y < top + box.h * 1.4 + reach * 2;
+      const live = roughly ? plate.getBoundingClientRect() : null;
       const k = live ? live.width / (box.w || 1) : 1;
       const near =
         !!live &&

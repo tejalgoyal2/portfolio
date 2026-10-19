@@ -197,6 +197,18 @@ export function turnCurve(p) {
   return p * p * p * (p * (p * 6 - 15) + 10);
 }
 
+/**
+ * A turn while it's speed-solving: no ease-in at all (it's already moving) and
+ * a little past and back at the end, so a run of quick turns flows into each
+ * other like jelly instead of stopping dead at every quarter.
+ */
+export function rushCurve(p) {
+  if (p >= 1) return 1;
+  if (p <= 0) return 0;
+  const c = 1.15;
+  return 1 + (c + 1) * (p - 1) ** 3 + c * (p - 1) ** 2;
+}
+
 /** A turn you made: quick, and it clicks home — a touch past, and back. */
 export function snapCurve(p) {
   if (p >= 1) return 1;
@@ -252,7 +264,10 @@ export async function createCubeView(director) {
       layerFor = a;
       layer = new Set(a ? director.state.layer(a.move.face) : []);
     }
-    if (a) layerRot.makeRotationAxis(axisV[FACE_AXIS[a.move.face].axis], ((moveQuarterTurns(a.move) * Math.PI) / 2) * (a.kind === 'visitor' ? snapCurve : turnCurve)(director.progress));
+    if (a) {
+      const curve = a.kind === 'visitor' ? snapCurve : a.duration < 0.16 ? rushCurve : turnCurve;
+      layerRot.makeRotationAxis(axisV[FACE_AXIS[a.move.face].axis], ((moveQuarterTurns(a.move) * Math.PI) / 2) * curve(director.progress));
+    }
     for (const c of director.state.cubies) {
       const m = cubieM[c.id].copy(m4(c.rot, c.pos));
       if (a && layer.has(c.id)) m.premultiply(layerRot);
@@ -267,6 +282,8 @@ export async function createCubeView(director) {
   const box = new Box3(new Vector3(-CUBE_HALF, -CUBE_HALF, -CUBE_HALF), new Vector3(CUBE_HALF, CUBE_HALF, CUBE_HALF));
   const inv = new Matrix4();
   const hit = new Vector3();
+  const rimA = new Vector3();
+  const rimB = new Vector3();
   let vw = 1;
   let vh = 1;
   let crop = { x: 0, y: 0, w: 1, h: 1 };
@@ -291,6 +308,52 @@ export async function createCubeView(director) {
     update,
     setEdge(v) {
       uniforms.uEdge.value = v;
+    },
+    /**
+     * Where a layer's turn shows on screen: points round the turning layer's
+     * rim (just outside the cube), each with the way the rim is moving there,
+     * in viewport px — the few that stand furthest out from the cube's centre,
+     * which is where motion lines read best.
+     */
+    rim(move, n = 3) {
+      const { axis, side } = FACE_AXIS[move.face];
+      const turn = Math.sign(moveQuarterTurns(move)) || 1;
+      const u = (axis + 1) % 3;
+      const w = (axis + 2) % 3;
+      const R = CUBE_HALF * 1.22;
+      group.updateMatrixWorld();
+      const toScreen = (v) => {
+        v.applyMatrix4(group.matrixWorld).project(camera);
+        return [crop.x + ((v.x + 1) / 2) * crop.w, crop.y + ((1 - v.y) / 2) * crop.h];
+      };
+      const centre = toScreen(rimA.set(0, 0, 0));
+      const pts = [];
+      for (let k = 0; k < 16; k++) {
+        const phi = (k / 16) * Math.PI * 2;
+        const p = [0, 0, 0];
+        p[axis] = side * SPACING;
+        p[u] = Math.cos(phi) * R;
+        p[w] = Math.sin(phi) * R;
+        // the rim's motion there: the turn axis crossed with the point
+        const v = [0, 0, 0];
+        v[w] = turn * p[u] * 0.08;
+        v[u] = -turn * p[w] * 0.08;
+        const a = toScreen(rimA.set(p[0], p[1], p[2]));
+        const b = toScreen(rimB.set(p[0] + v[0], p[1] + v[1], p[2] + v[2]));
+        const dx = b[0] - a[0];
+        const dy = b[1] - a[1];
+        const len = Math.hypot(dx, dy);
+        if (len < 0.3) continue;
+        pts.push({ x: a[0], y: a[1], dx: dx / len, dy: dy / len, far: Math.hypot(a[0] - centre[0], a[1] - centre[1]), phi });
+      }
+      pts.sort((p, q) => q.far - p.far);
+      // the furthest out, spread round the rim rather than bunched together
+      const out = [];
+      for (const p of pts) {
+        if (out.every((o) => Math.abs(Math.atan2(Math.sin(o.phi - p.phi), Math.cos(o.phi - p.phi))) > 1.1)) out.push(p);
+        if (out.length >= n) break;
+      }
+      return { centre, pts: out };
     },
     /** The face under a viewport point, or null if the ray misses the cube. */
     pick(x, y) {

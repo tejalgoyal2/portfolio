@@ -15,10 +15,13 @@ import { onLayout } from '../life/layout';
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
- * margin — not ruled straight: it meanders a little and makes a small loop as
- * it comes to each job, pressing a dot in beside it — with the pen nib riding
- * its very tip (one eased scroll value drives both, so they never drift
- * apart); each row is pasted in from the margin and slides off the
+ * margin — not ruled straight: it winds down like a snake, and throws one big
+ * loop (out to the right, above the date) as it comes to each job (carrying on round in the way it was going, so
+ * it never doubles back), pressing a dot in beside it. At the bottom it
+ * rounds the corner onto the closing rule and runs along it, off the side of
+ * the screen. The pen nib rides its very tip, held like a pen — leaning into
+ * the stroke, never spinning round the loops (one eased scroll value drives
+ * line and nib, so they never drift apart); each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
  * marked {{like this}} in the data — count up as they arrive.
  */
@@ -62,8 +65,39 @@ export default function Experience() {
     let total = 1;
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
-    const wave = (y) => CX + Math.sin(y * 0.0105) * 12 + Math.sin(y * 0.0037 + 1) * 7;
-    const LOOP = 19; // radius of the little loop before each job
+    // a snake's path: long, easy S-bends, never a kink
+    const wave = (y) => CX + Math.sin(y * 0.0165) * 17 + Math.sin(y * 0.0061 + 1) * 7;
+    const LOOP = 34; // radius of the loop it throws before each job
+    let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
+    let exitAt = 0; // the point where it turns onto the closing rule
+    let downLen = 1;
+    const DOWN = 0.86; // the share of the scroll that draws the run down the margin
+    const bez = (a, b, c, e, t) => {
+      const u = 1 - t;
+      const w0 = u * u * u;
+      const w1 = 3 * u * u * t;
+      const w2 = 3 * u * t * t;
+      const w3 = t * t * t;
+      return [w0 * a[0] + w1 * b[0] + w2 * c[0] + w3 * e[0], w0 * a[1] + w1 * b[1] + w2 * c[1] + w3 * e[1]];
+    };
+    /** The point at length L along the line, and the line's heading there. */
+    const along = (L) => {
+      let lo = 0;
+      let hi = segs.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (segs[mid].at <= L) lo = mid;
+        else hi = mid - 1;
+      }
+      const g = segs[lo];
+      if (!g) return { x: 0, y: 0, a: Math.PI / 2 };
+      const t = Math.min(1, Math.max(0, (L - g.at) / Math.max(1e-6, g.len)));
+      const [x, y] = bez(g.p1, g.c1, g.c2, g.p2, t);
+      // the tangent, smoothed over a little of the line either side
+      const [x0, y0] = bez(g.p1, g.c1, g.c2, g.p2, Math.max(0, t - 0.25));
+      const [x1, y1] = bez(g.p1, g.c1, g.c2, g.p2, Math.min(1, t + 0.25));
+      return { x, y, a: Math.atan2(y1 - y0, x1 - x0) };
+    };
 
     // the line: a meander down the margin with a loop before each job, then
     // round the corner at the bottom and out along the closing rule
@@ -71,51 +105,76 @@ export default function Experience() {
       const H = ledger.offsetHeight;
       const Wd = ledger.clientWidth;
       // the strip sits out in the margin (SVG has no offsetLeft: measure the boxes)
-      const left = svg.getBoundingClientRect().left - ledger.getBoundingClientRect().left;
+      const lr = ledger.getBoundingClientRect();
+      const left = svg.getBoundingClientRect().left - lr.left;
       svg.setAttribute('viewBox', `0 0 ${Wd - left} ${H + 4}`);
       svg.style.width = `${Wd - left}px`;
       svg.style.height = `${H + 4}px`;
       const at = dots.map((d) => d.parentElement.offsetTop + d.offsetTop + d.offsetHeight / 2);
       const raw = [];
       let next = 0;
-      const end = H - 30;
+      const end = H - 46;
       for (let y = 0; y <= end; y += 6) {
-        while (next < at.length && y >= at[next] - 52) {
-          // a loop: up and round to the left, then on down to the dot
-          const ly = at[next] - 52;
-          const cx = wave(ly) - LOOP;
-          for (let a = 0; a >= -Math.PI * 2; a -= Math.PI / 14) raw.push([cx + Math.cos(a) * LOOP, ly + Math.sin(a) * LOOP * 1.1]);
+        while (next < at.length && y >= at[next] - 66) {
+          // a loop: carrying on down and round to the right (into the empty
+          // paper above the date, never off the edge of the screen), up and
+          // over, and back into the line still heading down — no doubling back
+          const ly = y; // right where the line is now, so it flows straight in
+          const cx = wave(ly) + LOOP;
+          raw.push([wave(y), y]);
+          for (let a = Math.PI - Math.PI / 16; a > -Math.PI; a -= Math.PI / 16) raw.push([cx + Math.cos(a) * LOOP, ly + Math.sin(a) * LOOP * 1.1]);
           next++;
         }
         raw.push([wave(y), y]);
       }
-      // round the corner onto the closing rule, and out along it
+      // round the corner onto the closing rule, and out along it, off the side of the screen
       const ex = wave(end);
       const ry = H - 1;
-      for (let a = Math.PI; a >= Math.PI / 2; a -= Math.PI / 12) raw.push([ex + 28 + Math.cos(a) * 28, ry - 28 + Math.sin(a) * 28]);
-      for (let x = ex + 40; x <= Wd - left; x += 24) raw.push([x, ry]);
-      // smooth it (Catmull-Rom), and note how far along each dot is
+      const RC = 44;
+      for (let a = Math.PI; a >= Math.PI / 2 - 1e-6; a -= Math.PI / 14) raw.push([ex + RC + Math.cos(a) * RC, ry - RC + Math.sin(a) * RC]);
+      exitAt = raw.length;
+      const off = document.documentElement.clientWidth - lr.left - left + 90;
+      for (let x = ex + RC + 30; x <= off; x += 30) raw.push([x, ry]);
+      // smooth it (Catmull-Rom → cubic Béziers), keeping each piece so the nib
+      // can ride the curve by plain arithmetic, never by asking the SVG
+      segs = [];
       let d = `M${raw[0][0].toFixed(1)} ${raw[0][1].toFixed(1)}`;
+      let acc = 0;
       for (let k = 0; k < raw.length - 1; k++) {
         const p0 = raw[k - 1] || raw[k];
         const p1 = raw[k];
         const p2 = raw[k + 1];
         const p3 = raw[k + 2] || p2;
-        d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+        // its length, from a few points along it
+        let len = 0;
+        let prev = p1;
+        for (let q = 1; q <= 4; q++) {
+          const pt = bez(p1, c1, c2, p2, q / 4);
+          len += Math.hypot(pt[0] - prev[0], pt[1] - prev[1]);
+          prev = pt;
+        }
+        segs.push({ p1, c1, c2, p2, at: acc, len });
+        acc += len;
       }
       path.setAttribute('d', d);
       total = path.getTotalLength();
       path.style.strokeDasharray = `${total}`;
-      // where along the line each dot sits: the running length of the points
-      // we laid down (cheap — no measuring the curve), scaled to the real path
-      const run = [0];
-      for (let k = 1; k < raw.length; k++) run.push(run[k - 1] + Math.hypot(raw[k][0] - raw[k - 1][0], raw[k][1] - raw[k - 1][1]));
-      const scale = total / Math.max(1, run[run.length - 1]);
-      const tail = raw.length - Math.ceil((Wd - left - ex) / 24) - 7; // the points before the exit
+      // scale our sums to the browser's own length, so the ink and the nib agree
+      const scale = total / Math.max(1, acc);
+      segs.forEach((g) => {
+        g.at *= scale;
+        g.len *= scale;
+      });
+      // where along the line each dot sits
       marks = at.map((y) => {
-        for (let k = 1; k < tail; k++) if (raw[k][1] >= y - 1) return run[k] * scale;
+        for (let k = 1; k < exitAt; k++) if (raw[k][1] >= y - 1 && raw[k][0] > raw[k - 1][0] - 4) return segs[k - 1].at + segs[k - 1].len;
         return total;
       });
+      // how much of the line is the run down the margin (the rest is the exit)
+      downLen = segs[Math.max(0, exitAt - 2)].at;
       dots.forEach((dot, i) => {
         dot.style.left = `${(left - dot.parentElement.offsetLeft + wave(at[i]) - 6).toFixed(1)}px`;
       });
@@ -123,29 +182,44 @@ export default function Experience() {
     };
     const state = { p: isReduced ? 1 : 0 };
     let ang = 0;
+    let lastT = 0;
     const draw = (p, snap = false) => {
-      const L = p * total;
+      // most of the scroll draws the run down the margin; the last stretch is the exit
+      const L = p < DOWN ? (p / DOWN) * downLen : downLen + ((p - DOWN) / (1 - DOWN)) * (total - downLen);
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
-      const pt = path.getPointAtLength(L);
-      // the nib's lean follows the line, smoothed over a few px so it never twitches
-      const a0 = path.getPointAtLength(Math.max(0, L - 10));
-      const a1 = path.getPointAtLength(Math.min(total, L + 10));
-      let want = (Math.atan2(a1.y - a0.y, a1.x - a0.x) * 180) / Math.PI - 90;
-      while (want - ang > 180) want -= 360;
-      while (want - ang < -180) want += 360;
-      ang = snap ? want : ang + (want - ang) * 0.35;
+      const pt = along(L);
+      // the nib doesn't spin round the loops — it's held like a pen, leaning a
+      // little into the way the line is going, eased so it never twitches
+      let dev = pt.a - Math.PI / 2;
+      while (dev > Math.PI) dev -= Math.PI * 2;
+      while (dev < -Math.PI) dev += Math.PI * 2;
+      const want = (Math.max(-0.62, Math.min(0.62, dev * 0.42)) * 180) / Math.PI;
+      const now = performance.now();
+      const k = snap ? 1 : 1 - Math.exp(-Math.min(0.1, (now - lastT) / 1000) / 0.12);
+      lastT = now;
+      ang += (want - ang) * k;
       nib.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) rotate(${ang.toFixed(1)}deg)`;
-      nib.classList.toggle('is-on', p > 0.002 && p < 0.995);
+      nib.classList.toggle('is-on', p > 0.002);
       dots.forEach((d, i) => d.classList.toggle('is-in', L >= marks[i] - 2));
     };
     build();
     const offLayout = onLayout(build);
+    // and whenever the ledger itself changes size (fonts landing, rows settling)
+    let sizedH = ledger.offsetHeight;
+    let sizedW = ledger.clientWidth;
+    const sized = new ResizeObserver(() => {
+      if (ledger.offsetHeight === sizedH && ledger.clientWidth === sizedW) return;
+      sizedH = ledger.offsetHeight;
+      sizedW = ledger.clientWidth;
+      build();
+    });
+    sized.observe(ledger);
     const ctx = gsap.context(() => {
       if (isReduced) return;
       gsap.to(state, {
         p: 1,
         ease: 'none',
-        scrollTrigger: { trigger: ledger, start: 'top 70%', end: 'bottom 55%', scrub: 0.5 },
+        scrollTrigger: { trigger: ledger, start: 'top 70%', end: 'bottom 35%', scrub: 0.6 },
         onUpdate: () => draw(state.p),
       });
     }, root);
@@ -153,6 +227,7 @@ export default function Experience() {
     return () => {
       ctx.revert();
       offLayout();
+      sized.disconnect();
     };
   }, []);
 

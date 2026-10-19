@@ -176,6 +176,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   animation: think-in 0.42s var(--ease-stamp) calc(var(--i) * 18ms) both,
     think-shimmer 2.2s ease-in-out calc(0.5s + var(--i) * 55ms) infinite;
 }
+.thinking.is-resting .thinking-word span { animation-play-state: paused; }
 @keyframes think-in {
   from { opacity: 0; translate: 0 0.55em; }
   to { opacity: 1; translate: 0 0; }
@@ -559,7 +560,9 @@ html.np-handoff .mast-plate { visibility: hidden; }
   object-fit: contain;
   will-change: transform, opacity;
 }
-/* a click: the slug turns into its icon for a moment */
+/* comic pop lines round a slug that just landed */
+.skill-pop { position: absolute; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+/* pointed at (or a ripple passing): the slug turns into its icon */
 .skill-face {
   position: absolute;
   top: 50%;
@@ -570,12 +573,18 @@ html.np-handoff .mast-plate { visibility: hidden; }
   object-fit: contain;
   opacity: 0;
   scale: 0.3;
+  rotate: -25deg;
   pointer-events: none;
-  transition: opacity 0.2s var(--ease-set), scale 0.45s var(--ease-stamp);
+  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-set), rotate 0.3s var(--ease-set);
 }
-.skill { transition: color 0.2s var(--ease-set); }
-.skill.is-icon { color: transparent; }
-.skill.is-icon .skill-face { opacity: 1; scale: 1; }
+.skill { transition: color 0.22s var(--ease-set) 0.04s, background-color 0.3s var(--ease-set); }
+.skill.is-icon { color: transparent; transition: color 0.14s var(--ease-set); }
+.skill.is-icon .skill-face {
+  opacity: 1;
+  scale: 1;
+  rotate: 0deg;
+  transition: opacity 0.16s var(--ease-set) 0.05s, scale 0.55s var(--ease-stamp) 0.03s, rotate 0.55s var(--ease-stamp) 0.03s;
+}
 
 @media (max-width: 1024px) {
   .about-grid {
@@ -619,27 +628,87 @@ html.np-handoff .mast-plate { visibility: hidden; }
   cursor: pointer;
   will-change: transform;
 }
-.cf-bug svg { width: 100%; height: 100%; transition: scale 0.18s var(--ease-stamp), opacity 0.6s var(--ease-set) 1s; }
-.cf-bug.is-squashed svg { scale: 1.25 0.3; opacity: 0; color: var(--red); }
-.cf-bug-note {
+.cf-bug > svg:not(.cf-bug-dash) { width: 100%; height: 100%; transition: scale 0.18s var(--ease-stamp), opacity 0.6s var(--ease-set) 1s; }
+.cf-bug.is-squashed > svg:not(.cf-bug-dash) { scale: 1.25 0.3; opacity: 0; color: var(--red); }
+/* speed lines behind it while it runs (it walks "up" its own drawing) */
+.cf-bug-dash {
   position: absolute;
+  left: 0;
+  top: 88%;
+  width: 40px;
+  height: 30px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  opacity: calc(var(--dash, 0) * 0.55);
+  pointer-events: none;
+}
+/* what it says: scribbled in the margin, in a wobbly hand-drawn bubble that
+   trails little circles down to it, like a thought said out loud */
+.cf-bug-say {
+  position: absolute;
+  top: 0;
+  left: 0;
+  translate: -50% calc(-100% - 10px);
+  padding: 0.22rem 0.75rem 0.3rem;
   font-family: var(--font-pen);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: var(--red);
+  line-height: 1.1;
   white-space: nowrap;
-  translate: -50% -50%;
-  rotate: -8deg;
+  color: var(--red);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 255px 18px 225px 22px / 22px 225px 18px 255px;
+  opacity: 0;
+  scale: 0.4;
+  transform-origin: 50% 130%;
+  pointer-events: none;
+}
+.cf-bug-say::before,
+.cf-bug-say::after {
+  content: '';
+  position: absolute;
+  left: 46%;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+.cf-bug-say::before { bottom: -11px; width: 9px; height: 8px; }
+.cf-bug-say::after { bottom: -19px; left: 41%; width: 5px; height: 5px; border-width: 1.6px; }
+.cf-bug-say.is-on { animation: bug-say 0.5s var(--ease-stamp) forwards; }
+@keyframes bug-say {
+  0% { opacity: 0; scale: 0.4; rotate: -8deg; }
+  60% { opacity: 1; scale: 1.08; rotate: 3deg; }
+  100% { opacity: 1; scale: 1; rotate: -2deg; }
+}
+/* where it fell: a little headstone */
+.cf-bug-stone {
+  position: absolute;
+  width: 42px;
+  height: 40px;
+  translate: -50% -60%;
+  transform-origin: 50% 100%;
+  pointer-events: none;
   opacity: 0;
 }
-.cf-bug-note.is-on { animation: bug-note 2.2s var(--ease-set) forwards; }
-@keyframes bug-note {
-  0% { opacity: 0; scale: 0.4; }
-  15% { opacity: 1; scale: 1.1; }
-  25% { scale: 1; }
-  75% { opacity: 1; }
-  100% { opacity: 0; translate: -50% -90%; }
+.cf-bug-stone svg { width: 100%; height: 100%; overflow: visible; }
+.cf-bug-stone .stone { fill: oklch(90% 0.012 80); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.cf-bug-stone .stone-grass { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; }
+.cf-bug-stone text { font-family: var(--font-data); font-size: 7.5px; font-weight: 700; letter-spacing: 0.06em; fill: var(--ink); }
+/* its soul, floating up out of it */
+.cf-bug-soul {
+  position: absolute;
+  width: 34px;
+  height: 44px;
+  translate: -50% -70%;
+  pointer-events: none;
+  opacity: 0;
 }
+.cf-bug-soul svg { width: 100%; height: 100%; overflow: visible; }
+.cf-bug-soul .soul-body { fill: oklch(99% 0.006 85 / 0.92); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.cf-bug-soul .soul-face { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
 @media (max-width: 720px) { .cf-bugzone { display: none; } }
 .cf-headline {
   font-size: clamp(2.4rem, 7vw, 6rem);
@@ -937,6 +1006,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .experience {
   position: relative;
   z-index: 1;
+  /* the nib leaves along the closing rule, off the side of the screen */
+  overflow-x: clip;
   /* Its own sheet of solid ink (--ground, the warm ink-black of the body text):
      cream type, red accents. The torn edge above sells the cream→ink turn. */
   background: var(--ground);
@@ -956,7 +1027,11 @@ html.np-handoff .mast-plate { visibility: hidden; }
 .ledger {
   position: relative;
   border-top: 1px solid oklch(58% 0.01 60 / 0.32);
+  /* the closing rule belongs to the ledger, not the last row (rows slide away as
+     they leave; this stays put, under the ink line that runs out along it) */
+  border-bottom: 1px solid oklch(58% 0.01 60 / 0.32);
 }
+.led-entry:last-of-type { border-bottom-color: transparent; }
 .led-entry {
   position: relative;
   display: grid;
@@ -1059,6 +1134,9 @@ html.np-handoff .mast-plate { visibility: hidden; }
   top: 0;
   left: calc(-1 * clamp(0.6rem, 2.4vw, 2.25rem) - 40px);
   width: 80px;
+  /* its box is set to the ledger's exact size; the page-wide max-width on
+     images would squeeze it and shrink the whole drawing out of register */
+  max-width: none;
   overflow: visible;
   fill: none;
   stroke: var(--red);
@@ -1460,7 +1538,19 @@ html.np-handoff .mast-plate { visibility: hidden; }
   mask: linear-gradient(#000 0 0) content-box, radial-gradient(circle 3.6px at 50% 50%, #0000 96%, #000) -6px -6px / 12px 12px round;
   mask-composite: add;
   filter: drop-shadow(0 6px 10px oklch(15% 0.03 25 / 0.35));
-  transition: rotate 0.45s var(--ease-stamp), translate 0.45s var(--ease-stamp);
+  transition: translate 0.45s var(--ease-stamp);
+}
+.postage-whirl {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .postage:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
@@ -1571,7 +1661,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
   border-bottom: 1.5px solid transparent;
   transition: border-color 0.2s, opacity 0.2s;
 }
-.contact-line-link:hover {
+.contact-line-link:hover,
+.contact-line:has(.contact-line-label:hover) .contact-line-link {
   border-color: var(--paper);
   opacity: 0.82;
 }

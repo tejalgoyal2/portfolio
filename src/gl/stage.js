@@ -8,7 +8,7 @@ import { gsap } from 'gsap';
 import { Director } from '../cube/director';
 import { targetAt } from '../cube/schedule';
 import { SCRAMBLE, SOLVE, STAGES, SECTION_MOVES, SECTION_ORDER } from '../cube/solve';
-import { FACES } from '../cube/model';
+import { FACES, FACE_AXIS } from '../cube/model';
 import { bus } from '../life/bus';
 import { prefs, onPrefsChange } from '../life/prefs';
 import { settings } from '../life/settings';
@@ -16,6 +16,9 @@ import { onLayout } from '../life/layout';
 import { createCubeView } from './cube-view';
 import { createPresence } from './presence';
 import { createNotes } from './notes';
+import { clack } from '../life/sound';
+import { setSetting } from '../life/settings';
+import { scroll } from '../life/scroll';
 
 const LINE = 0.6; // a section's moves play while it scrolls past 60% of the viewport
 
@@ -109,7 +112,8 @@ export async function startStage(canvas, hitBtn, noteHost) {
     const turns = back ? 3 : 1;
     director.click(face, turns);
     presence.kick(1);
-    heldAt = window.scrollY;
+    heldAt = scroll.y;
+    twisted = true;
     return turns;
   };
   bus.orbit = (dx, dy) => presence.orbit(dx, dy);
@@ -137,14 +141,51 @@ export async function startStage(canvas, hitBtn, noteHost) {
   director.instant = prefs.reduced;
 
   let shownOn = true;
-  let rush = 0;
   let solvedOnce = false;
+  let twisted = false;
+  // each turn, as it starts: lines round the cube the way it's going, a jelly
+  // squash along its axis, and — for one you made — the click of the plastic
+  let lastActive = null;
+  let lastLines = 0;
+  const onTurn = (a, now) => {
+    const axis = FACE_AXIS[a.move.face].axis;
+    const mine = a.kind === 'visitor';
+    const quick = a.duration < 0.16;
+    presence.wobble(axis, mine ? 0.085 : quick ? 0.045 : 0.03);
+    if (mine) clack(a.duration);
+    // lines: every twist of yours; the solve's own turns lighter, and not every one while it rushes
+    if (mine || now - lastLines > (quick ? 150 : 0)) {
+      lastLines = now;
+      notes.swoosh(presence.state, view.rim(a.move, mine ? 3 : 2), mine);
+    }
+  };
+  // a page that's struggling: the cube offers to get out of the way (once a visit)
+  let slowAvg = 16.7;
+  let slowFor = 0;
+  let askedSlow = false;
+  // the first time you come near it (and haven't played yet): "play with me?" (once a visit)
+  let nearFor = 0;
+  let askedPlay = false;
+  try {
+    askedPlay = sessionStorage.getItem('press-cube-play') === '1';
+    askedSlow = sessionStorage.getItem('press-cube-slow') === '1';
+  } catch {
+    /* fine */
+  }
+  const once = (k) => {
+    try {
+      sessionStorage.setItem(k, '1');
+    } catch {
+      /* fine */
+    }
+  };
+  const bornAt = performance.now();
   const frame = (time, deltaMs) => {
     if (document.hidden) return;
     const dt = Math.min(deltaMs / 1000, 0.1);
-    if (director.held && Math.abs(window.scrollY - heldAt) > 24) director.letGo();
+    if (director.held && Math.abs(scroll.y - heldAt) > 24) director.letGo();
     // once it's been solved it stays solved: scrolling back up doesn't scramble it again
-    director.setTarget(solvedOnce ? director.total : targetAt(window.scrollY, spans));
+    director.setTarget(solvedOnce ? director.total : targetAt(scroll.y, spans));
     const before = director.k;
     const done = director.tick(dt);
     // switched off in Page settings: the solve keeps time, nothing is drawn
@@ -159,8 +200,26 @@ export async function startStage(canvas, hitBtn, noteHost) {
     if (!shownOn) return;
     presence.update(dt);
     notes.follow(presence.state);
-    rush += ((director.rushing ? 1 : 0) - rush) * (1 - Math.exp(-5 * dt));
-    if (!prefs.reduced) notes.whirl(presence.state, rush, dt);
+    const now = performance.now();
+    if (director.active && director.active !== lastActive && !director.instant) onTurn(director.active, now);
+    lastActive = director.active;
+    // slow frames, sustained (a few seconds well under 40 fps, page in view)
+    slowAvg += (Math.min(deltaMs, 120) - slowAvg) * 0.05;
+    slowFor = slowAvg > 26 ? slowFor + dt : Math.max(0, slowFor - dt * 2);
+    if (!askedSlow && slowFor > 4 && now - bornAt > 6000 && presence.state.seen) {
+      askedSlow = true;
+      once('press-cube-slow');
+      notes.say('slow', presence.state, () => setSetting('cube', false));
+    }
+    if (!askedPlay && !twisted && presence.state.near && presence.state.seen && now - bornAt > 8000) {
+      nearFor += dt;
+      if (nearFor > 0.7) {
+        askedPlay = true;
+        once('press-cube-play');
+        notes.say('play', presence.state);
+      }
+    } else nearFor = 0;
+    if (twisted && askedPlay) notes.hushIf('play');
     // milestones, on the way forward only: two layers done, and the solve
     if (done.some((c) => c.kind === 'solve')) {
       if (before < STAGES[4].end && director.k >= STAGES[4].end && director.k < director.total) notes.show('layers', presence.state);

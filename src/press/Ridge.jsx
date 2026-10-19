@@ -4,6 +4,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { startCar } from '../life/car';
 import { hash } from '../life/spring';
 import { prefs } from '../life/prefs';
+import { scroll } from '../life/scroll';
+import { onLayout } from '../life/layout';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -86,7 +88,10 @@ export default function Ridge() {
     let w = 1;
     let h = VB_H;
 
+    let docTop = 0;
+    const place = () => (docTop = root.getBoundingClientRect().top + scroll.y);
     const draw = () => {
+      place();
       w = Math.max(1, root.clientWidth);
       h = root.clientHeight || VB_H;
       svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
@@ -118,9 +123,10 @@ export default function Ridge() {
       length: () => w,
       target: () => {
         if (prefs.reduced) return w * 0.62;
-        const r = root.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.9 + r.height)));
+        // where the ridge is on screen, from its cached place on the page
+        const top = docTop - scroll.y;
+        const vh = scroll.vh;
+        const p = Math.min(1, Math.max(0, (vh - top) / (vh * 0.9 + h)));
         return 40 + p * (w - 80);
       },
     });
@@ -137,23 +143,43 @@ export default function Ridge() {
     let bv = 0;
     let roll = 0;
     let prevBs = bs;
-    let air = null; // { vx, vy, h } while it's flying
+    let air = null; // { vx, vy, y, bounced } while it's flying: a real arc, in the ridge's own px
+    let on = false;
+    const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
+    io.observe(root);
+    const offLayout = onLayout(place);
     const chase = (t, deltaMs) => {
+      if (!on || document.hidden) return;
       const dt = Math.min(0.05, deltaMs / 1000);
       let h = 0;
       if (prefs.reduced) {
         bs = car.s + side * 70;
       } else if (air) {
-        // thrown: flying on, coming down under gravity, spinning
+        // thrown: a plain ballistic arc on screen — on at a steady pace, up and
+        // down under gravity — whatever the hills below are doing
         bs += air.vx * dt;
         air.vy += G * dt;
-        air.h -= air.vy * dt;
-        h = Math.max(0, air.h);
-        if (air.h <= 0) {
-          bv = air.vx * 0.35;
-          air = null;
-          side = bs > car.s ? 1 : -1;
+        air.y += air.vy * dt;
+        // the ends of the ridge: it knocks off them and comes back in
+        if (bs < R || bs > w - R) {
+          bs = Math.max(R, Math.min(w - R, bs));
+          air.vx *= -0.5;
         }
+        const floor = ground(bs) + 1.5 - R;
+        if (air.vy > 0 && air.y >= floor) {
+          if (!air.bounced && air.vy > 260) {
+            // one small bounce, then it rolls on
+            air.bounced = true;
+            air.y = floor;
+            air.vy *= -0.32;
+            air.vx *= 0.7;
+          } else {
+            bv = air.vx * 0.6;
+            air = null;
+            side = bs > car.s ? 1 : -1;
+          }
+        }
+        if (air) h = Math.max(0, floor - air.y);
       } else {
         // it keeps after the van, never faster than it can roll; when the van
         // turns back towards it, it just keeps coming
@@ -167,23 +193,27 @@ export default function Ridge() {
         const contact = 38 * 1.1 + R - 4;
         if (approaching && Math.abs(bs - car.s) < contact) {
           const dir = Math.sign(car.v) || -side;
-          air = { vx: dir * (Math.abs(car.v) * 1.15 + 160), vy: -(380 + Math.min(260, Math.abs(car.v) * 0.4)), h: 0.01 };
+          // a harder hit throws it further and higher, within reason
+          const hit = Math.min(1, Math.abs(car.v) / 420);
+          air = { vx: dir * (150 + hit * 170), vy: -(330 + hit * 220), y: ground(bs) + 1.5 - R, bounced: false };
           side = dir;
         }
       }
-      roll += (bs - prevBs) / R + (air ? dt * 9 * Math.sign(air.vx) : 0);
+      // it rolls with the distance it covers — in the air too, so the spin matches the flight
+      roll += (bs - prevBs) / R;
       prevBs = bs;
       const y = ground(bs) + 1.5 - R - h;
       rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;
       const close = !air && Math.abs(bs - car.s) < 100 && Math.abs(car.v) + Math.abs(bv) > 30;
       if (close !== yikes.classList.contains('is-on')) yikes.classList.toggle('is-on', close);
-      yikes.style.left = `${car.x.toFixed(1)}px`;
-      yikes.style.top = `${(car.y - 54).toFixed(1)}px`;
+      if (close) yikes.style.translate = `${car.x.toFixed(1)}px ${(car.y - 54).toFixed(1)}px`;
     };
     gsap.ticker.add(chase);
 
     return () => {
       ro.disconnect();
+      io.disconnect();
+      offLayout();
       ctx.revert();
       stopCar();
       gsap.ticker.remove(chase);

@@ -7,7 +7,7 @@ import Stamp from '../press/Stamp';
 import Bug from '../press/Bug';
 
 /**
- * Work — a board of project cards. Tier-1 files render their full dossier
+ * Projects — a board of project cards. Tier-1 files render their full dossier
  * always (deck + metrics + notes + links). The rest run past on three curved
  * rows, like a wraparound display: real CSS 3D, each card turned to face you
  * as it comes round from the side, the rows running in alternating directions
@@ -350,11 +350,11 @@ export default function Projects() {
   const linkedSet = active ? new Set(CONNECTIONS[active] || []) : null;
 
   return (
-    <section className="projects" id="work" aria-label="Work — projects" data-ground="paper" data-section="projects">
+    <section className="projects" id="projects" aria-label="Projects" data-ground="paper" data-section="projects">
       <div className="press-container cf-stage">
         <Bug />
         <header className="cf-head" data-depart="lift">
-          <span className="kicker">Work</span>
+          <span className="kicker">Projects</span>
           <KineticHeadline as="h2" font="impact" className="cf-headline">
             Things I&rsquo;ve built. Some broke.
           </KineticHeadline>

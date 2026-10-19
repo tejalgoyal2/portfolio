@@ -192,19 +192,29 @@ const WORDS = [
 export default function Thinking() {
   const [word, setWord] = useState(() => Math.floor(Math.random() * WORDS.length));
   const glyphRef = useRef(null);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     let g = 0;
+    // only while it's on screen: off it, the words, the star and the shimmer all rest
+    let seen = true;
+    const io = new IntersectionObserver(([e]) => {
+      seen = e.isIntersecting;
+      rootRef.current?.classList.toggle('is-resting', !seen);
+    });
+    if (rootRef.current) io.observe(rootRef.current);
     // a fresh word every few seconds, never the same twice running
     const words = setInterval(() => {
+      if (!seen || document.hidden) return;
       setWord((w) => (w + 1 + Math.floor(Math.random() * (WORDS.length - 2))) % WORDS.length);
     }, 3200);
     const twinkle = setInterval(() => {
-      if (prefs.reduced || !glyphRef.current) return;
+      if (!seen || document.hidden || prefs.reduced || !glyphRef.current) return;
       g = (g + 1) % GLYPHS.length;
       glyphRef.current.textContent = GLYPHS[g];
     }, 120);
     return () => {
+      io.disconnect();
       clearInterval(words);
       clearInterval(twinkle);
     };
@@ -213,7 +223,7 @@ export default function Thinking() {
   const text = `${WORDS[word]}…`;
   return (
     // decoration that never stops changing: kept away from screen readers
-    <span className="thinking" aria-hidden="true">
+    <span ref={rootRef} className="thinking" aria-hidden="true">
       <span ref={glyphRef} className="thinking-glyph">
         ✻
       </span>

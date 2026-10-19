@@ -83,13 +83,6 @@
   outline-offset: 4px;
 }
 
-/* drawing on the paper: no text selection while the pen is down */
-html.is-doodling,
-html.is-doodling * {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
 /* ── Ink roller ──────────────────────────────────────────────────────────── */
 .ink-roller {
   position: fixed;
@@ -184,18 +177,91 @@ html.is-doodling * {
 .cube-note-crown path { transition-duration: 0.9s !important; transition-delay: 0.7s; }
 .cube-note--stickers { transform: translate3d(calc(var(--cx) + var(--cr) * 1.05), calc(var(--cy) - var(--cr) * 0.35), 0); }
 .cube-note--stickers.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.1 - 10px), calc(var(--cy) - var(--cr) * 0.35), 0) translateX(-100%); }
-.cube-whirl {
+/* motion lines round the cube, the way a layer is turning */
+.cube-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  pointer-events: none;
+}
+.cube-lines path {
+  stroke: var(--red);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  opacity: 0.75;
+}
+.cube-lines path.is-bold { stroke: var(--ink); stroke-width: 2.6; opacity: 1; }
+.cube-lines path.is-thin { stroke-width: 1.4; }
+.cube-lines path[data-ground="ink"] { stroke: #fe433e; }
+.cube-lines path.is-bold[data-ground="ink"] { stroke: var(--paper); }
+.cube-lines path[data-ground="red"] { stroke: var(--paper); }
+/* the cube says something: a comic speech bubble beside it */
+.cube-say {
   position: absolute;
   top: 0;
   left: 0;
+  width: max-content;
+  max-width: 15rem;
+  padding: 0.45rem 0.75rem 0.5rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 3px 3px 0 var(--ink);
+  /* off the cube's top corner, close to it (--cr is the radius of its corners) */
+  transform: translate3d(calc(var(--cx) + var(--cr) * 0.5), calc(var(--cy) - var(--cr) * 0.72), 0) translateY(-100%);
+  transform-origin: 0 100%;
   opacity: 0;
-  pointer-events: none;
-  will-change: transform, opacity;
+  scale: 0.5;
+  pointer-events: auto;
+  transition: opacity 0.2s var(--ease-set), scale 0.45s var(--ease-stamp);
 }
-.cube-whirl svg { width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.cube-whirl .cw-trail { stroke-width: 1.3; stroke-dasharray: 4 5; }
-.cube-whirl[data-ground="ink"] svg { stroke: #fe433e; }
-.cube-whirl[data-ground="red"] svg { stroke: var(--paper); }
+.cube-say.is-left {
+  transform: translate3d(calc(var(--cx) - var(--cr) * 0.5), calc(var(--cy) - var(--cr) * 0.72), 0) translate(-100%, -100%);
+  transform-origin: 100% 100%;
+}
+.cube-say.is-on { opacity: 1; scale: 1; }
+.cube-say.is-off,
+.cube-say.is-hidden { opacity: 0; scale: 0.8; pointer-events: none; }
+.cube-say::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 18px;
+  width: 14px;
+  height: 14px;
+  background: var(--paper);
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  rotate: 50deg;
+  skew: -12deg -12deg;
+}
+.cube-say.is-left::after { left: auto; right: 18px; rotate: 40deg; }
+.cube-say-text { margin: 0; font-family: var(--font-pen); font-size: 1.25rem; font-weight: 700; line-height: 1.05; }
+.cube-say-small { margin: 0.25rem 0 0; font-family: var(--font-data); font-size: 0.62rem; letter-spacing: 0.04em; opacity: 0.75; }
+.cube-say-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+.cube-say-btn,
+.cube-say-no {
+  font-family: var(--font-data);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.55rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cube-say-btn { color: var(--paper); background: var(--red); border-color: var(--red); }
+.cube-say-no { color: var(--ink); background: transparent; }
+.cube-say-btn:focus-visible,
+.cube-say-no:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.cube-note.is-hidden { opacity: 0 !important; transition: opacity 0.3s var(--ease-set); }
 .cube-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .cube-confetti span {
   position: absolute;

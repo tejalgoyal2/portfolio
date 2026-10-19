@@ -10,8 +10,9 @@ The logos of tools and companies, used where the page talks about them
   `dist/<slug>.js` (`export const svg`), XML prolog and comments stripped.
   Full colour, as published.
 - **`manifest.json`:** slug → `{ title, hex }` from the same files.
-- **Loading:** `src/life/brands.js` imports them lazily (one small chunk) and
-  can rasterise them for canvases, in colour or as a flat ink silhouette.
+- **Loading:** `src/life/brands.js` maps each slug to its file's URL; the
+  files are never inlined into the scripts (see `vite.config.js`), so a mark
+  is only downloaded when an `<img>` shows it.
 - **Which skill uses which mark:** `src/data/skillIcons.js`.
 
 ## Adding one
