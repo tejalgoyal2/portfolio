@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { nib, onNib, NIBS, LOANERS } from '../life/nib';
 import { bus } from '../life/bus';
-import { thock } from '../life/sound';
 
 /**
  * The cursor is your pen: one of the site's pointy pencil icons, its tip
@@ -15,10 +14,10 @@ import { thock } from '../life/sound';
  *   data-cursor="wheel | nib".
  * - A couple of places hand you a fitting pen while you're over them
  *   (data-pen: a pencil on the blog cards, a rocket in Let's talk), and over
- *   the cube — or while you turn it — the cursor is a little turning arrow.
- * - A click that twists a face draws a quarter-turn arrow round the point,
- *   the way the face went, with comic motion lines (life:twist), and the face
- *   lands with a soft thock (src/life/sound.js; off in Page settings).
+ *   the cube — or while you turn it — the cursor is a little turning arrow,
+ *   the way a click will turn the face: clockwise, or mirrored while Shift is
+ *   held (Shift turns it back). The turn itself is drawn round the cube
+ *   (src/gl/notes.js), not here.
  *
  * It's inked for whatever is actually under it — the first solid background
  * up the tree, a paper card on the ink spread included — easing between ink
@@ -60,7 +59,6 @@ export default function PressCursor() {
   const leanRef = useRef(null);
   const iconRef = useRef(null);
   const markRef = useRef(null);
-  const flickRef = useRef(null);
   const [fine] = useState(() => typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches);
   const [system, setSystem] = useState(() => nib().name === 'system');
 
@@ -76,8 +74,9 @@ export default function PressCursor() {
       if (!icons || !el || !n.tip || shown === n.name) return;
       shown = n.name;
       const k = SIZE / 24;
-      el.innerHTML = icons[n.name] || '';
+      el.innerHTML = icons[n.icon || n.name] || '';
       el.style.setProperty('--rot', `${n.rot}deg`);
+      el.style.setProperty('--flip', n.flip ? '-1' : '1');
       el.style.setProperty('--tx', `${(-n.tip[0] * k).toFixed(2)}px`);
       el.style.setProperty('--ty', `${(-n.tip[1] * k).toFixed(2)}px`);
       if (animate) gsap.fromTo(leanRef.current, { scale: 0.3 }, { scale: 1, duration: 0.55, ease: 'back.out(2.2)', overwrite: true });
@@ -86,11 +85,20 @@ export default function PressCursor() {
     let over = null;
     const onOver = (e) => (over = e.target.closest?.('[data-pen]')?.dataset.pen || null);
     window.addEventListener('pointerover', onOver);
+    // Shift turns a face the other way, so the arrow shows it before you click
+    let shift = false;
+    const onKey = (e) => (shift = e.shiftKey);
+    const onMove = (e) => (shift = e.shiftKey);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKey);
+    window.addEventListener('pointermove', onMove, { passive: true });
+    const offShift = () => (shift = false);
+    window.addEventListener('blur', offShift);
     const choose = () => {
       const mine = nib();
       if (mine.name === 'system' || !icons) return;
       const turning = bus.cursorHint === 'rotate' || document.documentElement.classList.contains('is-orbiting');
-      const want = turning ? 'rotate-cw' : over;
+      const want = turning ? (shift ? 'rotate-ccw' : 'rotate-cw') : over;
       paint(want ? ALL_PENS().find((x) => x.name === want) || mine : mine);
     };
     gsap.ticker.add(choose);
@@ -104,6 +112,10 @@ export default function PressCursor() {
       cancelled = true;
       off();
       window.removeEventListener('pointerover', onOver);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKey);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('blur', offShift);
       gsap.ticker.remove(choose);
     };
   }, [fine]);
@@ -186,30 +198,6 @@ export default function PressCursor() {
       html.classList.toggle('cursor-has-mark', !!state);
     };
 
-    // a twist: a quarter-turn arrow draws itself round the point, the way the face went
-    const onTwist = (e) => {
-      const el = flickRef.current;
-      if (!el) return;
-      const cw = e.detail.turns !== 3;
-      el.dataset.ground = darkUnder(document.elementFromPoint(e.detail.x, e.detail.y)) ? 'ink' : 'paper';
-      const [arc, head] = el.querySelectorAll('path');
-      gsap.killTweensOf([el, arc, head]);
-      gsap.set(el, { x: e.detail.x, y: e.detail.y, scaleX: cw ? 1 : -1, opacity: 1, rotate: -20 });
-      gsap.set(head, { opacity: 0, scale: 0.4, svgOrigin: '21.2 -21.2' });
-      gsap
-        .timeline()
-        .fromTo(arc, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.45, ease: 'power2.inOut' }, 0)
-        .to(el, { rotate: 10, duration: 0.5, ease: 'power2.inOut' }, 0)
-        .to(head, { opacity: 1, scale: 1, duration: 0.18, ease: 'back.out(3)' }, 0.36)
-        .to(el, { opacity: 0, duration: 0.35, ease: 'power1.in' }, 0.75);
-      // the comic bit: motion arcs trail the arrow round, speed lines flick off its head
-      const trails = el.querySelectorAll('.flick-trail');
-      gsap.fromTo(trails, { strokeDashoffset: 1, opacity: 0.9 }, { strokeDashoffset: -1, duration: 0.55, ease: 'power2.inOut', stagger: 0.06 });
-      const lines = el.querySelectorAll('.flick-line');
-      gsap.fromTo(lines, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: -1, duration: 0.5, ease: 'power2.out', stagger: 0.04, delay: 0.3 });
-      thock();
-    };
-
     const down = () => html.classList.add('cursor-down');
     const up = () => html.classList.remove('cursor-down');
 
@@ -218,7 +206,6 @@ export default function PressCursor() {
     window.addEventListener('pointerup', up);
     document.addEventListener('pointerleave', leave);
     document.addEventListener('pointerenter', enter);
-    window.addEventListener('life:twist', onTwist);
     window.addEventListener('contextmenu', onMenu);
     window.addEventListener('focus', onFocus);
     window.addEventListener('blur', soon);
@@ -233,7 +220,6 @@ export default function PressCursor() {
       window.removeEventListener('pointerup', up);
       document.removeEventListener('pointerleave', leave);
       document.removeEventListener('pointerenter', enter);
-      window.removeEventListener('life:twist', onTwist);
       window.removeEventListener('contextmenu', onMenu);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('blur', soon);
@@ -266,16 +252,6 @@ export default function PressCursor() {
           <path d="M28 30v15" />
         </svg>
       </div>
-      {/* a quarter turn over the top of the point, drawn clockwise; mirrored for anticlockwise */}
-      <svg ref={flickRef} className="cursor-flick" viewBox="-40 -40 80 80">
-        <path d="M-21.2 -21.2A30 30 0 0 1 21.2 -21.2" pathLength="1" />
-        <path d="M18.9 -29.9 21.2 -21.2 12.5 -23.5" />
-        <path className="flick-trail" d="M-25.9 -26.2A37 37 0 0 1 8 -36.1" pathLength="1" />
-        <path className="flick-trail" d="M-15.5 -17.8A23 23 0 0 1 9 -21.2" pathLength="1" />
-        <path className="flick-line" d="M27 -27 34 -33" pathLength="1" />
-        <path className="flick-line" d="M30 -18 39 -19" pathLength="1" />
-        <path className="flick-line" d="M22 -35 24 -43" pathLength="1" />
-      </svg>
     </div>
   );
 }

@@ -72,17 +72,14 @@ export function measureMask(pad = 10, decor = true) {
 }
 
 /**
- * The one paper-press listener: a click, a drag on the cube, or a doodle.
+ * The one paper-press listener: a click, or a drag on the cube.
  *
  * - On the cube: a click twists the face under it (clockwise; Shift turns it back);
  *   holding and dragging turns the whole cube to see its other sides (mice
  *   and pens — on touch a drag scrolls the page, so a tap twists).
  * - A quick click on bare paper dispatches `life:press` {x, y, ground}: the
  *   registration mark and the water ripple.
- * - Dragging on bare paper (mouse or pen) draws with your pen: `life:doodle`
- *   {phase: 'start' | 'move' | 'end', x, y} — a stroke of ink that fades away
- *   a few seconds later (drawn by src/life/iconDrift.js). On touch a drag
- *   scrolls the page, so nothing is drawn.
+ * - A drag anywhere else is left alone, so text selects the way it always does.
  */
 const SLOP = { mouse: 6, touch: 10 }; // px a press may wander before it's a drag
 
@@ -97,8 +94,7 @@ export function startPaperPress() {
 
   const end = () => {
     if (!press) return;
-    if (press.doodling) emit('life:doodle', { phase: 'end', x: press.x, y: press.y });
-    html.classList.remove('is-orbiting', 'is-doodling');
+    html.classList.remove('is-orbiting');
     press = null;
   };
 
@@ -118,7 +114,6 @@ export function startPaperPress() {
       y0: e.clientY,
       face,
       orbiting: false,
-      doodling: false,
       t: performance.now(),
       vx: 0,
       vy: 0,
@@ -147,17 +142,6 @@ export function startPaperPress() {
       bus.orbit?.(dx, dy);
       return;
     }
-    // a drag on bare paper doodles (not on touch, where it scrolls)
-    if (!press.face && press.kind === 'mouse' && (press.doodling || far)) {
-      if (!press.doodling) {
-        press.doodling = true;
-        html.classList.add('is-doodling');
-        window.getSelection?.()?.removeAllRanges();
-        emit('life:doodle', { phase: 'start', x: press.x0, y: press.y0 });
-      }
-      emit('life:doodle', { phase: 'move', x: press.x, y: press.y });
-      return;
-    }
     if (far) end();
   });
 
@@ -171,7 +155,7 @@ export function startPaperPress() {
     } else if (p.face) {
       const turns = bus.twist?.(p.face, e.shiftKey);
       emit('life:twist', { x: p.x0, y: p.y0, turns });
-    } else if (!p.doodling) emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
+    } else emit('life:press', { x: p.x0, y: p.y0, ground: groundAt(p.y0) });
     end();
   });
 

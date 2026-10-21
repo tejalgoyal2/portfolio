@@ -6,18 +6,20 @@ import { prefs } from '../life/prefs';
 import { SECTIONS } from '../data/sections';
 import { nib, nextNib, onNib } from '../life/nib';
 import PageSettings from './PageSettings';
+import { scroll } from '../life/scroll';
 
 /**
  * The running head — a band of glass across the top of the page, ruled off
  * like a newspaper's folio line, with every section in it so the whole
  * structure is always in view.
  *
- * It runs the full width of the screen, edge to edge. Along its foot runs one
- * long rule that fills with red ink as you read, a bead of wet ink at its
- * head: from the far left at the top of the page, reaching each label just as
- * its section begins. The section you're in is ringed in the editor's red — a
- * loop that rises off the rule and goes round the label once and a bit —
- * and the old loop is wiped back along itself as the new one draws.
+ * It sits on the page's own measure, lined up with the columns below it.
+ * Along its foot runs one long rule that fills with red ink as you read, a
+ * bead of wet ink at its head, reaching each label just as its section
+ * begins. The section you're in is marked with a bookmark: a red silk ribbon
+ * hanging from under its label, like the one sewn into a book's spine. When
+ * you move on it slides along to the next label — off quickly, easing into
+ * place — and swings from where it hangs as it goes, settling with a sway.
  *
  * One click (or Enter) flies you to any section with Lenis. At its end sit two
  * cells: your pen (click to swap it; hover for who drew it) and Page settings.
@@ -48,36 +50,6 @@ const markHint = (k) => {
     /* fine */
   }
 };
-
-/** A loose hand-drawn loop round a label, starting on the rule below it. */
-function loopPath(x, y, w, h, trackH, seed) {
-  const cx = x + w / 2;
-  const cy = y + h / 2 + 1;
-  const rx = w / 2 + 6;
-  const ry = h / 2 - 7;
-  const j = (k) => Math.sin(seed * 12.9898 + k * 78.233) * 0.5; // steady wobble per label
-  const pts = [[x + 4, trackH - 1]];
-  const turns = 1.12;
-  const n = 26;
-  for (let k = 0; k <= n; k++) {
-    const t = k / n;
-    const a = Math.PI * 1.05 + t * turns * Math.PI * 2; // from the left, over the top, round
-    const grow = 1 + t * 0.07 + j(k) * 0.05;
-    pts.push([cx + Math.cos(a) * rx * grow, cy + Math.sin(a) * ry * grow - t * 1.5]);
-  }
-  // Catmull-Rom through the points, as cubic curves
-  let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i - 1] || pts[i];
-    const p1 = pts[i];
-    const p2 = pts[i + 1];
-    const p3 = pts[i + 2] || p2;
-    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-    d += `C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
-  }
-  return d;
-}
 
 export default function Contents() {
   const [current, setCurrent] = useState(0);
@@ -144,7 +116,7 @@ export default function Contents() {
     let lastGround = '';
     let lastTip = -1;
     const tick = () => {
-      const probe = window.scrollY + window.innerHeight * 0.38;
+      const probe = scroll.y + scroll.vh * 0.38;
       let i = 0;
       bounds.forEach((b, k) => {
         if (b && probe >= b.top) i = k;
@@ -159,8 +131,7 @@ export default function Contents() {
       const { starts, w, narrow } = geo.current;
       let tip;
       if (narrow) {
-        const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-        tip = (window.scrollY / max) * w;
+        tip = (scroll.y / Math.max(1, scroll.max)) * w;
       } else {
         const a = starts[i] ?? 0;
         const z = i < starts.length - 1 ? starts[i + 1] : w;
@@ -187,43 +158,65 @@ export default function Contents() {
     };
   }, [place]);
 
-  // the editor's pen circles the section you're in: a loop that rises off the
-  // reading rule at the label's left, goes round it once and a bit, and lifts
-  // off; moving on, the old loop is wiped back along itself as the new one is drawn
-  const loopRefs = useRef([]);
-  const live = useRef(0);
-  const drawLoop = useCallback((i, animate) => {
-    const item = itemRefs.current[i];
-    const track = trackRef.current;
-    if (!item || !track || !item.offsetParent) return;
-    const paths = loopRefs.current;
-    const prev = paths[live.current];
-    const next = paths[(live.current = 1 - live.current)];
-    const d = loopPath(item.offsetLeft, item.offsetTop, item.offsetWidth, item.offsetHeight, track.clientHeight, i);
-    next.setAttribute('d', d);
-    gsap.killTweensOf([prev, next]);
-    if (!animate || prefs.reduced) {
-      gsap.set(next, { strokeDashoffset: 0, opacity: 1 });
-      gsap.set(prev, { strokeDashoffset: 1, opacity: 0 });
-      return;
-    }
-    gsap.to(prev, { strokeDashoffset: -1, duration: 0.45, ease: 'power2.in' });
-    gsap.fromTo(next, { strokeDashoffset: 1, opacity: 1 }, { strokeDashoffset: 0, duration: 0.9, ease: 'power2.inOut', delay: 0.15 });
-  }, []);
-  const placedOnce = useRef(false);
-  useEffect(() => {
-    drawLoop(current, placedOnce.current);
-    placedOnce.current = true;
-  }, [current, drawLoop]);
-  // on a real resize (and once the fonts land), re-place the loop without drawing it again
+  // the bookmark: slides to the label you're on and swings from where it hangs
+  const ribbonRef = useRef(null);
   const currentRef = useRef(current);
   currentRef.current = current;
   useEffect(() => {
-    const again = () => drawLoop(currentRef.current, false);
-    document.fonts?.ready.then(again);
-    window.addEventListener('resize', again);
-    return () => window.removeEventListener('resize', again);
-  }, [drawLoop]);
+    const el = ribbonRef.current;
+    if (!el) return;
+    const rb = { x: 0, v: 0, th: 0, w: 0, goal: 0, placed: false, awake: false };
+    const aim = () => {
+      const item = itemRefs.current[currentRef.current];
+      if (!item || !item.offsetParent) return false;
+      rb.goal = item.offsetLeft + item.offsetWidth / 2;
+      return true;
+    };
+    const write = () => {
+      el.style.transform = `translate3d(${rb.x.toFixed(1)}px,0,0) rotate(${rb.th.toFixed(2)}deg)`;
+    };
+    const snap = () => {
+      if (!aim()) return;
+      rb.x = rb.goal;
+      rb.v = rb.th = rb.w = 0;
+      rb.placed = true;
+      write();
+    };
+    const tick = (time, deltaMs) => {
+      if (!rb.awake) return;
+      const dt = Math.min(0.05, deltaMs / 1000);
+      // a spring that sets off quickly and eases a long way in (a touch under-damped)
+      const a = 46 * (rb.goal - rb.x) - 11.5 * rb.v;
+      rb.v += a * dt;
+      rb.x += rb.v * dt;
+      // hanging from its top, it swings back against the way it's carried
+      rb.w += (-90 * rb.th - 5.5 * rb.w - a * 0.03) * dt;
+      rb.th = Math.max(-38, Math.min(38, rb.th + rb.w * dt));
+      write();
+      if (Math.abs(rb.goal - rb.x) < 0.3 && Math.abs(rb.v) < 2 && Math.abs(rb.th) < 0.15 && Math.abs(rb.w) < 1) {
+        rb.x = rb.goal;
+        rb.th = rb.w = rb.v = 0;
+        rb.awake = false;
+        write();
+      }
+    };
+    gsap.ticker.add(tick);
+    const move = () => {
+      if (!rb.placed || prefs.reduced) return snap();
+      if (aim()) rb.awake = true;
+    };
+    el._move = move;
+    document.fonts?.ready.then(snap);
+    window.addEventListener('resize', snap);
+    snap();
+    return () => {
+      gsap.ticker.remove(tick);
+      window.removeEventListener('resize', snap);
+    };
+  }, []);
+  useEffect(() => {
+    ribbonRef.current?._move?.();
+  }, [current]);
 
   const go = useCallback((i) => {
     const el = document.querySelector(`[data-section="${SECTIONS[i].key}"]`);
@@ -315,10 +308,13 @@ export default function Contents() {
           Contents <span aria-hidden="true">{open ? '−' : '+'}</span>
         </button>
         <div ref={trackRef} className="rh-track">
-          <svg className="rh-loops" aria-hidden="true">
-            <path ref={(el) => (loopRefs.current[0] = el)} pathLength="1" />
-            <path ref={(el) => (loopRefs.current[1] = el)} pathLength="1" />
-          </svg>
+          {/* the bookmark ribbon, hanging under the label you're on */}
+          <span ref={ribbonRef} className="rh-ribbon" aria-hidden="true">
+            <svg viewBox="0 0 14 26">
+              <path d="M0 0H14V26L7 20.5 0 26Z" />
+              <path className="rh-ribbon-sheen" d="M3.2 0V21.4" />
+            </svg>
+          </span>
           <ol ref={listRef} id="rh-list" className="rh-list">
             {SECTIONS.map(({ key, label }, i) => (
               <li key={key} className={i === current ? 'is-current' : undefined}>

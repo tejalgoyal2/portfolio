@@ -5,6 +5,7 @@ import { measureMask } from './paper';
 import { groundAtDoc } from './ground';
 import { loadSprites, INKS_FOR } from './sprites';
 import { settings, onSettings } from './settings';
+import { scroll } from './scroll';
 
 /**
  * A few of the pencil icons (matita.dev, MIT) drift across the bare paper —
@@ -25,10 +26,6 @@ import { settings, onSettings } from './settings';
  * How many icons there are follows Page settings (src/life/settings.js), and
  * ripples can be switched off there.
  *
- * Drag on bare paper and you draw with your pen (`life:doodle`): a smooth
- * line of ink that sits on the page a couple of seconds after you lift the
- * pen and then fades away, all of a piece.
- *
  * One fixed canvas, redrawn each frame (a dozen sprites and a few rings).
  * Paused while the tab is hidden. Reduced motion: the icons sit still and
  * there are no ripples.
@@ -38,6 +35,8 @@ const PX = 40; // css px the sprites are rasterised at
 const PAD = 12; // clearance kept from text, on top of the icon's radius
 const SPACING = 150; // icons keep at least this far apart
 const RIPPLE = { speed: 330, wave: 40, reach: 420, crests: 4, push: 210 };
+/** How fast a ripple's front travels, px/s (the skills time their icons to it). */
+export const RIPPLE_SPEED = RIPPLE.speed;
 const SPRING = { k: 14, damp: 5.2 }; // ~0.5 s sway back, one soft overshoot
 
 /** The offset an icon was pushed by eases home on a spring — smooth however many hits it took. */
@@ -55,9 +54,6 @@ function springBack(o, dt) {
   }
 }
 const RING_INK = { paper: [213, 30, 34], ink: [254, 67, 62], red: [244, 240, 230] };
-const DOODLE_INK = { paper: [28, 22, 18], ink: [244, 240, 230], red: [244, 240, 230] };
-const DOODLE_HOLD = 2.2; // s a stroke stays fully inked
-const DOODLE_FADE = 1.4; // s it takes to fade
 
 export function startIconDrift(canvas) {
   const ctx = canvas.getContext('2d');
@@ -74,7 +70,9 @@ export function startIconDrift(canvas) {
   let lastDrawKey = '';
 
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // faint doodles and soft rings don't need a full retina buffer: 1.5× is
+    // crisp enough and almost halves the canvas's memory on a 2× screen
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     W = document.documentElement.clientWidth;
     H = window.innerHeight;
     canvas.width = Math.round(W * dpr);
@@ -104,10 +102,9 @@ export function startIconDrift(canvas) {
 
   const target = () => Math.round(Math.max(8, Math.min(14, (W * H) / 110000)) * settings.drift);
   const sparks = [];
-  const doodles = [];
 
   function spawn(fadeIn = true) {
-    const sy0 = window.scrollY;
+    const sy0 = scroll.y;
     for (let tries = 0; tries < 40; tries++) {
       const x = Math.random() * W;
       const y = sy0 + Math.random() * H;
@@ -146,7 +143,7 @@ export function startIconDrift(canvas) {
 
   function step(dt) {
     const still = prefs.reduced;
-    const sy0 = window.scrollY;
+    const sy0 = scroll.y;
     for (let k = ripples.length - 1; k >= 0; k--) {
       const rp = ripples[k];
       rp.prev = rp.R;
@@ -278,43 +275,11 @@ export function startIconDrift(canvas) {
     }
   }
 
-  function drawDoodles(sy0) {
-    // each stroke is one smooth path (no overlapping segments to show as dots
-    // when it fades), and it fades as a whole a while after you lift the pen
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    for (let k = doodles.length - 1; k >= 0; k--) {
-      const d = doodles[k];
-      const pts = d.pts;
-      const age = d.done ? clock - d.end : 0;
-      const a = age < DOODLE_HOLD ? 1 : 1 - (age - DOODLE_HOLD) / DOODLE_FADE;
-      if (a <= 0) {
-        doodles.splice(k, 1);
-        continue;
-      }
-      if (pts.length < 2) continue;
-      const [r, g, b] = DOODLE_INK[d.ground] || DOODLE_INK.paper;
-      ctx.strokeStyle = `rgba(${r},${g},${b},${(0.85 * a).toFixed(3)})`;
-      ctx.lineWidth = 2.4 * (0.75 + 0.25 * a);
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y - sy0);
-      for (let i = 1; i < pts.length - 1; i++) {
-        const mx = (pts[i].x + pts[i + 1].x) / 2;
-        const my = (pts[i].y + pts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y - sy0, mx, my - sy0);
-      }
-      const last = pts[pts.length - 1];
-      ctx.lineTo(last.x, last.y - sy0);
-      ctx.stroke();
-    }
-  }
-
   function draw() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    const sy0 = window.scrollY;
+    const sy0 = scroll.y;
     drawRipples(sy0);
-    drawDoodles(sy0);
     for (const sp of sparks) {
       const inks = INKS_FOR[sp.ground] || INKS_FOR.paper;
       const img = sprites[sp.sprite][inks[sp.accent ? 1 : 0]];
@@ -348,7 +313,7 @@ export function startIconDrift(canvas) {
     step(dt);
     if (prefs.reduced) {
       // still icons: repaint only when the page has moved
-      const key = `${Math.round(window.scrollY)}|${icons.length}|${doodles.length ? clock : 0}`;
+      const key = `${Math.round(scroll.y)}|${icons.length}`;
       if (key === lastDrawKey) return;
       lastDrawKey = key;
     }
@@ -387,31 +352,6 @@ export function startIconDrift(canvas) {
     if (sparks.length > 40) sparks.splice(0, sparks.length - 40);
   };
   window.addEventListener('life:press', onPress);
-  // drawing with the pen
-  const onDoodle = (e) => {
-    const { phase, x, y } = e.detail;
-    const docY = y + window.scrollY;
-    if (phase === 'start') {
-      doodles.push({ pts: [{ x, y: docY, t: clock, w: 2.6 }], ground: groundAtDoc(docY), done: false });
-      if (doodles.length > 12) doodles.shift();
-      return;
-    }
-    const d = doodles[doodles.length - 1];
-    if (!d) return;
-    if (phase === 'end') {
-      d.done = true;
-      d.end = clock;
-      return;
-    }
-    const last = d.pts[d.pts.length - 1];
-    const step = Math.hypot(x - last.x, docY - last.y);
-    if (step < 1.5) return;
-    // a pen: thinner when it moves fast, eased so the width doesn't flicker
-    const w = Math.max(1.1, Math.min(3.2, 3.4 - step * 0.09));
-    d.pts.push({ x, y: docY, t: clock, w: last.w + (w - last.w) * 0.35 });
-    if (d.pts.length > 900) d.pts.shift();
-  };
-  window.addEventListener('life:doodle', onDoodle);
   // fewer or more icons, from Page settings: the extras drift off or float in
   const offSettings = onSettings((_, key) => {
     if (key !== 'drift') return;
@@ -435,7 +375,6 @@ export function startIconDrift(canvas) {
     cancelled = true;
     gsap.ticker.remove(tick);
     window.removeEventListener('life:press', onPress);
-    window.removeEventListener('life:doodle', onDoodle);
     window.removeEventListener('resize', resize);
     offSettings();
     offLayout();

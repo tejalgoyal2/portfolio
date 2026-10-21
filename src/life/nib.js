@@ -21,7 +21,11 @@ export const NIBS = [
 ];
 export const SYSTEM = { name: 'system', label: 'Your own cursor' };
 /** Pens the page hands you over particular things (not in the chooser). */
-export const LOANERS = [{ name: 'rotate-cw', label: 'Turn it', tip: [12, 12], rot: 0 }];
+export const LOANERS = [
+  { name: 'rotate-cw', label: 'Turn it', tip: [12, 12], rot: 0 },
+  // the same arrow in a mirror: Shift held over the cube, it turns the other way
+  { name: 'rotate-ccw', icon: 'rotate-cw', flip: true, label: 'Turn it back', tip: [12, 12], rot: 0 },
+];
 const KEY = 'press-nib';
 const subs = new Set();
 
