@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import agentLayer from './scripts/agent-layer.mjs'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), agentLayer()],
   // unit tests only; the browser checks in tests/e2e run under Playwright
   test: { include: ['tests/unit/**/*.test.js'] },
   build: {
