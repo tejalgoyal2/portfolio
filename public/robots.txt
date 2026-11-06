@@ -3,7 +3,7 @@
 # or fetches a page because someone asked it a question. A bot with its own group here
 # ignores the "*" group, so each group repeats the two paths that stay private.
 #
-# A page for machines: https://tgoyal.me/llms.txt  (and /llms-full.txt, /index.md)
+# A page for machines: https://tgoyal.me/llms.txt  (and /llms-full.txt)
 # Ask me through MCP:  https://tgoyal.me/mcp
 
 # Content Signals (contentsignals.org): search, grounding answers (ai-input) and training are all yes.

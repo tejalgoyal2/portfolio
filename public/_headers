@@ -10,10 +10,10 @@
   Cross-Origin-Opener-Policy: same-origin
   Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'; upgrade-insecure-requests
 
-# the front page tells machines where its Markdown copy and its llms.txt are (the same
-# two links as in <head>, for clients that only look at headers)
+# the front page tells machines where its llms.txt is (the same link as in <head>, for
+# clients that only look at headers)
 /
-  Link: </index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"; type="text/plain"
+  Link: </llms.txt>; rel="describedby"; type="text/plain"
 
 # files made for machines (scripts/agent-layer.mjs): plain text, cached for an hour, and
 # free for any site or tool to read
@@ -25,10 +25,13 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600
   Access-Control-Allow-Origin: *
-/index.md
-  Content-Type: text/markdown; charset=utf-8
+
+# the short link to my GitHub: only there to show a preview, never worth indexing
+/github
+  X-Robots-Tag: noindex
+/github/
+  X-Robots-Tag: noindex
   Cache-Control: public, max-age=3600
-  Access-Control-Allow-Origin: *
 
 # fonts, models and built assets never change under the same name
 /assets/*

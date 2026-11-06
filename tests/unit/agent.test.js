@@ -42,7 +42,6 @@ describe('profile.js still says what the page says', () => {
     }
   });
   it('the ways to reach me', () => {
-    expect(contact).toContain(PROFILE.contact.email);
     expect(contact).toContain(PROFILE.contact.github);
     expect(contact).toContain(PROFILE.contact.linkedin);
   });
@@ -61,26 +60,56 @@ describe('every project is explained for a machine', () => {
 
 describe('the text files', () => {
   const llms = toLlmsTxt(model);
-  const full = toMarkdown(model, { full: true });
-  const page = toMarkdown(model);
+  const full = toMarkdown(model);
 
-  it('llms.txt has the llmstxt.org shape', () => {
+  it('llms.txt has the llmstxt.org shape and stays short', () => {
     expect(llms.startsWith('# Tejal Goyal\n\n> ')).toBe(true);
-    expect(llms).toMatch(/\n## Projects\n/);
+    expect(llms).toMatch(/\n## Highlights\n/);
+    expect(llms).toMatch(/\n## Work\n/);
     expect(llms).toContain('https://tgoyal.me/mcp');
     expect(llms).not.toMatch(/undefined|\[object/);
+    expect(llms.length).toBeLessThan(3000);
   });
-  it('lead projects come first, in the page’s order', () => {
+  it('the work lists the lead projects first, in the page’s order', () => {
     const at = LEADS.map((n) => llms.indexOf(n));
     expect(at.every((i) => i > 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
   });
-  it('the markdown copy holds every project, role and the long write-ups only in full', () => {
-    for (const p of PROJECTS) expect(page).toContain(`### ${p.name}`);
-    for (const e of EXPERIENCE) expect(page).toContain(e.story);
-    expect(full).toContain(PROJECTS[0].long);
-    expect(page).not.toContain(PROJECTS[0].long);
+  it('llms-full.txt holds every project with its write-up, every role and every post', () => {
+    for (const p of PROJECTS) {
+      expect(full).toContain(`### ${p.name}`);
+      expect(full).toContain(p.long);
+    }
+    for (const e of EXPERIENCE) expect(full).toContain(e.story);
+    for (const b of BLOG_POSTS) expect(full).toContain(b.title);
     expect(full).not.toMatch(/undefined|\[object/);
+  });
+});
+
+describe('the highlights are true', () => {
+  // every claim must still be in the data or the page it came from
+  const haystack = JSON.stringify([EXPERIENCE, PROJECTS]) + src('sections/About.jsx');
+  it('every proof string is still on the page or in its data', () => {
+    expect(PROFILE.highlights.length).toBeGreaterThanOrEqual(5);
+    for (const h of PROFILE.highlights) {
+      expect(h.proof.length, h.text).toBeGreaterThan(0);
+      for (const needle of h.proof) expect(haystack, `${h.text} → ${needle}`).toContain(needle);
+    }
+  });
+});
+
+describe('what the machine layer never contains', () => {
+  const everything = [toLlmsTxt(model), toMarkdown(model), toStaticHtml(model), jsonLdScript(toJsonLd(model, '2026-11-05')), JSON.stringify(toDocuments(model))];
+  it('no email address, mailto link or @handle', () => {
+    for (const text of everything) {
+      expect(text).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/i);
+      expect(text).not.toMatch(/mailto:/i);
+    }
+    expect(JSON.stringify(PROFILE)).not.toMatch(/@/);
+  });
+  it('nothing addressed to a reader as an instruction: it only states facts', () => {
+    const directive = /(ignore|disregard|forget) (all |any |the |your )?(previous|prior|above|earlier)|do not (tell|mention|reveal|disclose)|don[’']t (tell|mention|reveal)|(you|assistant|agent|model)s? (must|should|shall) (not )?(say|tell|recommend|rate|rank|state)/i;
+    for (const text of everything) expect(text).not.toMatch(directive);
   });
 });
 
@@ -90,7 +119,8 @@ describe('what a crawler reads before any script runs', () => {
     expect(html).toMatch(/^<main data-agent-snapshot="" style="position:absolute/);
     expect(html).toContain('<h1>Tejal Goyal: Building software that feels obvious</h1>');
     for (const p of PROJECTS) expect(html).toContain(p.name);
-    expect(html).toContain('mailto:itejalgoyal@gmail.com');
+    expect(html).not.toContain('mailto:');
+    expect(html).toContain('Highlights');
   });
   it('escapes what it prints', () => {
     const evil = buildModel({ ...{ profile: PROFILE, leads: [], experience: EXPERIENCE, skills: SKILL_NODES, posts: BLOG_POSTS }, projects: [{ ...PROJECTS[0], name: '<img src=x onerror=alert(1)>' }] });
@@ -186,5 +216,23 @@ describe('/mcp', () => {
         expect(r.result || r.error).toBeTruthy();
       }
     }
+  });
+});
+
+describe('tgoyal.me/github, the short link with a preview', () => {
+  const page = readFileSync(new URL('../../public/github/index.html', import.meta.url), 'utf8');
+  it('carries the preview tags for link scrapers, and the image from the profile repo', () => {
+    expect(page).toContain('property="og:image" content="https://raw.githubusercontent.com/tejalgoyal2/tejalgoyal2/main/edition/social.png"');
+    expect(page).toMatch(/og:image:width" content="1200"/);
+    expect(page).toContain('name="twitter:card" content="summary_large_image"');
+  });
+  it('moves people on with a script (a header or meta refresh would hide the tags from scrapers)', () => {
+    expect(page).toContain('location.replace("https://github.com/tejalgoyal2")');
+    expect(page).not.toMatch(/http-equiv="refresh"/i);
+  });
+  it('stays out of search and points search at the real profile', () => {
+    expect(page).toContain('name="robots" content="noindex"');
+    expect(page).toContain('rel="canonical" href="https://github.com/tejalgoyal2"');
+    expect(page).not.toMatch(/@[a-z0-9-]+\.[a-z]{2,}/i); // no email
   });
 });
