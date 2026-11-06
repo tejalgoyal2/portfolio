@@ -1,6 +1,7 @@
 // The layer made for machines, built from src/data/* on every deploy (build only; the dev
 // server and the page itself are untouched):
 //   dist/llms.txt        the short version, for language models (llmstxt.org)
+//   dist/index.md        the same short text, for agents that ask for a Markdown copy of the page
 //   dist/llms-full.txt   every write-up in one file
 //   dist/sitemap.xml     with a real lastmod
 //   index.html           schema.org JSON-LD in <head>, and the whole page as plain semantic HTML
@@ -57,6 +58,7 @@ export default function agentLayer() {
     generateBundle() {
       const emit = (fileName, source) => this.emitFile({ type: 'asset', fileName, source });
       emit('llms.txt', toLlmsTxt(model));
+      emit('index.md', toLlmsTxt(model)); // the same short text where agents look for a Markdown copy of the page
       emit('llms-full.txt', toMarkdown(model));
       emit(
         'sitemap.xml',
