@@ -64,7 +64,7 @@ test('the press: a scroll during the opening skips ahead, and the page waits for
   expect(errors).toEqual([]);
 });
 
-test('projects: each tile is dog-eared at the top right; Pit Wall turns over line by line', async ({ page }) => {
+test('projects: each tile is dog-eared at the top right; pitwall turns over line by line', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.tile--lead', -80);
   const lead = page.locator('.tile--lead');
@@ -72,8 +72,8 @@ test('projects: each tile is dog-eared at the top right; Pit Wall turns over lin
   expect(Math.abs(ear.x + ear.width - (t.x + t.width))).toBeLessThan(4);
   expect(Math.abs(ear.y - t.y)).toBeLessThan(4);
   await expect(page.locator('.tile-peek')).toHaveCount(0);
-  const pit = page.locator('.tile[data-name="Pit Wall"]');
-  await scrollTo(page, '.tile[data-name="Pit Wall"]', -200);
+  const pit = page.locator('.tile[data-name="pitwall"]');
+  await scrollTo(page, '.tile[data-name="pitwall"]', -200);
   await pit.click({ position: { x: 60, y: 60 } });
   await expect(pit.locator('.tile-scale--x').first()).toBeAttached();
   await expect(pit.locator('.tile-scale')).toHaveCount(0, { timeout: 3000 });
@@ -151,7 +151,7 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   expect(errors).toEqual([]);
 });
 
-test('profile: one paragraph with Pit Wall, bide, type, Dime and the Sudoku linked, a box of numbers and the Weekend Edition', async ({ page }) => {
+test('profile: one paragraph with pitwall, bide, type, dime and the Sudoku linked, a box of numbers and the Weekend Edition', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.about-grid');
   await page.waitForTimeout(1600); // the figures count up once
@@ -209,10 +209,10 @@ test('projects: a link on a tile opens the project and leaves the tile as it is'
 test('projects: stamps say LIVE, or one word for what a thing is', async ({ page }) => {
   await open(page);
   const labels = await page.locator('.projects .press-stamp').allTextContents();
-  expect(labels.length).toBeGreaterThan(8);
+  expect(labels.length).toBeGreaterThanOrEqual(4);
   expect(labels.map((l) => l.trim())).not.toContain('REPO');
   for (const l of labels) expect(l.trim()).toMatch(/^[A-Z]+$/);
-  await expect(page.locator('.brief[data-name="Claubi"] .press-stamp')).toHaveText('OFFLINE');
+  await expect(page.locator('.tile[data-name="pitwall"] .press-stamp').first()).toHaveText('LIVE');
 });
 
 test('things to find tick themselves off', async ({ page }) => {
@@ -369,36 +369,35 @@ test('nameplate: back from the bottom, every letter keeps the width it was set a
   expect(await widths()).toEqual(before);
 });
 
-test('the back pages: the first two rows show, and turning the page unfolds the rest', async ({ page }) => {
+test('also in this edition: the rest are one quiet line each, in two columns, each going where it lives', async ({ page }) => {
   await open(page);
-  await scrollTo(page, '.briefs', -100);
-  await expect(page.locator('.brief')).toHaveCount(6);
-  const btn = page.getByRole('button', { name: /turn the page/i });
-  await expect(btn).toBeVisible();
-  await btn.click();
-  await expect(page.locator('.brief')).toHaveCount(11);
-  await expect(page.getByRole('button', { name: /turn the page/i })).toHaveCount(0);
-  await expect(page.locator('.brief--late').first()).toBeFocused();
+  await scrollTo(page, '.edition', -100);
+  await page.waitForTimeout(800);
+  const entries = page.locator('.ed-entry');
+  expect(await entries.count()).toBeGreaterThan(6);
+  await expect(page.locator('.edition .press-stamp, .edition button')).toHaveCount(0);
+  const lefts = await entries.evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().left)))]);
+  expect(lefts.length).toBe(2);
+  await expect(page.locator('.ed-entry[data-name="claubi"] a.ed-row')).toHaveAttribute('href', 'https://github.com/tejalgoyal2/claubi');
 });
 
-test('the hero headline scribbles under the pointer and the letter comes back', async ({ page }) => {
+test('the hero headline: a letter gets one painted loop, which holds still, and comes back when left', async ({ page }) => {
   await open(page);
   const letter = page.locator('.mast-headline .kh-char').nth(3);
   await page.waitForTimeout(2500);
   await letter.hover();
   await expect(letter).toHaveAttribute('data-squig', '');
-  await expect(letter.locator('svg.kh-squig path')).toHaveAttribute('d', /^M/);
-  await page.mouse.move(5, 5);
-  await expect(letter).not.toHaveAttribute('data-squig', '', { timeout: 3000 });
-  await expect(page.locator('.mast-headline svg.kh-squig')).toHaveCount(0);
-});
-
-test('in brief: the projects sit in three columns, all in view of the section', async ({ page }) => {
-  await open(page);
-  await scrollTo(page, '.briefs', -100);
+  const canvas = letter.locator('canvas.kh-squig');
+  await expect(canvas).toHaveCount(1);
   await page.waitForTimeout(800);
-  const lefts = await page.locator('.brief').evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().left)))]);
-  expect(lefts.length).toBe(3);
+  // painted, and then still: two looks a moment apart are the same picture
+  const look = () => canvas.evaluate((c) => c.toDataURL());
+  const a = await look();
+  await page.waitForTimeout(300);
+  expect(await look()).toBe(a);
+  await page.mouse.move(5, 5);
+  await expect(letter).not.toHaveAttribute('data-squig', '');
+  await expect(page.locator('.mast-headline canvas.kh-squig')).toHaveCount(0);
 });
 
 test('phone: things to find only lists what a phone can do', async ({ browser }) => {

@@ -9,7 +9,7 @@ import { onLayout } from '../life/layout';
 
 /**
  * The Profile, set as a feature: one paragraph in the standfirst's voice
- * (Pit Wall, bide, type, Dime and the Sudoku linked from it), a box of numbers beside it that count
+ * (pitwall, bide, type, dime and the Sudoku linked from it), a box of numbers beside it that count
  * up once as they arrive (the paragraph, and a pen note of favourite subjects
  * under it, run as long as the box does), and under both the Weekend Edition — what I do off
  * the clock, filed under the paper's own sections. Nothing else moves here:
@@ -81,8 +81,8 @@ export default function About() {
               simple is usually the hard part, and <strong>the hard part is what I like</strong>: the problem that takes
               three attempts and a walk around the block before it gives in. So my
               weekends go to it too, on things nobody asked for (well, I did):{' '}
-              <a className="about-link" href="https://pitwall.itejalgoyal.workers.dev" target="_blank" rel="noopener noreferrer">
-                Pit Wall<span className="about-link-arrow" aria-hidden="true">↗</span>
+              <a className="about-link" href="https://pitwall.tgoyal.me" target="_blank" rel="noopener noreferrer">
+                pitwall<span className="about-link-arrow" aria-hidden="true">↗</span>
               </a>,{' '}
               <a className="about-link" href="https://bide.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 bide<span className="about-link-arrow" aria-hidden="true">↗</span>
@@ -91,7 +91,7 @@ export default function About() {
                 type<span className="about-link-arrow" aria-hidden="true">↗</span>
               </a>,{' '}
               <a className="about-link" href="https://dime.tgoyal.me" target="_blank" rel="noopener noreferrer">
-                Dime<span className="about-link-arrow" aria-hidden="true">↗</span>
+                dime<span className="about-link-arrow" aria-hidden="true">↗</span>
               </a> and{' '}
               <a className="about-link" href="https://sudoku.tgoyal.me" target="_blank" rel="noopener noreferrer">
                 a Sudoku with no ads<span className="about-link-arrow" aria-hidden="true">↗</span>

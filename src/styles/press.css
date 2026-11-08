@@ -255,24 +255,17 @@ html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
      while it moves, so a page of set headlines isn't hundreds of layers */
 }
 .kh-char { position: relative; }
-/* a letter turned into a scribble (src/life/squiggle.js): its text stays, unseen, so it
-   still reads, selects and takes up its place; the pen in red sits over it */
-.kh-char[data-squig] { color: transparent; -webkit-text-stroke-color: transparent; }
+/* a letter with a loop painted over it (src/life/squiggle.js): its text stays, unseen,
+   so it still reads, selects and keeps its place; the paint sits on a canvas of its own */
+.kh-char[data-squig] { color: transparent; -webkit-text-stroke-color: transparent; transition: color 0.125s ease-out; }
 .kh-squig {
   position: absolute;
-  left: 0;
+  /* reaches 22% past the letter on each side (SPILL in squiggle.js) */
+  left: -22%;
   top: 0;
-  width: 100%;
+  width: 144%;
   height: 100%;
-  overflow: visible;
   pointer-events: none;
-  color: var(--red);
-}
-/* and back: the letter drops into its place with a little bounce */
-.kh-char.kh-back { animation: kh-back 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
-@keyframes kh-back {
-  from { scale: 0.55 0.8; translate: 0 -0.06em; }
-  to { scale: 1; translate: 0 0; }
 }
 .kh-space {
   display: inline-block;

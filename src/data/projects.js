@@ -1,6 +1,6 @@
 // The four lead stories on the Projects front page, in order (src/sections/Projects.jsx).
-// Everything else runs on the back pages, the classifieds: still columns of small ads, the
-// first few in view and the rest behind "turn the page". Order here is the order there. Every project has an `eli5`: what it
+// Everything else runs in "Also in this edition": a contents list, one line each, the way a
+// paper points you to its inside pages. Order here is the order there. Every project has an `eli5`: what it
 // is in one or two plain lines, the way you'd explain it to a ten-year-old.
 // `status` is the stamp: LIVE if you can use it now, otherwise one plain word
 // for what it is.
@@ -10,40 +10,40 @@
 // `desc` and `long` are the back (the full file).
 // `wave` is how the tile turns over (src/press/Story.jsx): rows, ripple,
 // spread or scan, each picked to suit the project.
-// `links` only ever holds links that work for anyone: Pit Wall's code is private, so it has none.
-export const LEADS = ["Pit Wall", "bide", "Dime", "type"];
+// `links` only ever holds links that work for anyone: pitwall's code is private, so it has none.
+export const LEADS = ["pitwall", "bide", "dime", "type"];
 
 export const PROJECTS = [
   {
-    tier: 1, name: "Pit Wall", status: "LIVE", color: "#ff8700",
-    why: "I wanted to know whether an AI could make a Formula 1 pit call, box or stay out, and which tyre. So I replayed every race since 2023 from real timing data, gave an AI race engineer the job, and then let you try to out-strategise it.",
+    tier: 1, name: "pitwall", status: "LIVE", color: "#ff8700",
+    why: "Tyres fading, a gap closing, and someone on the pit wall has a second to say “box” or “stay out.” I wanted to know if an AI could make that call. So I rebuilt every race since 2023 from real timing data, put an AI race engineer on the radio, and handed you the same car to see who calls it better.",
     facts: [["88", "races to replay, 2023 to 2026"], ["2,814", "parameters in BOX-1, the decision model I trained myself"]],
     wave: "scan",
-    eli5: "Replay any Formula 1 race lap by lap, watch an AI make the pit-stop calls, then try to beat it.",
+    eli5: "Every Formula 1 race since 2023, lap by lap. An AI on the pit wall decides when to stop for tyres, then hands you the same car and dares you to call it better.",
     desc: "Real F1 timing replay with an AI race engineer that has real tools, my own small decision model, and a game where you try to out-strategise both.",
     long: "Replays any race since 2023 lap by lap, rebuilt from noisy OpenF1 timing streams into one consistent race state. An LLM race engineer answers questions from the data up to the current lap, and every tool call it makes streams in live. BOX-1 is a small neural network I trained in plain numpy that stands in for a paid decision model, and runs in the browser. Everything is scored honestly on a held-out 2026 season, and the Lab page shows where each strategist wins and where it loses. Then you take the same car in Beat the Pit Wall, solo or in a live room of up to eight friends on one Durable Object clock. It also speaks MCP, so any agent can call its tools. All on Cloudflare’s free plan.",
     tech: ["TypeScript", "React", "three.js", "Cloudflare Workers", "Durable Objects", "D1", "Python", "LightGBM", "MCP"],
-    links: { live: "https://pitwall.itejalgoyal.workers.dev" },
+    links: { live: "https://pitwall.tgoyal.me" },
   },
   {
     tier: 1, name: "bide", status: "LIVE", color: "#22d3ee",
-    why: "I wanted to watch a whole city move. So bide draws every bus in Victoria, BC on a map that rises out of an animated sea, while a recorder quietly keeps every prediction BC Transit makes, so I can check, fairly, whether mine are any better.",
+    why: "Bus apps give you a dot and a number. I wanted to watch a whole city move: every bus in Victoria gliding along its route, over a hand-built map that rises out of an animated sea, lit by the real sun and the real tide. Underneath, it quietly writes down every arrival BC Transit predicts, so I can check, fairly, whose guesses are better.",
     facts: [["10 s", "between bus position updates"], ["0", "map libraries: the whole map is hand-built three.js"]],
     wave: "ripple",
-    eli5: "A live map of Victoria where you can watch every bus moving right now.",
+    eli5: "Every bus in Victoria, moving right now, gliding through a city that rises out of the sea.",
     desc: "A living map of Victoria, BC: every bus moving now, with light that follows the real sun, weather and tide, and an honest scoreboard of arrival predictions.",
     long: "No map library: land, parks, lakes and streets are painted from OpenStreetMap, hills come from open elevation data, and the sea’s foam follows a distance field of the real coastline. Buses are decoded from BC Transit’s GTFS-Realtime feed, snapped onto their route shapes and dead-reckoned between reports so they glide. Underneath, a Cloudflare Worker and a SQLite Durable Object record every position and every arrival prediction, using a protobuf reader I wrote that decodes a feed in about 3 ms to fit the free plan’s CPU budget. The scoreboard that compares my predictions to the official ones is in progress: it needs about two weeks of history to be fair.",
     tech: ["three.js", "JavaScript", "Cloudflare Workers", "Durable Objects", "GTFS-Realtime"],
     links: { live: "https://bide.tgoyal.me", github: "https://github.com/tejalgoyal2/bide" },
   },
   {
-    tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
+    tier: 1, name: "dime", status: "LIVE", color: "#00ff88",
     why: "I wanted to log spending the way I’d text a friend: \u201c$16 sandwich.\u201d A friend would also tell me that’s a crime. I didn’t have one on call, so I built a tracker that does both: it gets what I mean, and roasts me for it.",
     facts: [["0", "database writes from the browser"], ["1", "roast per questionable purchase"]],
     wave: "rows",
-    eli5: "Tell it what you spent, the way you’d tell a friend, and it keeps track of your money — and teases you about it.",
+    eli5: "Text it what you spent, the way you’d tell a friend. It files it for you, and roasts you for the $16 sandwich.",
     desc: "An expense tracker you text like a friend. It reads plain English (and Hinglish), files it, and has opinions.",
-    long: "A ground-up rewrite of my first tracker, WalletRIP, on Cloudflare Workers with Next.js 16. The browser never writes to the database: every change goes through an API route with auth, Zod validation and Upstash rate limits. Gemini reads what you type, writes the insights, and delivers the roasts. There’s a Quick Add endpoint for Siri and Shortcuts, a CSV export that’s safe from formula injection, and optimistic updates that roll back if the server says no.",
+    long: "A ground-up rewrite of my first tracker, walletrip, on Cloudflare Workers with Next.js 16. The browser never writes to the database: every change goes through an API route with auth, Zod validation and Upstash rate limits. Gemini reads what you type, writes the insights, and delivers the roasts. There’s a Quick Add endpoint for Siri and Shortcuts, a CSV export that’s safe from formula injection, and optimistic updates that roll back if the server says no.",
     tech: ["React 19", "TypeScript", "Tailwind CSS", "Cloudflare Workers", "Supabase", "Gemini API"],
     links: { live: "https://dime.tgoyal.me", github: "https://github.com/tejalgoyal2/Dime" },
   },
@@ -52,18 +52,18 @@ export const PROJECTS = [
     why: "I wanted to understand how real systems get broken into: where each piece is weak, how an attacker walks from one to the next, and what would have shut the door. So I took five real breaches apart, step by step, from both sides.",
     facts: [["5", "real breaches"], ["32", "attack steps"], ["17", "ATT&CK techniques"]],
     wave: "spread",
-    eli5: "Shows, step by step, how hackers broke into real companies by stealing logins, and what would have stopped them.",
+    eli5: "Five real break-ins, replayed one stolen login at a time, with the door that would have stopped each one.",
     desc: "Five real breaches, taken apart one login at a time and mapped to the attacker’s playbook, MITRE ATT&CK.",
     long: "MGM and Caesars, Uber and Lapsus$, Twilio and 0ktapus, Midnight Blizzard at Microsoft, and M365 token theft: 32 steps across 17 ATT&CK techniques, drawn as interactive Cytoscape.js graphs and coloured by severity. Then it turns the lens on you: a 20-question IAM maturity check, aligned to NIST 800-63 and the CIS Controls and scored across seven categories, where every gap links to the breach that used it.",
     tech: ["React 19", "Cytoscape.js", "Tailwind CSS", "Cloudflare Pages"],
     links: { live: "https://iam.tgoyal.me", github: "https://github.com/tejalgoyal2/iam-threat-mapper" },
   },
   {
-    tier: 1, name: "Claubi", status: "OFFLINE", color: "#f97316",
+    tier: 1, name: "claubi", status: "OFFLINE", color: "#f97316",
     why: "I like AI writing code. I’m less keen on it running questionable commands on my machine without asking. So I’m building one that runs offline, has to ask first, and writes down every answer.",
     facts: [["0", "cloud calls: every model runs on your machine"]],
     wave: "scan",
-    eli5: "A coding helper that lives on your own computer and has to ask permission before it touches anything.",
+    eli5: "A coding helper that lives on your own laptop and has to ask before it touches anything.",
     desc: "A coding agent in Rust that lives on your own machine, treats AI-written code as untrusted, and asks before it acts.",
     long: "Any model runs locally through Ollama, so nothing leaves the laptop and no vendor holds the keys. Permissions are deny-first, modelled on AWS IAM and CrowdStrike prevention policies: the agent has to ask, and every ask and answer goes into an append-only audit log (JSONL). Today it has a full Ollama client with streaming chat, model switching and a CLI REPL. Next: routing between models, a planner, executor and reviewer pipeline, a Ratatui TUI, and a local MCP server.",
     note: "where my weekends go",
@@ -71,16 +71,16 @@ export const PROJECTS = [
     links: { github: "https://github.com/tejalgoyal2/claubi" },
   },
   {
-    tier: 2, name: "Nib", status: "APP", color: "#f472b6",
-    eli5: "A single note that lives in your Mac’s menu bar. Click, type, close. It’s still there next time.",
+    tier: 2, name: "nib", status: "APP", color: "#f472b6",
+    eli5: "One note in your Mac’s menu bar. Click, scribble, close. It’s still there tomorrow.",
     desc: "A menu bar scratchpad for macOS: one note, always there, with live Markdown, pinning and no cloud.",
     long: "Built because every quick thought ended up as the 300th “Untitled” note. Markdown styles itself as you type, checkboxes click, and the window can float over full-screen apps. The text stays in one file on your Mac: no accounts, no servers, no analytics, and the app makes no network calls. A native SwiftUI app with Liquid Glass on macOS Tahoe.",
     tech: ["Swift", "SwiftUI", "macOS"],
     links: { github: "https://github.com/tejalgoyal2/Nib" },
   },
   {
-    tier: 2, name: "Sudoku", status: "LIVE", color: "#6ee7b7",
-    eli5: "Sudoku with no ads. That’s the whole feature, plus a daily puzzle and hints that teach.",
+    tier: 2, name: "sudoku", status: "LIVE", color: "#6ee7b7",
+    eli5: "Sudoku, minus the ads. A daily puzzle, and hints that teach instead of telling.",
     desc: "A calm, ad-free Sudoku for phone and laptop: daily puzzle, hints that teach, challenges, 11 themes, offline. Built out of pure spite.",
     long: "Every puzzle has exactly one solution and is graded by how a person would solve it, not by counting empty squares. Hints go from a nudge to the technique explained on the board. Blitz, Sudden Death, Fog and Pen Only change the rules, and each of the 11 themes has its own board, keys and digits. It installs to your home screen, works offline, and has no backend, no accounts and no tracking: stats stay in your browser.",
     tech: ["React", "Vite", "PWA", "Cloudflare Pages"],
@@ -88,31 +88,31 @@ export const PROJECTS = [
   },
   {
     tier: 2, name: "lockin", status: "BOT", color: "#a3e635",
-    eli5: "Finds new entry-level tech jobs in Canada twice a day and drops the best ones into a Notion board, so I don’t have to refresh job sites.",
+    eli5: "A robot intern that job-hunts twice a day and has never once asked for coffee.",
     desc: "A job-hunting intern that never asks for coffee: it scans public job lists twice a day and files the best new entry-level roles.",
     long: "Runs on GitHub Actions twice a day, reads public job lists and employer boards, drops anything that wants seven years of experience, scores the rest against my skills and writes the top matches to a Notion board. It never writes a cover letter, never calls a model and costs nothing. A weekly report lists the tech terms postings keep asking for that I don’t have yet, so the to-learn list writes itself.",
     tech: ["Python", "GitHub Actions", "Notion API"],
     links: { github: "https://github.com/tejalgoyal2/lockin" },
   },
   {
-    tier: 2, name: "ThreatScope", status: "CHATBOT", color: "#67e8f9",
-    eli5: "Ask about hacker tricks in plain English and get answers pulled straight from the official security databases.",
+    tier: 2, name: "threatscope", status: "CHATBOT", color: "#67e8f9",
+    eli5: "Ask about hacker tricks in plain English, and get answers straight from the official security databases.",
     desc: "AI threat intelligence chatbot indexing MITRE ATT&CK, NVD CVEs, and CISA KEV for natural language querying.",
     long: "Hybrid retrieval pipeline: BM25 keyword matching + ChromaDB vector search with HuggingFace embeddings (local, no API key). Indexes 500+ ATT&CK techniques + NVD CVEs + CISA KEV. IOC extraction from pasted threat reports using regex and NER. Config-driven model selection (Groq free tier or local Ollama). RAGAS evaluation pipeline measuring retrieval precision and hallucination rate.",
     tech: ["Python", "LangChain", "ChromaDB", "Groq API", "Streamlit", "BM25"],
     links: { github: "https://github.com/tejalgoyal2/threatscope" },
   },
   {
-    tier: 2, name: "WalletRIP", status: "LIVE", color: "#fbbf24",
-    eli5: "The first version of Dime: an expense tracker that never needs to know who you are.",
-    desc: "The original expense tracker. Privacy-first with synthetic identities and zero PII. Evolved into Dime.",
+    tier: 2, name: "walletrip", status: "LIVE", color: "#fbbf24",
+    eli5: "Where dime started: an expense tracker that never needs to know who you are.",
+    desc: "The original expense tracker. Privacy-first with synthetic identities and zero PII. Evolved into dime.",
     long: "Privacy-first tracker requiring zero PII. Synthetic identity system with callsigns. PostgreSQL Row Level Security, Supabase SSR auth, invite-code gating. 5 Gemini API integrations for NLP parsing, insights, subscription detection, and spending roasts. Self-directed security audit found 4 vulnerabilities. The findings led to Dime.",
     tech: ["Next.js", "Supabase", "Gemini API", "Tailwind CSS"],
     links: { live: "https://walletrip.vercel.app", github: "https://github.com/tejalgoyal2/WalletRIP" },
   },
   {
-    tier: 2, name: "SmartHire", status: "SCREENER", color: "#a78bfa",
-    eli5: "Reads a pile of resumes and tells a recruiter which ones fit the job best, in seconds.",
+    tier: 2, name: "smarthire", status: "SCREENER", color: "#a78bfa",
+    eli5: "Reads a stack of resumes and tells a recruiter, in seconds, who fits the job.",
     desc: "AI resume screening system. Matches applicants to job descriptions using NLP similarity scoring in under 15 seconds.",
     long: "Two-sided marketplace for applicants and recruiters with role-based auth. TF-IDF vectorization + cosine similarity scoring between parsed resumes and JDs. spaCy/NLTK extraction of skills, education, experience from PDF/DOCX. Detailed match insights with matched/missing skills per applicant. Tested on 2,000 resumes from 8,000-record dataset against 50+ job descriptions.",
     tech: ["Flask", "MongoDB", "spaCy", "NLTK", "TF-IDF"],
@@ -123,7 +123,7 @@ export const PROJECTS = [
     why: "I got a new mechanical keyboard and wanted somewhere to just type. Notepad felt like a waste of a good keyboard, so I made a page where every letter lands like it has weight.",
     facts: [["6", "styles, a new one on F4"], ["0", "timers, scores or prompts"]],
     wave: "ripple",
-    eli5: "A blank page where every letter you type lands like it has weight. No score, no timer — it just feels nice.",
+    eli5: "A blank page where every key you press lands with a little thud. No score, no timer. It just feels good.",
     desc: "A blank page for typing, just for the feel of it. No timer and no score: letters land with weight, the page has mass, and six styles answer your rhythm.",
     long: "Everything is hand-rolled on canvas, with no animation libraries: the renderer, the physics, the springs. How hard you strike a key sets that letter’s weight on a variable-font axis, and each glyph settles on a closed-form underdamped spring. Every keystroke kicks the page, which hangs on a spring of its own. Six styles (Print, Clean, Ember, Tide, Frost and Gale) cycle on F4 and shed matter as your flow builds. There are streaks, secret words that switch styles mid-sentence, a 12-second seismograph and a lifetime odometer, and all of it stays in your browser.",
     tech: ["TypeScript", "Canvas API", "Vite", "Cloudflare Workers"],
@@ -131,7 +131,7 @@ export const PROJECTS = [
   },
   {
     tier: 2, name: "Phishing Classifier", status: "MODEL", color: "#f87171",
-    eli5: "Learned to spot scam emails by reading 82,000 of them, and gets it right 98% of the time.",
+    eli5: "Read 82,000 emails and learned to smell a scam. Right 98% of the time.",
     desc: "ML pipeline achieving 98.2% accuracy classifying phishing emails across 82K+ samples.",
     long: "End-to-end ML pipeline on 82,486 emails. Custom preprocessing with regex URL/email stripping. Engineered features: urgency flags, caps ratio, punctuation patterns. TF-IDF with GridSearchCV best params. Logistic regression selected over RF/SVM/NB for precision-recall balance. Top phishing indicators: 'verify', 'restriction', 'suspended'.",
     tech: ["Python", "Scikit-learn", "Pandas", "NLTK"],
@@ -139,15 +139,15 @@ export const PROJECTS = [
   },
   {
     tier: 3, name: "AI Smart Glasses", status: "WEARABLE", color: "#fbbf24",
-    eli5: "Glasses that help someone who can’t see: they spot objects and read text out loud.",
+    eli5: "Glasses that spot objects and read text out loud, for someone who can’t see them.",
     desc: "Assistive wearable for the visually impaired with real-time object detection, OCR, and text-to-speech on edge hardware.",
     long: "University-funded capstone. Camera + bone conduction speaker on spectacle frames. SIFT keypoint matching for 10 object classes, Tesseract OCR for document reading. Model quantized for Raspberry Pi with no cloud dependency. Led team of 5 across CS and Electronics departments.",
     tech: ["Raspberry Pi", "OpenCV", "Tesseract OCR", "Python"],
     links: { youtube: "https://youtu.be/N-yQPtAVEQw" },
   },
   {
-    tier: 3, name: "OccluSense", status: "RESEARCH", color: "#67e8f9",
-    eli5: "Helps self-driving cars spot people and vehicles even when they’re half hidden behind something.",
+    tier: 3, name: "occlusense", status: "RESEARCH", color: "#67e8f9",
+    eli5: "Helps a self-driving car spot the pedestrian half hidden behind a rickshaw.",
     desc: "Occluded object detection for autonomous vehicles using YOLOv5 transfer learning on custom traffic dataset.",
     long: "Improving AV perception for partially obstructed objects. 640 custom images with ~4,500 bounding box annotations across 6 classes. Transfer learning from MS COCO pretrained YOLOv5s. 0.85 precision detecting partially hidden pedestrians, vehicles, and rickshaws.",
     tech: ["YOLOv5", "PyTorch", "OpenCV", "Roboflow"],

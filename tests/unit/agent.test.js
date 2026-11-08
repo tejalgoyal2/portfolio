@@ -183,8 +183,8 @@ describe('search', () => {
   const docs = toDocuments(model);
   it('finds a project by what it does, and ranks a title hit first', () => {
     const hits = searchDocuments(docs, 'rust');
-    expect(hits[0].title).toBe('Claubi');
-    expect(searchDocuments(docs, 'formula')[0].title).toBe('Pit Wall');
+    expect(hits[0].title).toBe('claubi');
+    expect(searchDocuments(docs, 'formula')[0].title).toBe('pitwall');
     expect(searchDocuments(docs, 'federated')[0].kind).toBe('experience');
   });
   it('returns nothing for nothing', () => {
@@ -212,7 +212,7 @@ describe('/mcp', () => {
   it('answers a tool call with text', async () => {
     const r = await rpc({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'projects', arguments: { name: 'dime' } } });
     expect(r.result.isError).toBeUndefined();
-    expect(JSON.parse(r.result.content[0].text).name).toBe('Dime');
+    expect(JSON.parse(r.result.content[0].text).name).toBe('dime');
   });
   it('says so, as a tool error, when a project isn’t there', async () => {
     const r = await rpc({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'projects', arguments: { name: 'nope' } } });
