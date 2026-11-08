@@ -4,6 +4,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { startCar } from '../life/car';
 import { hash } from '../life/spring';
 import { prefs } from '../life/prefs';
+import { scroll } from '../life/scroll';
+import { onLayout } from '../life/layout';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -86,7 +88,10 @@ export default function Ridge() {
     let w = 1;
     let h = VB_H;
 
+    let docTop = 0;
+    const place = () => (docTop = root.getBoundingClientRect().top + scroll.y);
     const draw = () => {
+      place();
       w = Math.max(1, root.clientWidth);
       h = root.clientHeight || VB_H;
       svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
@@ -118,9 +123,10 @@ export default function Ridge() {
       length: () => w,
       target: () => {
         if (prefs.reduced) return w * 0.62;
-        const r = root.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.9 + r.height)));
+        // where the ridge is on screen, from its cached place on the page
+        const top = docTop - scroll.y;
+        const vh = scroll.vh;
+        const p = Math.min(1, Math.max(0, (vh - top) / (vh * 0.9 + h)));
         return 40 + p * (w - 80);
       },
     });
@@ -138,7 +144,12 @@ export default function Ridge() {
     let roll = 0;
     let prevBs = bs;
     let air = null; // { vx, vy, h } while it's flying
+    let on = false;
+    const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
+    io.observe(root);
+    const offLayout = onLayout(place);
     const chase = (t, deltaMs) => {
+      if (!on || document.hidden) return;
       const dt = Math.min(0.05, deltaMs / 1000);
       let h = 0;
       if (prefs.reduced) {
@@ -177,13 +188,14 @@ export default function Ridge() {
       rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;
       const close = !air && Math.abs(bs - car.s) < 100 && Math.abs(car.v) + Math.abs(bv) > 30;
       if (close !== yikes.classList.contains('is-on')) yikes.classList.toggle('is-on', close);
-      yikes.style.left = `${car.x.toFixed(1)}px`;
-      yikes.style.top = `${(car.y - 54).toFixed(1)}px`;
+      if (close) yikes.style.translate = `${car.x.toFixed(1)}px ${(car.y - 54).toFixed(1)}px`;
     };
     gsap.ticker.add(chase);
 
     return () => {
       ro.disconnect();
+      io.disconnect();
+      offLayout();
       ctx.revert();
       stopCar();
       gsap.ticker.remove(chase);

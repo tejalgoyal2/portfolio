@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
 import { prefs } from '../life/prefs';
 
 /**
  * Let's talk is a letter, so it gets a stamp: perforated edges, a little
  * line-drawn cube for the picture, first class, the value in the corner.
- * Click it and it spins — flung round fast, slowing gradually to a stop,
- * never at one dull speed — and copies my email. Point at any of the ways to
- * reach me (or the stamp) and a postmark is struck across it — a ring with the press's name and this month,
- * and the wavy cancellation lines — so the letter's ready to go; once you've
- * copied the email it says so.
+ * Click it and it spins like a fidget spinner — always the same way, off
+ * quickly and coasting a long while to a stop, and every click while it's
+ * still going adds its push to the spin, so a few quick clicks whirl it up
+ * (speed lines trailing) — and copies my email. Point at any of the ways to
+ * reach me (or the stamp) and a postmark is struck across it — a ring with
+ * the press's name and this month, and the wavy cancellation lines — so the
+ * letter's ready to go; once you've copied the email it says so.
  *
  * Reduced motion: the postmark just appears.
  */
@@ -23,7 +26,7 @@ export default function Postage() {
 
   // any of the contact links strikes the postmark too
   useEffect(() => {
-    const links = [...document.querySelectorAll('.contact-line-link')];
+    const links = [...document.querySelectorAll('.contact-line a')];
     const on = () => setStruck(true);
     links.forEach((a) => a.addEventListener('pointerenter', on));
     links.forEach((a) => a.addEventListener('focus', on));
@@ -33,17 +36,45 @@ export default function Postage() {
     };
   }, []);
 
-  // a spin: quick off the mark, a long slow coast to a stop, alternating ways
-  const spins = useRef(0);
+  // the spin: one way only; each click is a push that adds to whatever spin
+  // it already has, and it coasts down on friction — fast at first, then a
+  // long, slow fade to a stop
+  const spinner = useRef({ a: -5, v: 0, push: 0, on: false });
+  const tickRef = useRef(null);
+  useEffect(() => () => tickRef.current && gsap.ticker.remove(tickRef.current), []);
   const spin = () => {
     setStruck(true);
     const paper = ref.current?.querySelector('.postage-paper');
-    if (!paper || prefs.reduced || paper.getAnimations().length) return;
-    const dir = spins.current++ % 2 ? -1 : 1;
-    paper.animate([{ rotate: '-5deg' }, { rotate: `${-5 + dir * 720}deg` }], {
-      duration: 2200,
-      easing: 'cubic-bezier(0.08, 0.82, 0.17, 1)',
-    });
+    const lines = ref.current?.querySelector('.postage-whirl');
+    if (!paper || prefs.reduced) return;
+    const sp = spinner.current;
+    sp.push += 430; // deg/s per click
+    if (sp.on) return;
+    sp.on = true;
+    const tick = (t, deltaMs) => {
+      const dt = Math.min(0.05, deltaMs / 1000);
+      // a push lands over a few frames, not in one jolt
+      const take = sp.push * (1 - Math.exp(-dt / 0.05));
+      sp.push -= take;
+      sp.v = Math.min(1700, sp.v + take);
+      // friction: drag that grows with speed, and a little that's always there
+      sp.v = Math.max(0, sp.v - (0.55 * sp.v + 38) * dt);
+      sp.a += sp.v * dt;
+      paper.style.rotate = `${sp.a.toFixed(2)}deg`;
+      if (lines) {
+        const k = Math.min(1, Math.max(0, (sp.v - 260) / 700));
+        lines.style.opacity = k.toFixed(3);
+        lines.style.rotate = `${(sp.a - 30).toFixed(1)}deg`;
+      }
+      if (sp.v <= 0 && sp.push < 1) {
+        sp.on = false;
+        sp.a %= 360;
+        gsap.ticker.remove(tick);
+        tickRef.current = null;
+      }
+    };
+    tickRef.current = tick;
+    gsap.ticker.add(tick);
   };
 
   const copy = async () => {
@@ -70,6 +101,15 @@ export default function Postage() {
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >
+      {/* comic speed lines round it while it whirls */}
+      <svg className="postage-whirl" viewBox="-80 -80 160 160" aria-hidden="true">
+        <path d="M-6 -74A74 74 0 0 1 52 -52" />
+        <path d="M74 -6A74 74 0 0 1 52 52" />
+        <path d="M6 74A74 74 0 0 1 -52 52" />
+        <path d="M-74 6A74 74 0 0 1 -52 -52" />
+        <path className="pw-thin" d="M14 -64A64 64 0 0 1 48 -42" />
+        <path className="pw-thin" d="M-14 64A64 64 0 0 1 -48 42" />
+      </svg>
       <span className="postage-paper" aria-hidden="true">
         <span className="postage-face">
           <span className="postage-top">FIRST CLASS</span>
