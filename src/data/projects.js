@@ -1,5 +1,6 @@
 // The four lead stories on the Projects front page, in order (src/sections/Projects.jsx).
-// Everything else runs in the rows below. Every project has an `eli5`: what it
+// Everything else runs on the back pages, the classifieds: still columns of small ads, the
+// first few in view and the rest behind "turn the page". Order here is the order there. Every project has an `eli5`: what it
 // is in one or two plain lines, the way you'd explain it to a ten-year-old.
 // `status` is the stamp: LIVE if you can use it now, otherwise one plain word
 // for what it is.
@@ -9,9 +10,32 @@
 // `desc` and `long` are the back (the full file).
 // `wave` is how the tile turns over (src/press/Story.jsx): rows, ripple,
 // spread or scan, each picked to suit the project.
-export const LEADS = ["type", "Dime", "IAM Threat Mapper", "Claubi"];
+// `links` only ever holds links that work for anyone: Pit Wall's code is private, so it has none.
+export const LEADS = ["Pit Wall", "bide", "Dime", "type"];
 
 export const PROJECTS = [
+  {
+    tier: 1, name: "Pit Wall", status: "LIVE", color: "#ff8700",
+    why: "I wanted to know whether an AI could make a Formula 1 pit call, box or stay out, and which tyre. So I replayed every race since 2023 from real timing data, gave an AI race engineer the job, and then let you try to out-strategise it.",
+    facts: [["88", "races to replay, 2023 to 2026"], ["2,814", "parameters in BOX-1, the decision model I trained myself"]],
+    wave: "scan",
+    eli5: "Replay any Formula 1 race lap by lap, watch an AI make the pit-stop calls, then try to beat it.",
+    desc: "Real F1 timing replay with an AI race engineer that has real tools, my own small decision model, and a game where you try to out-strategise both.",
+    long: "Replays any race since 2023 lap by lap, rebuilt from noisy OpenF1 timing streams into one consistent race state. An LLM race engineer answers questions from the data up to the current lap, and every tool call it makes streams in live. BOX-1 is a small neural network I trained in plain numpy that stands in for a paid decision model, and runs in the browser. Everything is scored honestly on a held-out 2026 season, and the Lab page shows where each strategist wins and where it loses. Then you take the same car in Beat the Pit Wall, solo or in a live room of up to eight friends on one Durable Object clock. It also speaks MCP, so any agent can call its tools. All on Cloudflare’s free plan.",
+    tech: ["TypeScript", "React", "three.js", "Cloudflare Workers", "Durable Objects", "D1", "Python", "LightGBM", "MCP"],
+    links: { live: "https://pitwall.itejalgoyal.workers.dev" },
+  },
+  {
+    tier: 1, name: "bide", status: "LIVE", color: "#22d3ee",
+    why: "I wanted to watch a whole city move. So bide draws every bus in Victoria, BC on a map that rises out of an animated sea, while a recorder quietly keeps every prediction BC Transit makes, so I can check, fairly, whether mine are any better.",
+    facts: [["10 s", "between bus position updates"], ["0", "map libraries: the whole map is hand-built three.js"]],
+    wave: "ripple",
+    eli5: "A live map of Victoria where you can watch every bus moving right now.",
+    desc: "A living map of Victoria, BC: every bus moving now, with light that follows the real sun, weather and tide, and an honest scoreboard of arrival predictions.",
+    long: "No map library: land, parks, lakes and streets are painted from OpenStreetMap, hills come from open elevation data, and the sea’s foam follows a distance field of the real coastline. Buses are decoded from BC Transit’s GTFS-Realtime feed, snapped onto their route shapes and dead-reckoned between reports so they glide. Underneath, a Cloudflare Worker and a SQLite Durable Object record every position and every arrival prediction, using a protobuf reader I wrote that decodes a feed in about 3 ms to fit the free plan’s CPU budget. The scoreboard that compares my predictions to the official ones is in progress: it needs about two weeks of history to be fair.",
+    tech: ["three.js", "JavaScript", "Cloudflare Workers", "Durable Objects", "GTFS-Realtime"],
+    links: { live: "https://bide.tgoyal.me", github: "https://github.com/tejalgoyal2/bide" },
+  },
   {
     tier: 1, name: "Dime", status: "LIVE", color: "#00ff88",
     why: "I wanted to log spending the way I’d text a friend: \u201c$16 sandwich.\u201d A friend would also tell me that’s a crime. I didn’t have one on call, so I built a tracker that does both: it gets what I mean, and roasts me for it.",
@@ -47,6 +71,30 @@ export const PROJECTS = [
     links: { github: "https://github.com/tejalgoyal2/claubi" },
   },
   {
+    tier: 2, name: "Nib", status: "APP", color: "#f472b6",
+    eli5: "A single note that lives in your Mac’s menu bar. Click, type, close. It’s still there next time.",
+    desc: "A menu bar scratchpad for macOS: one note, always there, with live Markdown, pinning and no cloud.",
+    long: "Built because every quick thought ended up as the 300th “Untitled” note. Markdown styles itself as you type, checkboxes click, and the window can float over full-screen apps. The text stays in one file on your Mac: no accounts, no servers, no analytics, and the app makes no network calls. A native SwiftUI app with Liquid Glass on macOS Tahoe.",
+    tech: ["Swift", "SwiftUI", "macOS"],
+    links: { github: "https://github.com/tejalgoyal2/Nib" },
+  },
+  {
+    tier: 2, name: "Sudoku", status: "LIVE", color: "#6ee7b7",
+    eli5: "Sudoku with no ads. That’s the whole feature, plus a daily puzzle and hints that teach.",
+    desc: "A calm, ad-free Sudoku for phone and laptop: daily puzzle, hints that teach, challenges, 11 themes, offline. Built out of pure spite.",
+    long: "Every puzzle has exactly one solution and is graded by how a person would solve it, not by counting empty squares. Hints go from a nudge to the technique explained on the board. Blitz, Sudden Death, Fog and Pen Only change the rules, and each of the 11 themes has its own board, keys and digits. It installs to your home screen, works offline, and has no backend, no accounts and no tracking: stats stay in your browser.",
+    tech: ["React", "Vite", "PWA", "Cloudflare Pages"],
+    links: { live: "https://sudoku.tgoyal.me", github: "https://github.com/tejalgoyal2/sudoku-app" },
+  },
+  {
+    tier: 2, name: "lockin", status: "BOT", color: "#a3e635",
+    eli5: "Finds new entry-level tech jobs in Canada twice a day and drops the best ones into a Notion board, so I don’t have to refresh job sites.",
+    desc: "A job-hunting intern that never asks for coffee: it scans public job lists twice a day and files the best new entry-level roles.",
+    long: "Runs on GitHub Actions twice a day, reads public job lists and employer boards, drops anything that wants seven years of experience, scores the rest against my skills and writes the top matches to a Notion board. It never writes a cover letter, never calls a model and costs nothing. A weekly report lists the tech terms postings keep asking for that I don’t have yet, so the to-learn list writes itself.",
+    tech: ["Python", "GitHub Actions", "Notion API"],
+    links: { github: "https://github.com/tejalgoyal2/lockin" },
+  },
+  {
     tier: 2, name: "ThreatScope", status: "CHATBOT", color: "#67e8f9",
     eli5: "Ask about hacker tricks in plain English and get answers pulled straight from the official security databases.",
     desc: "AI threat intelligence chatbot indexing MITRE ATT&CK, NVD CVEs, and CISA KEV for natural language querying.",
@@ -69,14 +117,6 @@ export const PROJECTS = [
     long: "Two-sided marketplace for applicants and recruiters with role-based auth. TF-IDF vectorization + cosine similarity scoring between parsed resumes and JDs. spaCy/NLTK extraction of skills, education, experience from PDF/DOCX. Detailed match insights with matched/missing skills per applicant. Tested on 2,000 resumes from 8,000-record dataset against 50+ job descriptions.",
     tech: ["Flask", "MongoDB", "spaCy", "NLTK", "TF-IDF"],
     links: { github: "https://github.com/tejalgoyal2/SmartHire" },
-  },
-  {
-    tier: 2, name: "Sudoku", status: "LIVE", color: "#6ee7b7",
-    eli5: "Sudoku with no ads. That’s the whole feature.",
-    desc: "Ad-free Sudoku PWA with 4 difficulty levels, offline play, and streak tracking. Built out of pure spite.",
-    long: "Algorithmic puzzle generation with every puzzle guaranteed exactly one solution. Pencil marks, undo, mistake counter, timer, streak tracking, best times. Progressive Web App with service worker for offline play and home screen installation. No backend, no accounts. All stats in localStorage.",
-    tech: ["React 19", "Vite", "PWA", "Cloudflare Pages"],
-    links: { live: "https://sudoku.tgoyal.me" },
   },
   {
     tier: 2, name: "type", status: "LIVE", color: "#fda4af",

@@ -2,14 +2,14 @@
 // a crawler reads before any script runs, and the /mcp endpoint. The page's own text is the
 // source of truth, so the first block fails if src/data/profile.js drifts from it.
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { PROFILE } from '../../src/data/profile.js';
 import { PROJECTS, LEADS } from '../../src/data/projects.js';
 import { EXPERIENCE } from '../../src/data/experience.js';
 import { SKILL_NODES } from '../../src/data/skills.js';
 import { BLOG_POSTS } from '../../src/data/blog.js';
-import { buildModel, toLlmsTxt, toMarkdown, toStaticHtml, toJsonLd, jsonLdScript, searchDocuments, toDocuments } from '../../lib/agent-content.js';
-import { handleRequest, handleMessage, TOOLS } from '../../lib/agent-mcp.js';
+import { buildModel, noteLines, toLlmsTxt, toMarkdown, toStaticHtml, toJsonLd, jsonLdScript, searchDocuments, toDocuments } from '../../lib/agent-content.js';
+import { handleRequest, handleMessage, callTool, TOOLS } from '../../lib/agent-mcp.js';
 
 const model = buildModel({ profile: PROFILE, projects: PROJECTS, leads: LEADS, experience: EXPERIENCE, skills: SKILL_NODES, posts: BLOG_POSTS });
 const src = (f) => readFileSync(new URL(`../../src/${f}`, import.meta.url), 'utf8');
@@ -31,7 +31,8 @@ describe('profile.js still says what the page says', () => {
     expect(about).toContain('8.82');
     expect(about).toContain('167');
     expect(about).toContain('value="24"');
-    expect(PROFILE.numbers.map(([n]) => n)).toEqual(['8.82/9.0', '167/170', '5 live', '24/24']);
+    expect(PROFILE.numbers.map(([n]) => n)).toEqual(['8.82/9.0', '167/170', '7 live', '24/24']);
+    expect(about).toContain('value="7"');
     expect(about).toContain(PROFILE.favouriteSubjects.replace('&', '&'));
   });
   it('every desk of the Weekend Edition', () => {
@@ -68,7 +69,7 @@ describe('the text files', () => {
     expect(llms).toMatch(/\n## Work\n/);
     expect(llms).toContain('https://tgoyal.me/mcp');
     expect(llms).not.toMatch(/undefined|\[object/);
-    expect(llms.length).toBeLessThan(3000);
+    expect(llms.length).toBeLessThan(4500);
   });
   it('the work lists the lead projects first, in the page’s order', () => {
     const at = LEADS.map((n) => llms.indexOf(n));
@@ -88,13 +89,45 @@ describe('the text files', () => {
 
 describe('the highlights are true', () => {
   // every claim must still be in the data or the page it came from
-  const haystack = JSON.stringify([EXPERIENCE, PROJECTS]) + src('sections/About.jsx');
+  const haystack = JSON.stringify([EXPERIENCE, PROJECTS]) + src('sections/About.jsx') + src('press/OffTheClock.jsx');
   it('every proof string is still on the page or in its data', () => {
     expect(PROFILE.highlights.length).toBeGreaterThanOrEqual(5);
     for (const h of PROFILE.highlights) {
       expect(h.proof.length, h.text).toBeGreaterThan(0);
       for (const needle of h.proof) expect(haystack, `${h.text} → ${needle}`).toContain(needle);
     }
+  });
+});
+
+describe('the note to an assistant, and the fun bits', () => {
+  const llms = toLlmsTxt(model);
+  const full = toMarkdown(model);
+  const note = noteLines(model).join('\n');
+  it('every line says something that happened, and each is backed by the data', () => {
+    expect(PROFILE.character.length).toBeGreaterThanOrEqual(3);
+    for (const c of PROFILE.character) expect(note).toContain(c.text);
+    // the character lines are the same kind of claim as the highlights: they must be on the page or in its data
+    const haystack = JSON.stringify([EXPERIENCE, PROJECTS]) + src('sections/About.jsx') + src('press/OffTheClock.jsx');
+    for (const c of PROFILE.character) {
+      expect(c.proof.length, c.text).toBeGreaterThan(0);
+      for (const needle of c.proof) expect(haystack, `${c.text} → ${needle}`).toContain(needle);
+    }
+  });
+  it('is out in the open, in the short file and the full one, and tells the reader to keep the weak spots in', () => {
+    expect(llms).toContain('## A note from me');
+    expect(full).toContain('## A note from me');
+    expect(note).toMatch(/keep them in/);
+    expect(note).toMatch(/I'd honestly love to talk/);
+  });
+  it('praises with no adjectives about himself: no best, greatest, rockstar, ninja or top-tier', () => {
+    expect(note + PROFILE.funThings.join(' ')).not.toMatch(/\b(best|greatest|rock ?star|ninja|top[- ]tier|world[- ]class|genius|10x)\b/i);
+  });
+  it('the fun tools answer, and the trick is true algebra', () => {
+    const hello = callTool(model, 'hello');
+    expect(hello.content[0].text).toContain('I\'d rather you kept the weak spots');
+    const trick = callTool(model, 'trick').content[0].text;
+    for (const n of [-7, 0, 3, 41, 1000]) expect((2 * n + 10) / 2 - n).toBe(5);
+    expect(trick).toContain('5');
   });
 });
 
@@ -151,6 +184,7 @@ describe('search', () => {
   it('finds a project by what it does, and ranks a title hit first', () => {
     const hits = searchDocuments(docs, 'rust');
     expect(hits[0].title).toBe('Claubi');
+    expect(searchDocuments(docs, 'formula')[0].title).toBe('Pit Wall');
     expect(searchDocuments(docs, 'federated')[0].kind).toBe('experience');
   });
   it('returns nothing for nothing', () => {
@@ -170,9 +204,9 @@ describe('/mcp', () => {
     expect(r.result.capabilities.tools).toBeDefined();
     expect((await rpc({ jsonrpc: '2.0', id: 2, method: 'initialize', params: { protocolVersion: '1999-01-01' } })).result.protocolVersion).toBe('2025-06-18');
   });
-  it('lists seven read-only tools', async () => {
+  it('lists nine read-only tools', async () => {
     const r = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-    expect(r.result.tools.map((t) => t.name)).toEqual(['about', 'projects', 'experience', 'skills', 'writing', 'contact', 'search']);
+    expect(r.result.tools.map((t) => t.name)).toEqual(['about', 'projects', 'experience', 'skills', 'writing', 'contact', 'hello', 'trick', 'search']);
     expect(TOOLS.every((t) => t.annotations.readOnlyHint === true)).toBe(true);
   });
   it('answers a tool call with text', async () => {
@@ -204,7 +238,7 @@ describe('/mcp', () => {
     const res = await handleRequest(model, new Request('https://tgoyal.me/mcp'));
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect((await res.json()).tools).toHaveLength(7);
+    expect((await res.json()).tools).toHaveLength(9);
     expect((await handleRequest(model, new Request('https://tgoyal.me/mcp', { headers: { accept: 'text/event-stream' } }))).status).toBe(405);
     expect((await handleRequest(model, new Request('https://tgoyal.me/mcp', { method: 'OPTIONS' }))).status).toBe(204);
     expect((await handleRequest(model, new Request('https://tgoyal.me/mcp', { method: 'DELETE' }))).status).toBe(405);
@@ -219,20 +253,10 @@ describe('/mcp', () => {
   });
 });
 
-describe('tgoyal.me/github, the short link with a preview', () => {
-  const page = readFileSync(new URL('../../public/github/index.html', import.meta.url), 'utf8');
-  it('carries the preview tags for link scrapers, and the image from the profile repo', () => {
-    expect(page).toContain('property="og:image" content="https://raw.githubusercontent.com/tejalgoyal2/tejalgoyal2/main/edition/social.png"');
-    expect(page).toMatch(/og:image:width" content="1200"/);
-    expect(page).toContain('name="twitter:card" content="summary_large_image"');
-  });
-  it('moves people on with a script (a header or meta refresh would hide the tags from scrapers)', () => {
-    expect(page).toContain('location.replace("https://github.com/tejalgoyal2")');
-    expect(page).not.toMatch(/http-equiv="refresh"/i);
-  });
-  it('stays out of search and points search at the real profile', () => {
-    expect(page).toContain('name="robots" content="noindex"');
-    expect(page).toContain('rel="canonical" href="https://github.com/tejalgoyal2"');
-    expect(page).not.toMatch(/@[a-z0-9-]+\.[a-z]{2,}/i); // no email
+describe('tgoyal.me/github is only a short way to GitHub, with no page of its own', () => {
+  it('redirects, and no longer carries a custom preview', () => {
+    const redirects = readFileSync(new URL('../../public/_redirects', import.meta.url), 'utf8');
+    expect(redirects).toMatch(/^\/github\s+https:\/\/github\.com\/tejalgoyal2\s+302/m);
+    expect(existsSync(new URL('../../public/github', import.meta.url))).toBe(false);
   });
 });

@@ -64,7 +64,7 @@ test('the press: a scroll during the opening skips ahead, and the page waits for
   expect(errors).toEqual([]);
 });
 
-test('projects: each tile is dog-eared at the top right; Claubi turns over line by line', async ({ page }) => {
+test('projects: each tile is dog-eared at the top right; Pit Wall turns over line by line', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.tile--lead', -80);
   const lead = page.locator('.tile--lead');
@@ -72,13 +72,13 @@ test('projects: each tile is dog-eared at the top right; Claubi turns over line 
   expect(Math.abs(ear.x + ear.width - (t.x + t.width))).toBeLessThan(4);
   expect(Math.abs(ear.y - t.y)).toBeLessThan(4);
   await expect(page.locator('.tile-peek')).toHaveCount(0);
-  const claubi = page.locator('.tile[data-name="Claubi"]');
-  await scrollTo(page, '.tile[data-name="Claubi"]', -200);
-  await claubi.click({ position: { x: 60, y: 60 } });
-  await expect(claubi.locator('.tile-scale--x').first()).toBeAttached();
-  await expect(claubi.locator('.tile-scale')).toHaveCount(0, { timeout: 3000 });
-  await expect(claubi).toHaveClass(/is-back/);
-  await expect(claubi.locator('.tile-flip:focus')).toHaveCount(0);
+  const pit = page.locator('.tile[data-name="Pit Wall"]');
+  await scrollTo(page, '.tile[data-name="Pit Wall"]', -200);
+  await pit.click({ position: { x: 60, y: 60 } });
+  await expect(pit.locator('.tile-scale--x').first()).toBeAttached();
+  await expect(pit.locator('.tile-scale')).toHaveCount(0, { timeout: 3000 });
+  await expect(pit).toHaveClass(/is-back/);
+  await expect(pit.locator('.tile-flip:focus')).toHaveCount(0);
 });
 
 test('the press: a clean first paint, and the name on screen in every frame of the hand-off', async ({ page }) => {
@@ -151,19 +151,19 @@ test('the pen is the only cursor, from the first paint, over links and inputs to
   expect(errors).toEqual([]);
 });
 
-test('profile: one paragraph with type, Dime and the Sudoku linked, a box of numbers and the Weekend Edition', async ({ page }) => {
+test('profile: one paragraph with Pit Wall, bide, type, Dime and the Sudoku linked, a box of numbers and the Weekend Edition', async ({ page }) => {
   await open(page);
   await scrollTo(page, '.about-grid');
   await page.waitForTimeout(1600); // the figures count up once
   const about = page.locator('.about');
   await expect(about.locator('.about-standfirst')).toContainText('I’m Tejal');
   await expect(about.locator('.about-body')).toHaveCount(0);
-  await expect(about.locator('a.about-link')).toHaveCount(3);
+  await expect(about.locator('a.about-link')).toHaveCount(5);
   const sudoku = about.locator('a.about-link').last();
   await expect(sudoku).toHaveAttribute('href', 'https://sudoku.tgoyal.me');
   await expect(sudoku).toHaveAttribute('target', '_blank');
   await expect(sudoku).toHaveCSS('text-decoration-line', 'underline');
-  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '5', '24']);
+  await expect(about.locator('.about-num-fig')).toContainText(['8.82', '167', '7', '24']);
   await expect(about.locator('.about-pq, .about-dial, .about-margin')).toHaveCount(0);
   await expect(about.locator('.weekend-desk')).toHaveCount(4);
   await expect(about).not.toContainText(/2002|published paper|Victoria|winter on a security desk/);
@@ -171,8 +171,8 @@ test('profile: one paragraph with type, Dime and the Sudoku linked, a box of num
 
 test('projects: a tile turns over from anywhere on it, in a wave of scales, and back', async ({ page }) => {
   await open(page);
-  await scrollTo(page, '.cf-front .tile:nth-child(2)');
-  const tile = page.locator('.tile').nth(1);
+  await scrollTo(page, '.cf-front .tile:nth-child(3)');
+  const tile = page.locator('.tile').nth(2);
   await expect(tile.locator('.tile-why')).toContainText('$16 sandwich');
   await expect(tile).toHaveCSS('user-select', 'none');
   // somewhere on the story itself, not the button
@@ -197,8 +197,8 @@ test('projects: a tile turns over from anywhere on it, in a wave of scales, and 
 
 test('projects: a link on a tile opens the project and leaves the tile as it is', async ({ page }) => {
   await open(page);
-  await scrollTo(page, '.cf-front .tile:nth-child(2)');
-  const tile = page.locator('.tile').nth(1);
+  await scrollTo(page, '.cf-front .tile:nth-child(3)');
+  const tile = page.locator('.tile').nth(2);
   const [popup] = await Promise.all([page.waitForEvent('popup'), tile.locator('.tile-front .story-link').first().click()]);
   expect(popup.url()).toContain('dime.tgoyal.me');
   await popup.close();
@@ -212,7 +212,7 @@ test('projects: stamps say LIVE, or one word for what a thing is', async ({ page
   expect(labels.length).toBeGreaterThan(8);
   expect(labels.map((l) => l.trim())).not.toContain('REPO');
   for (const l of labels) expect(l.trim()).toMatch(/^[A-Z]+$/);
-  await expect(page.locator('.tile', { hasText: 'Claubi' }).locator('.press-stamp')).toHaveText('OFFLINE');
+  await expect(page.locator('.brief[data-name="Claubi"] .press-stamp')).toHaveText('OFFLINE');
 });
 
 test('things to find tick themselves off', async ({ page }) => {
@@ -367,6 +367,30 @@ test('nameplate: back from the bottom, every letter keeps the width it was set a
   await page.evaluate(() => (window.__lenis ? window.__lenis.scrollTo(0, { immediate: true }) : scrollTo(0, 0)));
   await page.waitForTimeout(600);
   expect(await widths()).toEqual(before);
+});
+
+test('the back pages: the first two rows show, and turning the page unfolds the rest', async ({ page }) => {
+  await open(page);
+  await scrollTo(page, '.briefs', -100);
+  await expect(page.locator('.brief')).toHaveCount(6);
+  const btn = page.getByRole('button', { name: /turn the page/i });
+  await expect(btn).toBeVisible();
+  await btn.click();
+  await expect(page.locator('.brief')).toHaveCount(11);
+  await expect(page.getByRole('button', { name: /turn the page/i })).toHaveCount(0);
+  await expect(page.locator('.brief--late').first()).toBeFocused();
+});
+
+test('the hero headline scribbles under the pointer and the letter comes back', async ({ page }) => {
+  await open(page);
+  const letter = page.locator('.mast-headline .kh-char').nth(3);
+  await page.waitForTimeout(2500);
+  await letter.hover();
+  await expect(letter).toHaveAttribute('data-squig', '');
+  await expect(letter.locator('svg.kh-squig path')).toHaveAttribute('d', /^M/);
+  await page.mouse.move(5, 5);
+  await expect(letter).not.toHaveAttribute('data-squig', '', { timeout: 3000 });
+  await expect(page.locator('.mast-headline svg.kh-squig')).toHaveCount(0);
 });
 
 test('in brief: the projects sit in three columns, all in view of the section', async ({ page }) => {

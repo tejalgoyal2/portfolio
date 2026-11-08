@@ -1250,6 +1250,41 @@ html.fonts-pending .mast-plate { visibility: hidden; }
   color: var(--red);
 }
 
+/* the classifieds: the first two rows are in view; the page turns to show the rest */
+.brief:focus { outline: none; }
+.brief--late { animation: brief-late 0.6s var(--ease-set, ease-out) both; animation-delay: calc(var(--late-i, 0) * 70ms); }
+@keyframes brief-late {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+.cf-turn { display: flex; justify-content: center; margin-top: 1.4rem; }
+.cf-turn-btn {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  padding: 0.7rem 1.2rem 0.65rem;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-data);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, translate 0.25s var(--ease-set, ease-out);
+}
+.cf-turn-count { font-weight: 400; letter-spacing: 0.08em; color: var(--red); }
+.cf-turn-arrow { display: inline-block; transition: translate 0.25s var(--ease-set, ease-out); }
+.cf-turn-btn:hover, .cf-turn-btn:focus-visible { background: var(--ink); color: var(--paper); translate: 0 -2px; }
+.cf-turn-btn:hover .cf-turn-count, .cf-turn-btn:focus-visible .cf-turn-count { color: inherit; }
+.cf-turn-btn:hover .cf-turn-arrow, .cf-turn-btn:focus-visible .cf-turn-arrow { translate: 4px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .brief--late { animation: none; }
+  .cf-turn-btn, .cf-turn-arrow { transition: none; }
+}
+
 @media (max-width: 900px) {
   .briefs { --brief-cols: 2; }
   .brief:not(:nth-child(3n + 1))::before { content: none; }

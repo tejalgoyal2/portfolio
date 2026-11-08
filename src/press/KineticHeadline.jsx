@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { looseType, sweep } from '../life/looseType';
+import { squiggle } from '../life/squiggle';
 
 /**
  * A headline that sets like movable type — each glyph drops, rotates a touch,
@@ -12,6 +13,8 @@ import { looseType, sweep } from '../life/looseType';
  *   as: tag name   font: 'name' (Fraunces) | 'impact' (Anton)   misregister: bool
  *   showLoose: once set, the letters lift once as if a cursor had passed (so people find they're loose);
  *     'zigzag' waits for the nameplate to finish inking, then runs it line by line, back and forth
+ *   squiggle: instead of coming loose, a letter you touch turns into a loop of red pen and
+ *     springs back when you leave it (src/life/squiggle). Nothing plays by itself.
  *   inview: play on an IntersectionObserver instead of a ScrollTrigger — use it
  *   on terminal/edge sections where ScrollTrigger's computed start can fail to
  *   fire under Lenis, which would otherwise strand the glyphs at opacity 0.
@@ -29,6 +32,7 @@ export default function KineticHeadline({
   intro = false,
   inview = false,
   showLoose = false,
+  squiggle: scribbles = false,
 }) {
   const rootRef = useRef(null);
   const text = String(children);
@@ -39,6 +43,7 @@ export default function KineticHeadline({
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let detach;
     let loosen;
+    let unscribble;
 
     const ctx = gsap.context(() => {
       const chars = gsap.utils.toArray('.kh-char');
@@ -69,6 +74,11 @@ export default function KineticHeadline({
       // the type has set — now it can come loose
       tl.eventCallback('onComplete', () => {
         loosen?.();
+        unscribble?.();
+        if (scribbles) {
+          unscribble = squiggle(root);
+          return;
+        }
         loosen = looseType(root);
         // and, where asked, show it once: the letters lift as if a cursor had passed
         if (showLoose === 'zigzag') {
@@ -129,9 +139,10 @@ export default function KineticHeadline({
     return () => {
       detach?.();
       loosen?.();
+      unscribble?.();
       ctx.revert();
     };
-  }, [text, misregister, spread, intro, inview]);
+  }, [text, misregister, spread, intro, inview, scribbles]);
 
   return (
     <Tag ref={rootRef} className={`kinetic kinetic--${font} ${className}`} aria-label={text}>
