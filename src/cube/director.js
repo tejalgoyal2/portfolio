@@ -44,7 +44,8 @@ export class Director {
     this.min = opts.minDuration ?? 0.26;
     this.flushDur = opts.flushDuration ?? 0.22;
     this.catchUp = opts.catchUp ?? 4;
-    this.rushMin = opts.rushDuration ?? 0.055;
+    // not so fast that a turn is only a frame or two: it reads as a fluid run, not a strobe
+    this.rushMin = opts.rushDuration ?? 0.062;
   }
 
   get total() {

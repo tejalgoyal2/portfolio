@@ -12,6 +12,9 @@
 // - it's fidgety: it leans a little towards the cursor when you're near, gives
 //   a small twitch every few seconds when left alone, and jolts when a face
 //   snaps round — all on a quick spring, so it wobbles and settles;
+// - and a bit jelly: every turn squashes it a touch along the turning axis
+//   (bulging round the middle) and it springs back, so a run of quick turns
+//   while it speed-solves wobbles through like a jelly instead of rattling;
 // - touch: a tap twists a face. Reduced motion: no turn, no fidget.
 import { Euler, Quaternion, Vector3 } from 'three';
 import { gsap } from 'gsap';
@@ -23,6 +26,7 @@ import { onLayout } from '../life/layout';
 import { bus } from '../life/bus';
 import { Spring, clamp, lerp, smoothstep } from '../life/spring';
 import { CUBE_REACH } from './cube-view';
+import { scroll } from '../life/scroll';
 
 const NEAR = 160;
 const TURN_RATE = 0.15;
@@ -38,6 +42,8 @@ export function createPresence(view, hitBtn) {
   let finale = null;
   let containerW = window.innerWidth * 0.92;
   let mask = []; // { x, y, w, h }
+  // the viewport's width without the scrollbar, measured on layout changes (reading it per frame forces a style recalc)
+  let vwNow = document.documentElement.clientWidth;
   const measure = () => {
     const sy = window.scrollY;
     if (slotEl) {
@@ -49,12 +55,13 @@ export function createPresence(view, hitBtn) {
       finale = r.width > 0 ? { x: r.left, y: r.top + sy, w: r.width, h: r.height } : null;
     }
     if (containerEl) containerW = containerEl.getBoundingClientRect().width;
+    vwNow = document.documentElement.clientWidth;
     mask = measureMask(4, false);
   };
   measure();
   const offLayout = onLayout(measure);
 
-  const vw = () => document.documentElement.clientWidth;
+  const vw = () => vwNow;
   const vh = () => window.innerHeight;
   const phone = () => vw() < 720;
   const margin = () => (vw() - containerW) / 2;
@@ -73,7 +80,7 @@ export function createPresence(view, hitBtn) {
 
   /** How much text a circle at (cx, cy) would cover. */
   function overlap(cx, cy, r) {
-    const sy = window.scrollY;
+    const sy = scroll.y;
     let s = 0;
     for (const b of mask) {
       const top = b.y - sy;
@@ -128,7 +135,16 @@ export function createPresence(view, hitBtn) {
     glideX = Math.max(-1600, Math.min(1600, vx));
     glideY = Math.max(-1600, Math.min(1600, vy));
   }
-  const state = { x: 0, y: 0, r: 0 };
+  const state = { x: 0, y: 0, r: 0, seen: false };
+
+  // the jelly: a squash along each of the cube's own axes, on a quick bouncy spring
+  const sq = [0, 0, 0];
+  const sqV = [0, 0, 0];
+  /** A turn about this axis (0 x, 1 y, 2 z): squash along it, bulge round it. */
+  const wobble = (axis, amt) => {
+    if (prefs.reduced) return;
+    for (let i = 0; i < 3; i++) sqV[i] += i === axis ? -amt * 9 : amt * 4.5;
+  };
 
   // the fidget: a small wobble on a quick spring (x and y tilt), kicked by twitches and twists
   const jig = { x: 0, y: 0, vx: 0, vy: 0 };
@@ -175,7 +191,7 @@ export function createPresence(view, hitBtn) {
     let t = 1;
     if (slot) {
       sx = slot.x + slot.w / 2;
-      sy = slot.y + slot.h / 2 - window.scrollY;
+      sy = slot.y + slot.h / 2 - scroll.y;
       ss = slot.w;
       t = smoothstep(H * 0.42, -H * 0.04, sy);
     }
@@ -197,7 +213,7 @@ export function createPresence(view, hitBtn) {
     let cy = lerp(sy, dockY.value, t) + float * (1 - t * 0.6);
     // the finale: out of the margin and into its spot in Let's talk
     if (finale) {
-      const fy = finale.y + finale.h / 2 - window.scrollY;
+      const fy = finale.y + finale.h / 2 - scroll.y;
       const u = smoothstep(H * 1.05, H * 0.5, fy);
       if (u > 0) {
         cx = lerp(cx, finale.x + finale.w / 2, u);
@@ -233,7 +249,12 @@ export function createPresence(view, hitBtn) {
     const g = view.group;
     g.position.set(cx - W / 2, H / 2 - cy, 0);
     const show = shown.step(dt);
-    g.scale.setScalar(Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show) * pop.v));
+    const base = Math.max(0.001, (rad / CUBE_REACH) * (0.92 + 0.08 * show) * pop.v);
+    for (let i = 0; i < 3; i++) {
+      sqV[i] += (-170 * sq[i] - 9 * sqV[i]) * dt;
+      sq[i] = clamp(sq[i] + sqV[i] * dt, -0.12, 0.12);
+    }
+    g.scale.set(base * (1 + sq[0]), base * (1 + sq[1]), base * (1 + sq[2]));
     turnQ.setFromAxisAngle(turnAxis, reduced ? TURN_REST : turn);
     qSpin.setFromAxisAngle(upAxis, spin.v);
     // fidget: lean towards a nearby cursor, twitch now and then, wobble back
@@ -260,6 +281,9 @@ export function createPresence(view, hitBtn) {
     state.x = cx;
     state.y = cy;
     state.r = rad;
+    state.near = near;
+    // on screen and not tucked away past the edge: notes about it may show
+    state.seen = rad > 8 && away.value < 0.3 && cx > -rad * 0.3 && cx < W + rad * 0.3 && cy > -rad * 0.3 && cy < H + rad * 0.3;
 
     // ---- the keyboard handle rides over the cube (transform only)
     if (hitBtn) {
@@ -291,5 +315,5 @@ export function createPresence(view, hitBtn) {
     bus.cursorHint = null;
   }
 
-  return { update, celebrate, reveal, dispose, orbit, release, kick, state };
+  return { update, celebrate, reveal, dispose, orbit, release, kick, wobble, state };
 }
