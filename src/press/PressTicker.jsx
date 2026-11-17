@@ -65,17 +65,23 @@ export default function PressTicker() {
     wire.addEventListener('pointerleave', onLeave);
 
     const BASE = 26;       // px/s — the idle dispatch crawl
-    const BOOST = 4;       // scroll velocity → extra px/s (gentle scroll nudges,
-                           // firmer scroll quickens — kept proportional, not on/off)
+    const BOOST = 4;       // scroll velocity → extra px/s
     const MAX_BOOST = 300; // cap so a hard flick quickens, never smears
     let x = 0;
+    let boost = 0; // the extra speed from scrolling: quick to come, slow to go
+    let run = 1; // 1 = crawling, 0 = held still (pointing at it)
 
     const tick = (time, dt) => {
-      if (paused || !seen || half <= 0) return;
+      if (!seen || half <= 0) return;
+      const s = Math.min(0.1, dt / 1000);
       const lenis = window.__lenis;
-      const vel = lenis ? Math.abs(lenis.velocity) : 0;
-      const speed = BASE + Math.min(vel * BOOST, MAX_BOOST);
-      x -= (speed * dt) / 1000;
+      const want = Math.min((lenis ? Math.abs(lenis.velocity) : 0) * BOOST, MAX_BOOST);
+      // the left-leaning bell: it picks up almost at once, then takes its time settling back
+      boost += (want - boost) * (1 - Math.exp(-s / (want > boost ? 0.08 : 0.9)));
+      // and it eases to a stop under the pointer, then pulls away again
+      run += ((paused ? 0 : 1) - run) * (1 - Math.exp(-s / (paused ? 0.18 : 0.45)));
+      if (run < 0.002 && paused) return;
+      x -= (BASE + boost) * run * s;
       if (x <= -half) x += half;
       track.style.transform = `translate3d(${x.toFixed(2)}px,0,0)`;
     };

@@ -16,11 +16,8 @@ import { onLayout } from '../life/layout';
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
  * margin — not ruled straight: it winds down in long, easy bends like a snake,
- * pressing a dot in beside each job as it passes. At the bottom the nib
- * lifts and the line ends the way a newspaper story does, with a small red
- * end mark (■) pressed in. The pen nib rides its very tip, held like a pen — leaning into
- * the stroke, never spinning (one eased scroll value drives
- * line and nib, so they never drift apart); each row is pasted in from the margin and slides off the
+ * pressing a dot in beside each job as it passes, and simply ends below the
+ * last one. Each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
  * marked {{like this}} in the data — count up as they arrive.
  */
@@ -84,16 +81,13 @@ export default function Experience() {
     const ledger = root.querySelector('.ledger');
     const svg = root.querySelector('.led-ink');
     const path = svg.querySelector('path');
-    const nib = root.querySelector('.led-nib');
     const dots = [...root.querySelectorAll('.led-dot-mark')];
-    const endMark = root.querySelector('.led-end');
     let total = 1;
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
     // a snake's path: long, easy S-bends, never a kink
     const wave = (y) => CX + Math.sin(y * 0.0118) * 15 + Math.sin(y * 0.0047 + 1) * 6;
     let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
-    let tip = { x: 0, y: 0 }; // where the line stops
     const bez = (a, b, c, e, t) => {
       const u = 1 - t;
       const w0 = u * u * u;
@@ -102,25 +96,6 @@ export default function Experience() {
       const w3 = t * t * t;
       return [w0 * a[0] + w1 * b[0] + w2 * c[0] + w3 * e[0], w0 * a[1] + w1 * b[1] + w2 * c[1] + w3 * e[1]];
     };
-    /** The point at length L along the line, and the line's heading there. */
-    const along = (L) => {
-      let lo = 0;
-      let hi = segs.length - 1;
-      while (lo < hi) {
-        const mid = (lo + hi + 1) >> 1;
-        if (segs[mid].at <= L) lo = mid;
-        else hi = mid - 1;
-      }
-      const g = segs[lo];
-      if (!g) return { x: 0, y: 0, a: Math.PI / 2 };
-      const t = Math.min(1, Math.max(0, (L - g.at) / Math.max(1e-6, g.len)));
-      const [x, y] = bez(g.p1, g.c1, g.c2, g.p2, t);
-      // the tangent, smoothed over a little of the line either side
-      const [x0, y0] = bez(g.p1, g.c1, g.c2, g.p2, Math.max(0, t - 0.25));
-      const [x1, y1] = bez(g.p1, g.c1, g.c2, g.p2, Math.min(1, t + 0.25));
-      return { x, y, a: Math.atan2(y1 - y0, x1 - x0) };
-    };
-
     // the line: a snake down the margin, stopping short of the closing rule
     const build = () => {
       const H = ledger.offsetHeight;
@@ -135,10 +110,8 @@ export default function Experience() {
       const raw = [];
       const end = H - 46;
       for (let y = 0; y <= end; y += 6) raw.push([wave(y), y]);
-      tip = { x: left + wave(end), y: end };
-      endMark.style.transform = `translate3d(${tip.x.toFixed(1)}px, ${(tip.y + 14).toFixed(1)}px, 0)`;
-      // smooth it (Catmull-Rom → cubic Béziers), keeping each piece so the nib
-      // can ride the curve by plain arithmetic, never by asking the SVG
+      // smooth it (Catmull-Rom → cubic Béziers), keeping each piece's length so
+      // the dots can be placed along it by plain arithmetic, never by asking the SVG
       segs = [];
       let d = `M${raw[0][0].toFixed(1)} ${raw[0][1].toFixed(1)}`;
       let acc = 0;
@@ -164,7 +137,7 @@ export default function Experience() {
       path.setAttribute('d', d);
       total = path.getTotalLength();
       path.style.strokeDasharray = `${total}`;
-      // scale our sums to the browser's own length, so the ink and the nib agree
+      // scale our sums to the browser's own length, so the ink and the dots agree
       const scale = total / Math.max(1, acc);
       segs.forEach((g) => {
         g.at *= scale;
@@ -178,29 +151,12 @@ export default function Experience() {
       dots.forEach((dot, i) => {
         dot.style.left = `${(left - dot.parentElement.offsetLeft + wave(at[i]) - 6).toFixed(1)}px`;
       });
-      draw(state.p, true);
+      draw(state.p);
     };
     const state = { p: isReduced ? 1 : 0 };
-    let ang = 0;
-    let lastT = 0;
-    const draw = (p, snap = false) => {
+    const draw = (p) => {
       const L = p * total;
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
-      const pt = along(L);
-      // the nib doesn't spin with the line — it's held like a pen, leaning a
-      // little into the way the line is going, eased so it never twitches
-      let dev = pt.a - Math.PI / 2;
-      while (dev > Math.PI) dev -= Math.PI * 2;
-      while (dev < -Math.PI) dev += Math.PI * 2;
-      const want = (Math.max(-0.62, Math.min(0.62, dev * 0.42)) * 180) / Math.PI;
-      const now = performance.now();
-      const k = snap ? 1 : 1 - Math.exp(-Math.min(0.1, (now - lastT) / 1000) / 0.12);
-      lastT = now;
-      ang += (want - ang) * k;
-      nib.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) rotate(${ang.toFixed(1)}deg)`;
-      // at the end the nib lifts off and the story's end mark is pressed in
-      nib.classList.toggle('is-on', p > 0.002 && p < 0.995);
-      endMark.classList.toggle('is-in', p >= 0.995);
       dots.forEach((d, i) => d.classList.toggle('is-in', L >= marks[i] - 2));
     };
     build();
@@ -246,14 +202,6 @@ export default function Experience() {
           <svg className="led-ink" aria-hidden="true">
             <path />
           </svg>
-          <span className="led-end" aria-hidden="true" />
-          <span className="led-nib" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 22 6.5 12.5 9 4h6l2.5 8.5z" />
-              <circle cx="12" cy="11.5" r="1.4" />
-              <path d="M12 13v8" />
-            </svg>
-          </span>
           {EXPERIENCE.map((entry) => (
             <article
               key={`${entry.org}-${entry.period}`}

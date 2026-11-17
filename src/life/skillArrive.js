@@ -11,8 +11,9 @@ import { SKILL_ICONS } from '../data/skillIcons';
  * far behind on the left (small, growing), one from past your shoulder on the
  * right (big, shrinking), and so on round — each on its own easy curve,
  * converging on the group. They move the way Tejal likes: most of the
- * distance early, then a long, gentle settle. Where each one lands, the icon
- * fades out as its word fades in — a plain crossfade, nothing jumps.
+ * distance early, then a long, gentle settle. Each one drops into its cell
+ * like a sort into the stick: the icon shrinks away as the cell sets in place
+ * with a small give.
  *
  * The cells are hidden from the very first paint until their icon lands
  * (Skills.jsx sets that up before anything is drawn), so you never see them
@@ -222,18 +223,25 @@ export function startSkillArrive(section) {
       layer.appendChild(img);
       const fly = img.animate(frames, { duration: dur, delay, easing: 'linear', fill: 'both' });
       fly.onfinish = () => {
-        // into the cell: the icon fades out as the word fades in where it lands
-        const out = img.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 480, easing: 'ease-out', fill: 'forwards' });
+        // into the cell: the icon shrinks away as the cell sets in place
+        const out = img.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(0.4)', opacity: 0 }], { duration: 260, easing: 'ease-in', fill: 'forwards' });
         out.onfinish = () => img.remove();
         setIn(slug);
       };
     });
   }
 
-  /** A cell appears where its icon landed: a plain fade, nothing jumps. */
+  /** A cell sets in place: in from a touch small, with a little give. */
   function setIn(slug) {
     landed(slug);
-    slug.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 480, easing: 'ease-out' });
+    slug.animate(
+      [
+        { transform: 'scale(0.86)', opacity: 0 },
+        { transform: 'scale(1.04)', opacity: 1, offset: 0.55 },
+        { transform: 'scale(1)', opacity: 1 },
+      ],
+      { duration: 420, easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)' }
+    );
   }
 
   // ---- afterwards: the slugs show their icons
