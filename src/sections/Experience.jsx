@@ -15,10 +15,13 @@ import { onLayout } from '../life/layout';
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
- * margin — not ruled straight: it meanders a little and makes a small loop as
- * it comes to each job, pressing a dot in beside it — with the pen nib riding
- * its very tip (one eased scroll value drives both, so they never drift
- * apart); each row is pasted in from the margin and slides off the
+ * margin — not ruled straight: it winds down like a snake, and throws one big
+ * loop (out to the right, above the date) as it comes to each job (carrying on round in the way it was going, so
+ * it never doubles back), pressing a dot in beside it. At the bottom it
+ * rounds the corner onto the closing rule and runs along it, off the side of
+ * the screen. The pen nib rides its very tip, held like a pen — leaning into
+ * the stroke, never spinning round the loops (one eased scroll value drives
+ * line and nib, so they never drift apart); each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
  * marked {{like this}} in the data — count up as they arrive.
  */
@@ -62,9 +65,13 @@ export default function Experience() {
     let total = 1;
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
-    const wave = (y) => CX + Math.sin(y * 0.0105) * 12 + Math.sin(y * 0.0037 + 1) * 7;
-    const LOOP = 19; // radius of the little loop before each job
+    // a snake's path: long, easy S-bends, never a kink
+    const wave = (y) => CX + Math.sin(y * 0.0165) * 17 + Math.sin(y * 0.0061 + 1) * 7;
+    const LOOP = 34; // radius of the loop it throws before each job
     let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
+    let exitAt = 0; // the point where it turns onto the closing rule
+    let downLen = 1;
+    const DOWN = 0.86; // the share of the scroll that draws the run down the margin
     const bez = (a, b, c, e, t) => {
       const u = 1 - t;
       const w0 = u * u * u;
@@ -98,29 +105,36 @@ export default function Experience() {
       const H = ledger.offsetHeight;
       const Wd = ledger.clientWidth;
       // the strip sits out in the margin (SVG has no offsetLeft: measure the boxes)
-      const left = svg.getBoundingClientRect().left - ledger.getBoundingClientRect().left;
+      const lr = ledger.getBoundingClientRect();
+      const left = svg.getBoundingClientRect().left - lr.left;
       svg.setAttribute('viewBox', `0 0 ${Wd - left} ${H + 4}`);
       svg.style.width = `${Wd - left}px`;
       svg.style.height = `${H + 4}px`;
       const at = dots.map((d) => d.parentElement.offsetTop + d.offsetTop + d.offsetHeight / 2);
       const raw = [];
       let next = 0;
-      const end = H - 30;
+      const end = H - 46;
       for (let y = 0; y <= end; y += 6) {
-        while (next < at.length && y >= at[next] - 52) {
-          // a loop: up and round to the left, then on down to the dot
-          const ly = at[next] - 52;
-          const cx = wave(ly) - LOOP;
-          for (let a = 0; a >= -Math.PI * 2; a -= Math.PI / 14) raw.push([cx + Math.cos(a) * LOOP, ly + Math.sin(a) * LOOP * 1.1]);
+        while (next < at.length && y >= at[next] - 66) {
+          // a loop: carrying on down and round to the right (into the empty
+          // paper above the date, never off the edge of the screen), up and
+          // over, and back into the line still heading down — no doubling back
+          const ly = y; // right where the line is now, so it flows straight in
+          const cx = wave(ly) + LOOP;
+          raw.push([wave(y), y]);
+          for (let a = Math.PI - Math.PI / 16; a > -Math.PI; a -= Math.PI / 16) raw.push([cx + Math.cos(a) * LOOP, ly + Math.sin(a) * LOOP * 1.1]);
           next++;
         }
         raw.push([wave(y), y]);
       }
-      // round the corner onto the closing rule, and out along it
+      // round the corner onto the closing rule, and out along it, off the side of the screen
       const ex = wave(end);
       const ry = H - 1;
-      for (let a = Math.PI; a >= Math.PI / 2; a -= Math.PI / 12) raw.push([ex + 28 + Math.cos(a) * 28, ry - 28 + Math.sin(a) * 28]);
-      for (let x = ex + 40; x <= Wd - left; x += 24) raw.push([x, ry]);
+      const RC = 44;
+      for (let a = Math.PI; a >= Math.PI / 2 - 1e-6; a -= Math.PI / 14) raw.push([ex + RC + Math.cos(a) * RC, ry - RC + Math.sin(a) * RC]);
+      exitAt = raw.length;
+      const off = document.documentElement.clientWidth - lr.left - left + 90;
+      for (let x = ex + RC + 30; x <= off; x += 30) raw.push([x, ry]);
       // smooth it (Catmull-Rom → cubic Béziers), keeping each piece so the nib
       // can ride the curve by plain arithmetic, never by asking the SVG
       segs = [];
@@ -155,11 +169,12 @@ export default function Experience() {
         g.len *= scale;
       });
       // where along the line each dot sits
-      const tail = raw.length - Math.ceil((Wd - left - ex) / 24) - 7; // the points before the exit
       marks = at.map((y) => {
-        for (let k = 1; k < tail; k++) if (raw[k][1] >= y - 1) return segs[k - 1].at + segs[k - 1].len;
+        for (let k = 1; k < exitAt; k++) if (raw[k][1] >= y - 1 && raw[k][0] > raw[k - 1][0] - 4) return segs[k - 1].at + segs[k - 1].len;
         return total;
       });
+      // how much of the line is the run down the margin (the rest is the exit)
+      downLen = segs[Math.max(0, exitAt - 2)].at;
       dots.forEach((dot, i) => {
         dot.style.left = `${(left - dot.parentElement.offsetLeft + wave(at[i]) - 6).toFixed(1)}px`;
       });
@@ -167,27 +182,44 @@ export default function Experience() {
     };
     const state = { p: isReduced ? 1 : 0 };
     let ang = 0;
+    let lastT = 0;
     const draw = (p, snap = false) => {
-      const L = p * total;
+      // most of the scroll draws the run down the margin; the last stretch is the exit
+      const L = p < DOWN ? (p / DOWN) * downLen : downLen + ((p - DOWN) / (1 - DOWN)) * (total - downLen);
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
       const pt = along(L);
-      // the nib's lean follows the line, eased so it never twitches
-      let want = (pt.a * 180) / Math.PI - 90;
-      while (want - ang > 180) want -= 360;
-      while (want - ang < -180) want += 360;
-      ang = snap ? want : ang + (want - ang) * 0.35;
+      // the nib doesn't spin round the loops — it's held like a pen, leaning a
+      // little into the way the line is going, eased so it never twitches
+      let dev = pt.a - Math.PI / 2;
+      while (dev > Math.PI) dev -= Math.PI * 2;
+      while (dev < -Math.PI) dev += Math.PI * 2;
+      const want = (Math.max(-0.62, Math.min(0.62, dev * 0.42)) * 180) / Math.PI;
+      const now = performance.now();
+      const k = snap ? 1 : 1 - Math.exp(-Math.min(0.1, (now - lastT) / 1000) / 0.12);
+      lastT = now;
+      ang += (want - ang) * k;
       nib.style.transform = `translate3d(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px, 0) rotate(${ang.toFixed(1)}deg)`;
-      nib.classList.toggle('is-on', p > 0.002 && p < 0.995);
+      nib.classList.toggle('is-on', p > 0.002);
       dots.forEach((d, i) => d.classList.toggle('is-in', L >= marks[i] - 2));
     };
     build();
     const offLayout = onLayout(build);
+    // and whenever the ledger itself changes size (fonts landing, rows settling)
+    let sizedH = ledger.offsetHeight;
+    let sizedW = ledger.clientWidth;
+    const sized = new ResizeObserver(() => {
+      if (ledger.offsetHeight === sizedH && ledger.clientWidth === sizedW) return;
+      sizedH = ledger.offsetHeight;
+      sizedW = ledger.clientWidth;
+      build();
+    });
+    sized.observe(ledger);
     const ctx = gsap.context(() => {
       if (isReduced) return;
       gsap.to(state, {
         p: 1,
         ease: 'none',
-        scrollTrigger: { trigger: ledger, start: 'top 70%', end: 'bottom 55%', scrub: 0.5 },
+        scrollTrigger: { trigger: ledger, start: 'top 70%', end: 'bottom 35%', scrub: 0.6 },
         onUpdate: () => draw(state.p),
       });
     }, root);
@@ -195,6 +227,7 @@ export default function Experience() {
     return () => {
       ctx.revert();
       offLayout();
+      sized.disconnect();
     };
   }, []);
 
