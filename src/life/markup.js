@@ -14,8 +14,8 @@ gsap.registerPlugin(ScrollTrigger);
  * scribble — and a little handwritten note on a slip of paper, stuck just
  * above the phrase for a moment, then tucked away.
  *
- * Hover a marked phrase and the editor goes over it again (the mark redraws,
- * the note pops back up while you're on it). The marks sit in one SVG over the column, measured
+ * Hover a marked phrase and its note comes back up while you're on it (the
+ * mark itself doesn't move). The marks sit in one SVG over the column, measured
  * from the words' own line boxes, so a phrase that wraps is marked on every
  * line it runs over; they're re-measured when the layout changes. Nothing
  * here moves the words. Reduced motion: the marks are simply there.
@@ -132,7 +132,7 @@ export function startMarkup(container) {
     }, after * 1000);
   };
 
-  // hovering a marked phrase: the editor goes over it again
+  // hovering a marked phrase brings its note back to read (the mark itself stays still)
   let unhook = [];
   function hookHovers() {
     unhook.forEach((f) => f());
@@ -140,7 +140,6 @@ export function startMarkup(container) {
       m.els.map((el) => {
         const again = () => {
           if (!drawn.has(m.id)) return;
-          if (!prefs.reduced) draw(m, 0, true);
           if (m.note) {
             clearTimeout(m.note._t);
             m.note.classList.add('is-on');

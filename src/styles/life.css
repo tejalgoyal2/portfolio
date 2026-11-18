@@ -176,6 +176,10 @@
 .cube-note--stickers.is-left .cube-note-crown { margin-left: auto; margin-right: 1.2rem; }
 .cube-note-crown path { transition-duration: 0.9s !important; transition-delay: 0.7s; }
 .cube-note--stickers { transform: translate3d(calc(var(--cx) + var(--cr) * 1.05), calc(var(--cy) - var(--cr) * 0.35), 0); }
+/* under the cube, when both sides are taken */
+.cube-note.cube-note.is-below { transform: translate3d(var(--cx), calc(var(--cy) + var(--cr) * 1.05), 0) translateX(-50%); }
+.cube-note.is-below .cube-note-arrow { display: none; }
+.cube-note.is-below .cube-note-crown { margin-left: auto; margin-right: auto; }
 .cube-note--stickers.is-left { transform: translate3d(calc(var(--cx) - var(--cr) * 1.1 - 10px), calc(var(--cy) - var(--cr) * 0.35), 0) translateX(-100%); }
 /* motion lines round the cube, the way a layer is turning */
 .cube-lines {
@@ -316,28 +320,7 @@ html.cube-off .cube-notes { visibility: hidden; }
   pointer-events: none;
 }
 
-/* reading with a highlighter: any inked line you hover gets a swipe of
-   marker behind it, which fades a moment after you move on (src/life/inkLines.js
-   splits the lines; this never moves them) */
-.ink-line { position: relative; width: fit-content; isolation: isolate; }
-@media (pointer: fine) {
-  .ink-line::after {
-    content: "";
-    position: absolute;
-    left: -0.15em;
-    right: -0.15em;
-    bottom: 0.12em;
-    height: 0.5em;
-    z-index: -1;
-    border-radius: 0.2em 0.35em 0.15em 0.4em;
-    background: color-mix(in oklch, var(--red) 15%, transparent);
-    transform: scaleX(0);
-    transform-origin: 0 50%;
-    transition: transform 0.5s var(--ease-set) 1.4s, opacity 0.5s var(--ease-set) 1.4s;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .ink-line:hover::after { transform: scaleX(1); opacity: 1; transition: transform 0.35s var(--ease-set), opacity 0.1s; }
-  [data-ground="ink"] .ink-line::after { background: color-mix(in oklch, #fe433e 22%, transparent); }
-  [data-ground="red"] .ink-line::after { background: color-mix(in oklch, var(--paper) 18%, transparent); }
-}
+/* the lines an inked paragraph is split into (src/life/inkLines.js) — no
+   hover effect on them: nothing moves just because the cursor passes */
+.ink-line { position: relative; width: fit-content; }
+

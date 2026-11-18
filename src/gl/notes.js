@@ -74,6 +74,13 @@ export function createNotes(host) {
     const roomR = vw - (cube.x + cube.r * 0.9) - 8;
     const roomL = cube.x - cube.r * 1.35 - 18;
     if ((left && w > roomL && roomR > roomL) || (!left && w > roomR && roomL > roomR)) el.classList.toggle('is-left', !left);
+    // and never over something you'd be reading or using (the stamp sheet): then it goes under the cube
+    const nr = el.getBoundingClientRect();
+    const over = [...document.querySelectorAll('[data-note-clear]')].some((c) => {
+      const r = c.getBoundingClientRect();
+      return nr.left < r.right && nr.right > r.left && nr.top < r.bottom && nr.bottom > r.top;
+    });
+    if (over) el.classList.add('is-below');
     if (prefs.reduced) el.classList.add('is-still');
     requestAnimationFrame(() => el?.classList.add('is-on'));
     timer = setTimeout(() => {

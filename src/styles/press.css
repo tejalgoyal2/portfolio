@@ -75,7 +75,7 @@ html.cursor-over-link .press-pen-icon { scale: calc(var(--flip, 1) * 1.16) 1.16;
 html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
 
 /* per-target marks, riding beside the tip: a twist arc for the cube, orbit
-   while turning it, a nib for the gratitude line */
+   while turning it */
 .press-cursor-mark {
   width: 30px;
   height: 30px;
@@ -97,8 +97,7 @@ html.cursor-down .press-pen-icon { scale: calc(var(--flip, 1) * 0.88) 0.88; }
   transition: opacity 0.18s var(--ease-set), transform 0.3s var(--ease-stamp);
 }
 .press-cursor-mark[data-state="twist"] .cursor-mark--twist,
-.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit,
-.press-cursor-mark[data-state="nib"] .cursor-mark--nib {
+.press-cursor-mark[data-state="orbit"] .cursor-mark--orbit {
   opacity: 1;
   transform: none;
 }
