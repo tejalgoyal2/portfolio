@@ -35,6 +35,9 @@
     <!-- Theme color — newsprint cream -->
     <meta name="theme-color" content="#f4efe6" />
 
+    <!-- the pen is the cursor from the very first paint (src/press/PressCursor.jsx takes over), so the OS one never flashes -->
+    <script>try{if(matchMedia('(pointer: fine)').matches&&localStorage.getItem('press-nib')!=='system')document.documentElement.classList.add('cursor-hidden')}catch(e){}</script>
+
     <!-- security headers are real HTTP headers, in public/_headers -->
   </head>
   <body>

@@ -30,8 +30,9 @@ html, body {
   overflow-x: clip;
 }
 
-/* OS cursor hiding is scoped to html.cursor-hidden (set by PressCursor only on
-   fine-pointer devices) — see press.css. Inputs always keep a text caret. */
+/* OS cursor hiding is scoped to html.cursor-hidden (set before first paint by
+   index.html, kept by PressCursor, fine pointers only) — see press.css. The pen
+   is the cursor everywhere, inputs included (the typing caret still shows). */
 input, textarea, select {
   cursor: text;
 }

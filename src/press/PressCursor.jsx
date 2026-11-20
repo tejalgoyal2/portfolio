@@ -141,11 +141,8 @@ export default function PressCursor() {
     // macOS shows its own cursor for its menus and popovers (a right-click,
     // Look Up…) and the browser doesn't hide it again until the style changes —
     // so after any of those, keep re-asserting the hidden cursor for a while
-    const fix = () => {
-      html.classList.remove('cursor-hidden');
-      void html.offsetWidth;
-      requestAnimationFrame(() => html.classList.add('cursor-hidden'));
-    };
+    // (flip between two ways of saying "hidden": a style change, but the OS cursor never shows)
+    const fix = () => html.classList.toggle('cursor-alt');
     const soon = () => (menuUntil = performance.now() + 5000);
     const move = (e) => {
       const x = e.clientX;
@@ -214,7 +211,7 @@ export default function PressCursor() {
     gsap.ticker.add(sync);
 
     return () => {
-      html.classList.remove('cursor-hidden', 'cursor-over-link', 'cursor-down', 'cursor-has-mark');
+      html.classList.remove('cursor-hidden', 'cursor-alt', 'cursor-over-link', 'cursor-down', 'cursor-has-mark');
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerdown', down);
       window.removeEventListener('pointerup', up);
