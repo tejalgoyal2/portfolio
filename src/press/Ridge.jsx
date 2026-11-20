@@ -143,7 +143,7 @@ export default function Ridge() {
     let bv = 0;
     let roll = 0;
     let prevBs = bs;
-    let air = null; // { vx, vy, h } while it's flying
+    let air = null; // { vx, vy, y, bounced } while it's flying: a real arc, in the ridge's own px
     let on = false;
     const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
     io.observe(root);
@@ -155,16 +155,31 @@ export default function Ridge() {
       if (prefs.reduced) {
         bs = car.s + side * 70;
       } else if (air) {
-        // thrown: flying on, coming down under gravity, spinning
+        // thrown: a plain ballistic arc on screen — on at a steady pace, up and
+        // down under gravity — whatever the hills below are doing
         bs += air.vx * dt;
         air.vy += G * dt;
-        air.h -= air.vy * dt;
-        h = Math.max(0, air.h);
-        if (air.h <= 0) {
-          bv = air.vx * 0.35;
-          air = null;
-          side = bs > car.s ? 1 : -1;
+        air.y += air.vy * dt;
+        // the ends of the ridge: it knocks off them and comes back in
+        if (bs < R || bs > w - R) {
+          bs = Math.max(R, Math.min(w - R, bs));
+          air.vx *= -0.5;
         }
+        const floor = ground(bs) + 1.5 - R;
+        if (air.vy > 0 && air.y >= floor) {
+          if (!air.bounced && air.vy > 260) {
+            // one small bounce, then it rolls on
+            air.bounced = true;
+            air.y = floor;
+            air.vy *= -0.32;
+            air.vx *= 0.7;
+          } else {
+            bv = air.vx * 0.6;
+            air = null;
+            side = bs > car.s ? 1 : -1;
+          }
+        }
+        if (air) h = Math.max(0, floor - air.y);
       } else {
         // it keeps after the van, never faster than it can roll; when the van
         // turns back towards it, it just keeps coming
@@ -178,11 +193,14 @@ export default function Ridge() {
         const contact = 38 * 1.1 + R - 4;
         if (approaching && Math.abs(bs - car.s) < contact) {
           const dir = Math.sign(car.v) || -side;
-          air = { vx: dir * (Math.abs(car.v) * 1.15 + 160), vy: -(380 + Math.min(260, Math.abs(car.v) * 0.4)), h: 0.01 };
+          // a harder hit throws it further and higher, within reason
+          const hit = Math.min(1, Math.abs(car.v) / 420);
+          air = { vx: dir * (150 + hit * 170), vy: -(330 + hit * 220), y: ground(bs) + 1.5 - R, bounced: false };
           side = dir;
         }
       }
-      roll += (bs - prevBs) / R + (air ? dt * 9 * Math.sign(air.vx) : 0);
+      // it rolls with the distance it covers — in the air too, so the spin matches the flight
+      roll += (bs - prevBs) / R;
       prevBs = bs;
       const y = ground(bs) + 1.5 - R - h;
       rock.style.transform = `translate3d(${(bs - R).toFixed(1)}px,${(y - R).toFixed(1)}px,0) rotate(${roll.toFixed(3)}rad)`;

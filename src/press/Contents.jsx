@@ -16,10 +16,11 @@ import { scroll } from '../life/scroll';
  * It sits on the page's own measure, lined up with the columns below it.
  * Along its foot runs one long rule that fills with red ink as you read, a
  * bead of wet ink at its head, reaching each label just as its section
- * begins. The section you're in is marked with a bookmark: a red silk ribbon
- * hanging from under its label, like the one sewn into a book's spine. When
- * you move on it slides along to the next label — off quickly, easing into
- * place — and swings from where it hangs as it goes, settling with a sway.
+ * begins. The section you're in is set on a slug of red ink, inside the bar
+ * (it never hangs over the page): when you move on the slug slides along to
+ * the next label like a drop of ink — its leading edge pulled ahead, the
+ * trailing edge catching up, so it stretches on the way and gathers itself
+ * as it lands.
  *
  * One click (or Enter) flies you to any section with Lenis. At its end sit two
  * cells: your pen (click to swap it; hover for who drew it) and Page settings.
@@ -158,54 +159,56 @@ export default function Contents() {
     };
   }, [place]);
 
-  // the bookmark: slides to the label you're on and swings from where it hangs
-  const ribbonRef = useRef(null);
+  // the ink slug: two edges on springs, the leading one quicker, so it stretches as it goes
+  const slugRef = useRef(null);
   const currentRef = useRef(current);
   currentRef.current = current;
   useEffect(() => {
-    const el = ribbonRef.current;
+    const el = slugRef.current;
     if (!el) return;
-    const rb = { x: 0, v: 0, th: 0, w: 0, goal: 0, placed: false, awake: false };
+    const BASE = 100; // the element's own width; the edges scale it
+    const e = { l: 0, r: 0, vl: 0, vr: 0, gl: 0, gr: 0, placed: false, awake: false };
     const aim = () => {
       const item = itemRefs.current[currentRef.current];
       if (!item || !item.offsetParent) return false;
-      rb.goal = item.offsetLeft + item.offsetWidth / 2;
+      e.gl = item.offsetLeft + 4;
+      e.gr = item.offsetLeft + item.offsetWidth - 4;
       return true;
     };
     const write = () => {
-      el.style.transform = `translate3d(${rb.x.toFixed(1)}px,0,0) rotate(${rb.th.toFixed(2)}deg)`;
+      el.style.transform = `translate3d(${e.l.toFixed(1)}px,0,0) scaleX(${(Math.max(4, e.r - e.l) / BASE).toFixed(4)})`;
     };
     const snap = () => {
       if (!aim()) return;
-      rb.x = rb.goal;
-      rb.v = rb.th = rb.w = 0;
-      rb.placed = true;
+      e.l = e.gl;
+      e.r = e.gr;
+      e.vl = e.vr = 0;
+      e.placed = true;
       write();
     };
     const tick = (time, deltaMs) => {
-      if (!rb.awake) return;
-      const dt = Math.min(0.05, deltaMs / 1000);
-      // a spring that sets off quickly and eases a long way in (a touch under-damped)
-      const a = 46 * (rb.goal - rb.x) - 11.5 * rb.v;
-      rb.v += a * dt;
-      rb.x += rb.v * dt;
-      // hanging from its top, it swings back against the way it's carried
-      rb.w += (-90 * rb.th - 5.5 * rb.w - a * 0.03) * dt;
-      rb.th = Math.max(-38, Math.min(38, rb.th + rb.w * dt));
+      if (!e.awake) return;
+      const dt = Math.min(0.033, deltaMs / 1000);
+      const right = e.gl > e.l;
+      // the leading edge sets off sharply; the trailing one follows softer
+      const [kl, kr] = right ? [34, 110] : [110, 34];
+      e.vl += (kl * (e.gl - e.l) - 2 * 0.9 * Math.sqrt(kl) * e.vl) * dt;
+      e.vr += (kr * (e.gr - e.r) - 2 * 0.9 * Math.sqrt(kr) * e.vr) * dt;
+      e.l += e.vl * dt;
+      e.r += e.vr * dt;
       write();
-      if (Math.abs(rb.goal - rb.x) < 0.3 && Math.abs(rb.v) < 2 && Math.abs(rb.th) < 0.15 && Math.abs(rb.w) < 1) {
-        rb.x = rb.goal;
-        rb.th = rb.w = rb.v = 0;
-        rb.awake = false;
+      if (Math.abs(e.gl - e.l) + Math.abs(e.gr - e.r) < 0.4 && Math.abs(e.vl) + Math.abs(e.vr) < 3) {
+        e.l = e.gl;
+        e.r = e.gr;
+        e.awake = false;
         write();
       }
     };
     gsap.ticker.add(tick);
-    const move = () => {
-      if (!rb.placed || prefs.reduced) return snap();
-      if (aim()) rb.awake = true;
+    el._move = () => {
+      if (!e.placed || prefs.reduced) return snap();
+      if (aim()) e.awake = true;
     };
-    el._move = move;
     document.fonts?.ready.then(snap);
     window.addEventListener('resize', snap);
     snap();
@@ -215,7 +218,7 @@ export default function Contents() {
     };
   }, []);
   useEffect(() => {
-    ribbonRef.current?._move?.();
+    slugRef.current?._move?.();
   }, [current]);
 
   const go = useCallback((i) => {
@@ -308,13 +311,8 @@ export default function Contents() {
           Contents <span aria-hidden="true">{open ? '−' : '+'}</span>
         </button>
         <div ref={trackRef} className="rh-track">
-          {/* the bookmark ribbon, hanging under the label you're on */}
-          <span ref={ribbonRef} className="rh-ribbon" aria-hidden="true">
-            <svg viewBox="0 0 14 26">
-              <path d="M0 0H14V26L7 20.5 0 26Z" />
-              <path className="rh-ribbon-sheen" d="M3.2 0V21.4" />
-            </svg>
-          </span>
+          {/* the ink slug the current section is set on */}
+          <span ref={slugRef} className="rh-slug" aria-hidden="true" />
           <ol ref={listRef} id="rh-list" className="rh-list">
             {SECTIONS.map(({ key, label }, i) => (
               <li key={key} className={i === current ? 'is-current' : undefined}>
