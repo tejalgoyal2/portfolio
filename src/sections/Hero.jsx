@@ -23,13 +23,13 @@ export default function Hero() {
     const ctx = gsap.context(() => {
       // nameplate: when the press runs, the loader's own plate flies in to
       // become it (src/press/Loader.jsx); otherwise it's inked in on mount
-      if (reduced || !sessionStorage.getItem('press-loaded')) {
-        gsap.set('.mast-plate', { clipPath: 'inset(0)', opacity: 1 });
-      } else {
+      // (and once it's inked the mask comes off: nothing may clip the letters
+      // when they lift out of the line on the way down the page)
+      if (!reduced && sessionStorage.getItem('press-loaded')) {
         gsap.fromTo(
           '.mast-plate',
-          { clipPath: 'inset(0 100% 0 0)', opacity: 1 },
-          { clipPath: 'inset(0 0% 0 0)', duration: 0.85, ease: 'power3.out', delay: 0.1 }
+          { clipPath: 'inset(-20% 100% -20% -2%)' },
+          { clipPath: 'inset(-20% -2% -20% -2%)', duration: 1.1, ease: 'power2.inOut', delay: 0.15, clearProps: 'clipPath' }
         );
       }
 
