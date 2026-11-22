@@ -127,16 +127,16 @@
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
-  rotate: -5deg;
+  rotate: var(--tilt, -2deg);
 }
-.cube-note-text span {
+.cube-note-text .hw-l {
   display: inline-block;
   opacity: 0;
   translate: 0 0.3em;
   transition: opacity 0.2s var(--ease-set), translate 0.35s var(--ease-stamp);
   transition-delay: calc(var(--i) * 45ms + 250ms);
 }
-.cube-note.is-on .cube-note-text span { opacity: 1; translate: 0 0; }
+.cube-note.is-on .cube-note-text .hw-l { opacity: 1; translate: 0 0; }
 .cube-note svg {
   position: absolute;
   overflow: visible;
@@ -163,7 +163,7 @@
 }
 .cube-note.is-left .cube-note-arrow { left: auto; right: -34px; rotate: 0deg; scale: 1 -1; }
 /* the solve: it's yours — a bigger hand, crowned */
-.cube-note--stickers .cube-note-text { font-size: clamp(2.2rem, 3.6vw, 3.4rem); rotate: -6deg; }
+.cube-note--stickers .cube-note-text { font-size: clamp(2.2rem, 3.6vw, 3.4rem); }
 .cube-note-crown {
   position: relative !important;
   display: block;

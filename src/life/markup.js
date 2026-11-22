@@ -2,6 +2,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { gsap } from 'gsap';
 import { prefs } from './prefs';
 import { onLayout } from './layout';
+import { setHand } from './hand';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -104,7 +105,7 @@ export function startMarkup(container) {
         const last = local[local.length - 1];
         note = document.createElement('span');
         note.className = 'markup-note';
-        note.textContent = g.note;
+        setHand(note, g.note, { slope: [-6, 4] });
         note.style.left = `${(last.x + last.w - 6).toFixed(0)}px`;
         note.style.top = `${(last.y - 4).toFixed(0)}px`;
         container.appendChild(note);

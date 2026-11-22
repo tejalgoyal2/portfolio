@@ -4,6 +4,7 @@ import { pointer } from '../life/pointer';
 import { prefs } from '../life/prefs';
 import { scroll } from '../life/scroll';
 import { onLayout } from '../life/layout';
+import { handHTML } from '../life/hand';
 
 /**
  * "Some broke." — so there's a bug loose in the empty paper beside the
@@ -76,7 +77,7 @@ export default function Bug() {
     let nextTaunt = 0;
     const speak = (text, secs = 2.6) => {
       if (!say) return;
-      say.textContent = text;
+      say.innerHTML = handHTML(text);
       sayW = say.offsetWidth;
       say.classList.remove('is-on');
       void say.offsetWidth; // restart the pop (a few times per life at most)

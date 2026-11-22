@@ -1,5 +1,6 @@
 import { prefs } from '../life/prefs';
 import { groundAt } from '../life/ground';
+import { hand, handHTML } from '../life/hand';
 
 /**
  * The editor's notes on the cube, and the comic bits round it.
@@ -56,13 +57,12 @@ export function createNotes(host) {
     el.setAttribute('role', 'status');
     const left = cube.x > document.documentElement.clientWidth / 2;
     el.classList.toggle('is-left', left);
-    const letters = [...n.text]
-      .map((ch, i) => `<span style="--i:${i}">${ch === ' ' ? '&nbsp;' : ch}</span>`)
-      .join('');
+    // written in letter by letter, in a natural hand (src/life/hand.js)
+    const text = `<p class="cube-note-text" style="--tilt:${hand(n.text).tilt}deg">${handHTML(n.text, { letters: true })}</p>`;
     if (n.mark === 'stickers') {
-      el.innerHTML = `<svg class="cube-note-crown" viewBox="0 0 80 44"><path d="${CROWN}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
+      el.innerHTML = `<svg class="cube-note-crown" viewBox="0 0 80 44"><path d="${CROWN}" pathLength="1"/></svg>${text}`;
     } else {
-      el.innerHTML = `<svg class="cube-note-arrow" viewBox="0 0 76 40"><path d="${ARROW}" pathLength="1"/></svg><p class="cube-note-text">${letters}</p>`;
+      el.innerHTML = `<svg class="cube-note-arrow" viewBox="0 0 76 40"><path d="${ARROW}" pathLength="1"/></svg>${text}`;
     }
     el.style.setProperty('--cx', `${cube.x}px`);
     el.style.setProperty('--cy', `${cube.y}px`);
@@ -218,7 +218,7 @@ export function createNotes(host) {
     bubble.classList.toggle('is-left', cube.x > document.documentElement.clientWidth / 2);
     bubble.setAttribute('role', 'status');
     bubble.innerHTML = `<p class="cube-say-text"></p>${n.small ? '<p class="cube-say-small"></p>' : ''}${n.button ? '<span class="cube-say-row"><button type="button" class="cube-say-btn"></button><button type="button" class="cube-say-no">nah, stay</button></span>' : ''}`;
-    bubble.querySelector('.cube-say-text').textContent = n.text;
+    bubble.querySelector('.cube-say-text').innerHTML = handHTML(n.text);
     if (n.small) bubble.querySelector('.cube-say-small').textContent = n.small;
     if (n.button) {
       const btn = bubble.querySelector('.cube-say-btn');
