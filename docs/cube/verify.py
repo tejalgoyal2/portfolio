@@ -21,6 +21,7 @@ def apply(st,seq):
 S0=solved()
 ok=lambda st,ps: all(st[k]==S0[k] for k in S0 if k[0] in ps)
 CROSS=[(0,-1,1),(1,-1,0),(0,-1,-1),(-1,-1,0)]
+TOP=[((0,1,1),(0,1,0)),((1,1,0),(0,1,0)),((0,1,-1),(0,1,0)),((-1,1,0),(0,1,0))]
 SLOT={'FR':[(1,-1,1),(1,0,1)],'RB':[(1,-1,-1),(1,0,-1)],'BL':[(-1,-1,-1),(-1,0,-1)],'LF':[(-1,-1,1),(-1,0,1)]}
 assert apply(S0,"R U R' U' "*6)==S0 and apply(S0,"R")[((1,1,1),(0,1,0))]=='G'
 d=json.load(open(os.path.join(os.path.dirname(__file__) or '.','solve.json')))
@@ -31,6 +32,7 @@ for i,s in enumerate(d['stages']):
     assert ok(st,CROSS), c
     if c.startswith('pair'): done.append(d['slot_order'][int(c[-1])-1])
     for k,v in SLOT.items(): assert ok(st,v)==(k in done or i>4), (c,k)
-    if c=='top face': assert all(st[k]=='Y' for k in st if k[1]==(0,1,0))
+    if c=='top cross': assert all(st[k]=='Y' for k in TOP) and not all(st[k]=='Y' for k in st if k[1]==(0,1,0)), c
+    if c=='top face': assert all(st[k]=='Y' for k in st if k[1]==(0,1,0)) and st!=S0, c
     print(f"{c:10s} ok  ({s['count']} moves)")
 assert st==S0; print("solved ok,", d['total_moves'], "moves")

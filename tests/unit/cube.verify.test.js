@@ -62,6 +62,7 @@ const ok = (st, ps) => {
   return [...S0map].filter(([k]) => want.has(k.split('|')[0])).every(([k, v]) => m.get(k) === v);
 };
 const CROSS = [[0, -1, 1], [1, -1, 0], [0, -1, -1], [-1, -1, 0]];
+const TOP = [[0, 1, 1], [1, 1, 0], [0, 1, -1], [-1, 1, 0]];
 const SLOT = {
   FR: [[1, -1, 1], [1, 0, 1]],
   RB: [[1, -1, -1], [1, 0, -1]],
@@ -81,7 +82,7 @@ describe('cube engine passes docs/cube/verify.py', () => {
     expect(ok(apply(S0, d.scramble), CROSS)).toBe(false);
   });
 
-  it('every stage holds: cross, F2L slots in order, top face, solved', () => {
+  it('every stage holds: cross, F2L slots in order, top cross, top face, solved', () => {
     let st = apply(S0, d.scramble);
     const done = [];
     d.stages.forEach((s, i) => {
@@ -90,9 +91,14 @@ describe('cube engine passes docs/cube/verify.py', () => {
       expect(ok(st, CROSS), c).toBe(true);
       if (c.startsWith('pair')) done.push(d.slot_order[Number(c.at(-1)) - 1]);
       for (const [k, v] of Object.entries(SLOT)) expect(ok(st, v), `${c} ${k}`).toBe(done.includes(k) || i > 4);
+      if (c === 'top cross') {
+        for (const p of TOP) expect(st.stickerAt(p, [0, 1, 0]), `${c} ${p}`).toBe('Y');
+        expect(st.facelets('U'), c).not.toBe('YYYYYYYYY');
+      }
       if (c === 'top face') {
         const m = st.stickers();
         for (const [k, col] of m) if (k.endsWith('|0,1,0')) expect(col, k).toBe('Y');
+        expect(st.isSolved(), c).toBe(false);
       }
       expect(parseMoves(s.moves).length, c).toBe(s.count);
     });
@@ -103,12 +109,12 @@ describe('cube engine passes docs/cube/verify.py', () => {
 });
 
 describe('cube engine matches the verify.py model move by move', () => {
-  it('after each of the 124 scramble and solve moves', () => {
+  it('after every scramble and solve move', () => {
     const cube = CubeState.solved();
     let ref = refSolved();
     expect(sameAsRef(cube, ref)).toBe(true);
     const tokens = `${d.scramble} ${d.stages.map((s) => s.moves).join(' ')}`.split(/\s+/);
-    expect(tokens.length).toBe(124);
+    expect(tokens.length).toBe(d.scramble_length + d.total_moves);
     tokens.forEach((t, i) => {
       cube.applyAll(parseMoves(t));
       ref = refMove(ref, t);
@@ -135,13 +141,13 @@ describe('solve data as the site uses it', () => {
     expect(formatMoves(SCRAMBLE)).toBe(d.scramble);
     expect(SCRAMBLE.length).toBe(d.scramble_length);
     expect(SOLVE.length).toBe(TOTAL_MOVES);
-    expect(TOTAL_MOVES).toBe(62);
+    expect(TOTAL_MOVES).toBe(44);
     STAGES.forEach((s, i) => expect(formatMoves(s.moves)).toBe(d.stages[i].moves));
-    expect(STAGES.map((s) => s.end)).toEqual([6, 14, 18, 26, 33, 40, 47, 62]);
+    expect(STAGES.map((s) => s.end)).toEqual([5, 9, 13, 16, 20, 26, 33, 44]);
   });
 
   it('sections reach the stages in docs/REVAMP.md §2', () => {
-    expect(SECTION_MOVES).toEqual({ hero: 0, about: 6, skills: 18, projects: 33, experience: 40, writing: 47, contact: 62 });
+    expect(SECTION_MOVES).toEqual({ hero: 0, about: 5, skills: 13, projects: 20, experience: 26, writing: 33, contact: 44 });
     expect(Object.keys(SECTION_MOVES)).toEqual(SECTION_ORDER);
     const at = (section) => CubeState.solved().applyAll(SCRAMBLE).applyAll(SOLVE.slice(0, SECTION_MOVES[section]));
     expect(ok(at('hero'), CROSS)).toBe(false);
@@ -163,5 +169,51 @@ describe('solve data as the site uses it', () => {
       cube.apply(invertMove(SOLVE[k - 1]));
       expect(cube.equals(history[k - 1]), `back to ${k - 1}`).toBe(true);
     }
+  });
+});
+
+describe('what the cube knows about itself', () => {
+  // a fixed pseudo-random walk, so the test is the same every run
+  const walk = (n, seed) => {
+    const faces = ['U', 'D', 'F', 'B', 'R', 'L'];
+    const out = [];
+    let x = seed;
+    for (let i = 0; i < n; i++) {
+      x = (x * 1103515245 + 12345) % 2147483648;
+      out.push({ face: faces[x % 6], turns: 1 + ((x >> 8) % 3) });
+    }
+    return out;
+  };
+
+  it('isSolved() says the same as comparing every sticker with the solved cube', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const ms = walk(seed % 7, seed);
+      const st = CubeState.solved().applyAll(ms);
+      expect(st.isSolved(), ms.map((m) => m.face + m.turns).join(' ')).toBe(st.equals(S0));
+    }
+    // there and back again: solved, though the centres have spun on the way
+    for (let seed = 1; seed < 20; seed++) {
+      const ms = walk(12, seed);
+      const st = CubeState.solved().applyAll(ms);
+      expect(st.isSolved()).toBe(st.equals(S0));
+      expect(st.applyAll(ms.slice().reverse().map(invertMove)).isSolved()).toBe(true);
+    }
+    expect(apply(S0, "R U R' U' ".repeat(6)).isSolved()).toBe(true);
+    expect(apply(S0, 'U').isSolved()).toBe(false);
+    expect(apply(S0, 'U U U U').isSolved()).toBe(true);
+  });
+
+  it('firstTwoLayers(): from pair 4 on, and not before; never once you twist under the top', () => {
+    const start = CubeState.solved().applyAll(SCRAMBLE);
+    for (let k = 0; k <= SOLVE.length; k++) {
+      const st = start.clone().applyAll(SOLVE.slice(0, k));
+      const f2l = [...Object.values(SLOT), CROSS].every((ps) => ok(st, ps));
+      expect(st.firstTwoLayers(), `after ${k} moves`).toBe(f2l);
+    }
+    const layers = start.clone().applyAll(SOLVE.slice(0, STAGES[4].end));
+    expect(layers.firstTwoLayers()).toBe(true);
+    expect(layers.clone().applyAll(parseMoves('U')).firstTwoLayers()).toBe(true); // the top doesn't matter
+    expect(layers.clone().applyAll(parseMoves('R')).firstTwoLayers()).toBe(false);
+    expect(start.firstTwoLayers()).toBe(false);
   });
 });

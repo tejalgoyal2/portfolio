@@ -162,6 +162,7 @@ export function createPresence(view, hitBtn) {
   const upAxis = new Vector3(0, 1, 0);
   const turnQ = new Quaternion();
   let lastHit = '';
+  let lastHitAt = '';
 
   function update(dt) {
     frame++;
@@ -294,7 +295,8 @@ export function createPresence(view, hitBtn) {
         lastHit = key;
         hitBtn.style.width = hitBtn.style.height = `${s}px`;
       }
-      hitBtn.style.transform = `translate3d(${(cx - rad).toFixed(1)}px,${(cy - rad).toFixed(1)}px,0)`;
+      const at = `translate3d(${(cx - rad).toFixed(1)}px,${(cy - rad).toFixed(1)}px,0)`;
+      if (at !== lastHitAt) hitBtn.style.transform = lastHitAt = at;
     }
   }
 

@@ -16,14 +16,14 @@ describe('scroll → solve moves', () => {
   });
 
   it('the cross is complete at the end of About', () => {
-    expect(targetAt(3999.99, spans)).toBe(6);
+    expect(targetAt(3999.99, spans)).toBe(SECTION_MOVES.about);
   });
 
   it('holds a stage across a gap, then solves by the end of Contact and stays solved', () => {
-    expect(targetAt(5000, spans)).toBe(18);
-    expect(targetAt(8999, spans)).toBe(18);
-    expect(targetAt(9600, spans)).toBe(62);
-    expect(targetAt(1e9, spans)).toBe(62);
+    expect(targetAt(5000, spans)).toBe(SECTION_MOVES.skills);
+    expect(targetAt(8999, spans)).toBe(SECTION_MOVES.skills);
+    expect(targetAt(9600, spans)).toBe(SECTION_MOVES.contact);
+    expect(targetAt(1e9, spans)).toBe(SECTION_MOVES.contact);
   });
 
   it('moves are spread evenly and the mapping is monotonic', () => {
@@ -33,12 +33,13 @@ describe('scroll → solve moves', () => {
       expect(k).toBeGreaterThanOrEqual(last);
       last = k;
     }
-    // About: 6 moves over 3000 px → thresholds at 1250, 1750, ..., 3750
-    expect([1, 2, 3, 4, 5, 6].map((m) => thresholdOf(m, spans))).toEqual([1250, 1750, 2250, 2750, 3250, 3750]);
-    expect(targetAt(1249, spans)).toBe(0);
-    expect(targetAt(1250, spans)).toBe(1);
+    // About: 5 moves over 3000 px → thresholds at 1300, 1900, ..., 3700
+    expect(SECTION_MOVES.about).toBe(5);
+    expect([1, 2, 3, 4, 5].map((m) => thresholdOf(m, spans))).toEqual([1300, 1900, 2500, 3100, 3700]);
+    expect(targetAt(1299, spans)).toBe(0);
+    expect(targetAt(1300, spans)).toBe(1);
     // each threshold switches exactly one move
-    for (const m of [...Array(18).keys()].map((i) => i + 1)) {
+    for (const m of [...Array(SECTION_MOVES.skills).keys()].map((i) => i + 1)) {
       const t = thresholdOf(m, spans);
       expect(targetAt(t - 0.01, spans)).toBe(m - 1);
       expect(targetAt(t, spans)).toBe(m);
