@@ -68,6 +68,12 @@ export function createNotes(host) {
     el.style.setProperty('--cy', `${cube.y}px`);
     el.style.setProperty('--cr', `${cube.r}px`);
     host.appendChild(el);
+    // on the side that has room for it (a narrow screen may have little either side)
+    const vw = document.documentElement.clientWidth;
+    const w = el.offsetWidth;
+    const roomR = vw - (cube.x + cube.r * 0.9) - 8;
+    const roomL = cube.x - cube.r * 1.35 - 18;
+    if ((left && w > roomL && roomR > roomL) || (!left && w > roomR && roomL > roomR)) el.classList.toggle('is-left', !left);
     if (prefs.reduced) el.classList.add('is-still');
     requestAnimationFrame(() => el?.classList.add('is-on'));
     timer = setTimeout(() => {
