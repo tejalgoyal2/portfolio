@@ -11,8 +11,8 @@ import { onLayout } from '../life/layout';
  * legs going, turning where it walks. It dares you ("catch me if you can"),
  * and when you come near it scurries off, speed lines trailing, and gloats
  * once the chase is on ("i'm fast af, baby"). Catch it with a click and it's
- * squashed: its little soul floats up out of it, swaying, and fades — and
- * "fixed!" is scribbled where it was. A while later another one wanders in
+ * squashed: a little headstone pops up where it fell — R.I.P. — and its
+ * soul floats up out of it, swaying, and fades. A while later another one wanders in
  * from the edge, because there's always another one.
  *
  * One small element moved with a transform, only while it's on screen; its
@@ -23,9 +23,15 @@ const SPEED = 34; // px/s, ambling
 const FLEE = 170; // px/s, running away
 const NEAR = 120;
 const DARE = 'catch me if you can';
-const GLOAT = 'i’m fast af, baby';
+const GLOAT = 'i’m fast af baby';
 const TAUNTS = ['too slow!', 'nope', 'zoom zoom', 'missed me!', 'nice try'];
 
+// its headstone, hand-drawn
+const STONE = `<svg viewBox="0 0 36 34" aria-hidden="true">
+  <path class="stone" d="M6 32V13C6 6.5 11.4 2 18 2s12 4.5 12 11v19Z"/>
+  <path class="stone-grass" d="M2 32.5h32M4 32l1.5-3.5M9 32l-1-3M27 32l1.4-3.2M32 32l-1.2-2.8"/>
+  <text x="18" y="21" text-anchor="middle">RIP</text>
+</svg>`;
 // the soul: a little cartoon ghost with a wispy tail and sleepy eyes
 const SOUL = `<svg viewBox="0 0 40 52" aria-hidden="true">
   <path class="soul-body" d="M20 3C10.5 3 5 10 5 19v13c0 4 2.4 6.6 5.2 6.6 2 0 3-1.6 4.8-1.6 1.6 0 2.4 3 5 7 1.6 2.6 3 4.8 4.6 6.2-0.8-3-0.4-6 1.4-8.4 1.4-1.8 3.4-2.4 4.8-4.2C33.6 35 35 33 35 30V19C35 10 29.5 3 20 3Z"/>
@@ -35,13 +41,11 @@ const SOUL = `<svg viewBox="0 0 40 52" aria-hidden="true">
 export default function Bug() {
   const zoneRef = useRef(null);
   const bugRef = useRef(null);
-  const noteRef = useRef(null);
   const sayRef = useRef(null);
 
   useEffect(() => {
     const zone = zoneRef.current;
     const bug = bugRef.current;
-    const note = noteRef.current;
     const say = sayRef.current;
     if (!zone || !bug) return;
     let alive = true;
@@ -179,7 +183,7 @@ export default function Bug() {
         soul.className = 'cf-bug-soul';
         soul.innerHTML = SOUL;
         soul.style.left = `${b.x}px`;
-        soul.style.top = `${b.y}px`;
+        soul.style.top = `${b.y - 10}px`;
         zone.appendChild(soul);
         const sway = (k) => `translate(${(Math.sin(k * Math.PI * 2.2) * 9).toFixed(1)}px, ${(-k * 92).toFixed(1)}px) rotate(${(Math.sin(k * Math.PI * 2.2 + 0.6) * 9).toFixed(1)}deg)`;
         const a = soul.animate(
@@ -195,12 +199,24 @@ export default function Bug() {
         );
         a.onfinish = () => soul.remove();
       }
-      note.style.left = `${b.x}px`;
-      note.style.top = `${b.y - 26}px`;
-      note.textContent = 'fixed!';
-      note.classList.remove('is-on');
-      void note.offsetWidth;
-      note.classList.add('is-on');
+      // and a headstone where it fell
+      const stone = document.createElement('span');
+      stone.className = 'cf-bug-stone';
+      stone.innerHTML = STONE;
+      stone.style.left = `${b.x}px`;
+      stone.style.top = `${b.y}px`;
+      zone.appendChild(stone);
+      const st = stone.animate(
+        [
+          { transform: 'translateY(10px) scale(0.2, 0)', opacity: 0 },
+          { transform: 'translateY(-2px) scale(1.08, 1.12)', opacity: 1, offset: 0.08 },
+          { transform: 'translateY(0) scale(1)', opacity: 1, offset: 0.14 },
+          { transform: 'translateY(0) scale(1)', opacity: 1, offset: 0.82 },
+          { transform: 'translateY(6px) scale(1, 0.6)', opacity: 0 },
+        ],
+        { duration: prefs.reduced ? 2400 : 3600, easing: 'ease-out' }
+      );
+      st.onfinish = () => stone.remove();
       clearTimeout(respawn);
       respawn = setTimeout(spawn, 5000 + Math.random() * 4000);
     };
@@ -224,7 +240,6 @@ export default function Bug() {
         </svg>
       </span>
       <span ref={sayRef} className="cf-bug-say" />
-      <span ref={noteRef} className="cf-bug-note" />
     </div>
   );
 }

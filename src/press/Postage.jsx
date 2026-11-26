@@ -17,6 +17,35 @@ import { prefs } from '../life/prefs';
  */
 const EMAIL = 'itejalgoyal@gmail.com';
 
+/**
+ * Speed lines for a spinning stamp: at each corner, a couple of short arcs
+ * trailing back from it along the circle the corner sweeps — the way a comic
+ * draws something whirling, without a ring round the whole thing.
+ */
+function cornerLines(svg, paper) {
+  const w = paper.offsetWidth;
+  const h = paper.offsetHeight;
+  const r = Math.hypot(w, h) / 2;
+  const box = Math.ceil(r + 22);
+  svg.setAttribute('viewBox', `${-box} ${-box} ${box * 2} ${box * 2}`);
+  svg.style.width = svg.style.height = `${box * 2}px`;
+  svg.style.margin = `${-box}px 0 0 ${-box}px`;
+  const arc = (rr, from, to) => {
+    const p = (a) => `${(Math.cos(a) * rr).toFixed(1)} ${(Math.sin(a) * rr).toFixed(1)}`;
+    return `M${p(from)}A${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${p(to)}`;
+  };
+  const corner = Math.atan2(h, w);
+  const d = [corner, Math.PI - corner, Math.PI + corner, -corner]
+    .map((c) => {
+      // clockwise spin: the trail lies just behind each corner
+      const near = arc(r + 5, c - 0.62, c - 0.08);
+      const far = arc(r + 13, c - 0.42, c - 0.16);
+      return `${near}${far}`;
+    })
+    .join('');
+  svg.innerHTML = `<path d="${d}"/>`;
+}
+
 export default function Postage() {
   const ref = useRef(null);
   const [struck, setStruck] = useState(false);
@@ -48,6 +77,7 @@ export default function Postage() {
     const lines = ref.current?.querySelector('.postage-whirl');
     if (!paper || prefs.reduced) return;
     const sp = spinner.current;
+    if (lines && !lines.childElementCount) cornerLines(lines, paper);
     sp.push += 430; // deg/s per click
     if (sp.on) return;
     sp.on = true;
@@ -64,7 +94,7 @@ export default function Postage() {
       if (lines) {
         const k = Math.min(1, Math.max(0, (sp.v - 260) / 700));
         lines.style.opacity = k.toFixed(3);
-        lines.style.rotate = `${(sp.a - 30).toFixed(1)}deg`;
+        lines.style.rotate = `${(sp.a - 4).toFixed(1)}deg`;
       }
       if (sp.v <= 0 && sp.push < 1) {
         sp.on = false;
@@ -101,15 +131,8 @@ export default function Postage() {
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >
-      {/* comic speed lines round it while it whirls */}
-      <svg className="postage-whirl" viewBox="-80 -80 160 160" aria-hidden="true">
-        <path d="M-6 -74A74 74 0 0 1 52 -52" />
-        <path d="M74 -6A74 74 0 0 1 52 52" />
-        <path d="M6 74A74 74 0 0 1 -52 52" />
-        <path d="M-74 6A74 74 0 0 1 -52 -52" />
-        <path className="pw-thin" d="M14 -64A64 64 0 0 1 48 -42" />
-        <path className="pw-thin" d="M-14 64A64 64 0 0 1 -48 42" />
-      </svg>
+      {/* comic speed lines trailing off its corners while it whirls (drawn on the first spin) */}
+      <svg className="postage-whirl" aria-hidden="true" />
       <span className="postage-paper" aria-hidden="true">
         <span className="postage-face">
           <span className="postage-top">FIRST CLASS</span>
