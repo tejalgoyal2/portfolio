@@ -6,14 +6,20 @@ import { SKILL_ICONS } from '../data/skillIcons';
 /**
  * The skills arrive as their own icons. Each category waits until you've
  * scrolled to it (once a visit — scroll back and it's simply there), then its
- * icons fly in as one wave — one from the left, the next from the right, one
- * from far behind (small, growing), one past your shoulder (big, shrinking) —
- * each on its own swinging, spinning curve. They come in fast and ease right
- * down as they arrive — the "left-leaning bell" of speed: most of the
- * distance early, a long gentle settle — and each one, landing on its slot,
- * squashes like a drop of ink and melts into the slug: the slug's paper opens
- * out from an icon-sized pill to its full width as the word inks in, with a
- * little burst of comic pop lines round it.
+ * icons pour in as one stream: in from off the screen (the left, the right,
+ * far behind the page, or past your shoulder), all along the same sweeping
+ * curve like a flock, one behind another, banking through the turn, with a
+ * faint trail of ghosts behind each — and drop out of the stream one by one
+ * into their places. They move the way Tejal likes: most of the distance
+ * early, then a long, gentle settle. Each one, landing, squashes like a drop
+ * of ink and the slug opens out of it — paper growing from an icon-sized pill
+ * to its full width while the word inks in, a little burst of pop lines
+ * round it.
+ *
+ * The slugs are hidden from the very first paint until their icon lands
+ * (Skills.jsx sets that up before anything is drawn), so you never see the
+ * cells first. A category you've already scrolled past when this starts is
+ * simply there.
  *
  * Afterwards the slugs show their icons when asked: point at one and it turns
  * into its icon (and back when you leave); tap one on a touch screen and it
@@ -22,14 +28,13 @@ import { SKILL_ICONS } from '../data/skillIcons';
  *
  * Brand marks in their own colours, generic ones hand-drawn in ink (see
  * src/data/skillIcons.js). Plain <img>s moved with transforms and opacity
- * (the compositor does the work), one wave in the air at a time, all gone
+ * (the compositor does the work), one stream in the air at a time, all gone
  * when it's done; the hover and the ripple only swap a class. Reduced motion
  * (or no JS): the slugs are just there.
  */
 const INK = '#1c140e';
 const FROM = ['left', 'right', 'back', 'front', 'right', 'left', 'back'];
-const EASE_IN_PLACE = 'cubic-bezier(0.13, 1, 0.24, 1)'; // quick away, long settle
-const WAVE_GAP = 420; // ms at least between one category's wave and the next
+const WAVE_GAP = 650; // ms at least between one category's wave and the next
 const NEAR_WAVE = 260; // px: slugs this close to a ripple flash their icons
 
 let urls = null;
@@ -50,19 +55,31 @@ function loadIcons() {
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 
-/** Where a wave's icons start, relative to the slot they're heading for (section coordinates). */
-function startFor(from, slot, W) {
+const bez = (a, b, c, d, t) => {
+  const u = 1 - t;
+  return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
+};
+/** Most of the way early, then a long gentle settle (the "left-leaning bell" of speed). */
+const settle = (t) => 1 - (1 - t) ** 2.5;
+
+/**
+ * The stream's route for a category, in section px: where it comes in from
+ * (off the screen) and the point it sweeps past before turning down into the
+ * category. `s` is how big the icons are out there (small = far behind).
+ */
+function route(from, box, W, top, vh) {
+  const midX = box.x + box.w / 2;
   switch (from) {
     case 'left':
-      return { x: -slot.x - rnd(90, 300), y: rnd(-260, 140), s: rnd(0.9, 1.5), r: rnd(-140, -50) };
+      return { e: { x: -90, y: box.y - 220, s: 1.2 }, p: { x: box.x + box.w * 0.9, y: box.y - 150 } };
     case 'right':
-      return { x: W - slot.x + rnd(90, 300), y: rnd(-260, 140), s: rnd(0.9, 1.5), r: rnd(50, 140) };
+      return { e: { x: W + 90, y: box.y - 220, s: 1.2 }, p: { x: box.x + box.w * 0.1, y: box.y - 150 } };
     case 'back':
-      // far off behind the page: small, high, faint
-      return { x: rnd(-200, 200), y: rnd(-480, -300), s: rnd(0.12, 0.28), r: rnd(-90, 90) };
+      // from far off behind the page: tiny, high up, growing as it comes
+      return { e: { x: midX + 160, y: top - 60, s: 0.15 }, p: { x: midX - box.w * 0.45, y: box.y - 120 } };
     default:
-      // past your shoulder: huge, from below
-      return { x: rnd(-340, 340), y: rnd(420, 620), s: rnd(2.6, 3.6), r: rnd(-70, 70) };
+      // past your shoulder: huge from below the screen, shrinking into place
+      return { e: { x: midX - 140, y: top + vh + 90, s: 2.8 }, p: { x: midX + box.w * 0.45, y: box.y - 70 } };
   }
 }
 
@@ -98,6 +115,17 @@ export function startSkillArrive(section) {
 
   // ---- the arrival: each category once, as you reach it
   let layer = null;
+  let landedCount = 0;
+  const landed = (slug) => {
+    if (slug.classList.contains('is-landed')) return;
+    slug.classList.add('is-landed');
+    if (++landedCount >= slugs.length) {
+      section.classList.remove('skills-await');
+      layer?.remove();
+      layer = null;
+    }
+  };
+
   if (!prefs.reduced) {
     section.classList.add('skills-await');
     // fetch the icons only as the case gets near, not with the page
@@ -134,24 +162,16 @@ export function startSkillArrive(section) {
       },
       { rootMargin: '0px 0px -28% 0px' }
     );
-    cats.forEach((cat) => queue.observe(cat));
+    // a category already scrolled past (a reload halfway down the page) is simply there
+    cats.forEach((cat) => {
+      if (cat.getBoundingClientRect().bottom < 0) {
+        waiting--;
+        cat.querySelectorAll('.skill').forEach((sl) => landed(sl));
+      } else queue.observe(cat);
+    });
     observers.push(queue);
-    // whatever happens, nobody is left looking at an empty case
-    later(() => {
-      slugs.forEach((s) => s.classList.add('is-landed'));
-      section.classList.remove('skills-await');
-    }, 45000);
   }
 
-  let landedCount = 0;
-  const landed = (slug) => {
-    slug.classList.add('is-landed');
-    if (++landedCount >= slugs.length) {
-      section.classList.remove('skills-await');
-      layer?.remove();
-      layer = null;
-    }
-  };
 
   function wave(c) {
     if (!layer) {
@@ -162,52 +182,87 @@ export function startSkillArrive(section) {
     }
     const sr = section.getBoundingClientRect();
     const W = section.clientWidth;
-    const from = FROM[c % FROM.length];
+    const cr = cats[c].getBoundingClientRect();
+    const box = { x: cr.left - sr.left, y: cr.top - sr.top, w: cr.width, h: cr.height };
+    const { e, p } = route(FROM[c % FROM.length], box, W, -sr.top, window.innerHeight);
+    const N = 18; // points along the curve, sampled with the settle already applied
+    // whatever happens (an icon that never loads), this category isn't left empty
+    const mine = [...cats[c].querySelectorAll('.skill')];
+    later(() => mine.forEach((sl) => landed(sl)), mine.length * 95 + 4000);
     [...cats[c].querySelectorAll('.skill')].forEach((slug, i) => {
+      if (slug.classList.contains('is-landed')) return;
       const url = urls?.[slug.textContent.trim()];
       const r = slug.getBoundingClientRect();
       const slot = { x: r.left - sr.left + r.width / 2, y: r.top - sr.top + r.height / 2, w: r.width, h: r.height };
-      const delay = i * 85 + rnd(0, 90);
+      // one behind another along the stream
+      const delay = i * 95;
+      const dur = 1650 + Math.min(i, 10) * 25;
       if (!url) {
-        later(() => melt(slug, slot), delay + 1200);
+        later(() => melt(slug, slot), delay + dur * 0.85);
         return;
       }
-      const img = document.createElement('img');
-      img.className = 'skill-flyer';
-      img.alt = '';
-      img.src = url;
-      img.style.left = `${slot.x - 18}px`;
-      img.style.top = `${slot.y - 18}px`;
-      layer.appendChild(img);
-      const s0 = startFor(from, slot, W);
-      // a swing: the path bows out to one side and back on the way in
-      const bow = rnd(-1, 1) * 150;
-      const p1 = { x: s0.x * 0.55 + bow * 0.6, y: s0.y * 0.55 - Math.abs(bow) * 0.35 };
-      const p2 = { x: s0.x * 0.18 + bow * 0.45, y: s0.y * 0.18 - Math.abs(bow) * 0.2 };
-      const p3 = { x: -bow * 0.06, y: -6 };
-      const t = (p, rot, sc) => `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${sc.toFixed(3)})`;
-      const dur = rnd(1800, 2300);
-      const fly = img.animate(
-        [
-          { transform: t(s0, s0.r, s0.s), opacity: 0 },
-          { transform: t({ x: s0.x * 0.82, y: s0.y * 0.82 }, s0.r * 0.85, s0.s * 0.9 + 0.1), opacity: 1, offset: 0.06 },
-          { transform: t(p1, s0.r * 0.5, (s0.s + 1) / 2), opacity: 1, offset: 0.3 },
-          { transform: t(p2, s0.r * 0.18, (s0.s + 3) / 4), opacity: 1, offset: 0.62 },
-          { transform: t(p3, s0.r * -0.04, 1.04), opacity: 1, offset: 0.86 },
-          { transform: t({ x: 0, y: 0 }, 0, 1), opacity: 1 },
-        ],
-        { duration: dur, delay, easing: EASE_IN_PLACE, fill: 'both' }
-      );
-      fly.onfinish = () => {
+      // the shared curve, a touch of spread so the flock isn't a single file
+      const j = (rnd(-1, 1) * 24);
+      const ax = e.x + j;
+      const ay = e.y + rnd(-1, 1) * 30;
+      const bx = p.x + j * 1.5;
+      const by = p.y + rnd(-1, 1) * 18;
+      const cx = slot.x + (bx - slot.x) * 0.25;
+      const cy = slot.y - 45;
+      const frames = [];
+      let prevA = null;
+      let bank = 0;
+      for (let k = 0; k <= N; k++) {
+        const t = k / N;
+        const u = settle(t);
+        const x = bez(ax, bx, cx, slot.x, u) - slot.x;
+        const y = bez(ay, by, cy, slot.y, u) - slot.y;
+        // banking: lean into the turn the curve is making (not a random tilt)
+        const u2 = Math.min(1, u + 0.02);
+        const a = Math.atan2(bez(ay, by, cy, slot.y, u2) - bez(ay, by, cy, slot.y, u), bez(ax, bx, cx, slot.x, u2) - bez(ax, bx, cx, slot.x, u));
+        if (prevA !== null) {
+          let d = a - prevA;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          bank = bank * 0.6 + Math.max(-28, Math.min(28, (d * 180) / Math.PI * 4)) * 0.4;
+        }
+        prevA = a;
+        const sc = e.s + (1 - e.s) * u;
+        const lean = k === N ? 0 : bank * (1 - t);
+        frames.push({
+          transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${lean.toFixed(1)}deg) scale(${sc.toFixed(3)})`,
+          opacity: t < 0.06 ? t / 0.06 : 1,
+          offset: t,
+        });
+      }
+      const fly = (cls, op, lag, fade) => {
+        const img = document.createElement('img');
+        img.className = cls;
+        img.alt = '';
+        img.src = url;
+        img.style.left = `${slot.x - 18}px`;
+        img.style.top = `${slot.y - 18}px`;
+        layer.appendChild(img);
+        const kf = frames.map((f, k) => ({ ...f, opacity: f.opacity * op * (fade && k > N * 0.7 ? Math.max(0, 1 - (k - N * 0.7) / (N * 0.3)) : 1) }));
+        const a = img.animate(kf, { duration: dur, delay: delay + lag, easing: 'linear', fill: 'both' });
+        return { img, a };
+      };
+      // a faint trail of ghosts behind it (they fade out before it lands)
+      for (const [op, lag] of [[0.32, 45], [0.14, 95]]) {
+        const g = fly('skill-flyer is-ghost', op, lag, true);
+        g.a.onfinish = () => g.img.remove();
+      }
+      const { img, a } = fly('skill-flyer', 1, 0, false);
+      a.onfinish = () => {
         // landing: it squashes like a drop of ink, and melts into the slug
         const out = img.animate(
           [
             { transform: 'scale(1)', opacity: 1 },
-            { transform: 'scale(1.25, 0.72)', opacity: 1, offset: 0.25 },
-            { transform: 'scale(0.82, 1.05)', opacity: 0.85, offset: 0.55 },
-            { transform: 'scale(0.6)', opacity: 0 },
+            { transform: 'scale(1.22, 0.76)', opacity: 1, offset: 0.25 },
+            { transform: 'scale(0.86, 1.05)', opacity: 0.8, offset: 0.55 },
+            { transform: 'scale(0.55)', opacity: 0 },
           ],
-          { duration: 460, easing: 'ease-out', fill: 'forwards' }
+          { duration: 440, easing: 'ease-out', fill: 'forwards' }
         );
         out.onfinish = () => img.remove();
         melt(slug, slot);

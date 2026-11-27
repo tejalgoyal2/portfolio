@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { SKILL_NODES } from '../data/skills';
 import KineticHeadline from '../press/KineticHeadline';
 import { startSkillArrive } from '../life/skillArrive';
@@ -14,6 +14,11 @@ import { afterPrint } from '../life/idle';
  */
 export default function Skills() {
   const ref = useRef(null);
+  // the slugs wait, unseen, for their icons from the very first paint (not
+  // only once the arrival script has started), so the cells never show first
+  useLayoutEffect(() => {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) ref.current?.classList.add('skills-await');
+  }, []);
   useEffect(
     () =>
       afterPrint(() => startSkillArrive(ref.current)),
