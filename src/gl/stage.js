@@ -207,16 +207,16 @@ export async function startStage(canvas, hitBtn, noteHost) {
     slowAvg += (Math.min(deltaMs, 120) - slowAvg) * 0.05;
     slowFor = slowAvg > 26 ? slowFor + dt : Math.max(0, slowFor - dt * 2);
     if (!askedSlow && slowFor > 4 && now - bornAt > 6000 && presence.state.seen) {
-      askedSlow = true;
-      once('press-cube-slow');
-      notes.say('slow', presence.state, () => setSetting('cube', false));
+      if (notes.say('slow', presence.state, () => setSetting('cube', false))) {
+        askedSlow = true;
+        once('press-cube-slow');
+      }
     }
     if (!askedPlay && !twisted && presence.state.near && presence.state.seen && now - bornAt > 8000) {
       nearFor += dt;
-      if (nearFor > 0.7) {
+      if (nearFor > 0.7 && notes.say('play', presence.state)) {
         askedPlay = true;
         once('press-cube-play');
-        notes.say('play', presence.state);
       }
     } else nearFor = 0;
     if (twisted && askedPlay) notes.hushIf('play');

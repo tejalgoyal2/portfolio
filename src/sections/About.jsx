@@ -6,6 +6,8 @@ import { handwrite } from '../life/writeIn';
 import { startMarkup } from '../life/markup';
 import { startCar } from '../life/car';
 import { afterPrint } from '../life/idle';
+import { scroll } from '../life/scroll';
+import { onLayout } from '../life/layout';
 
 /**
  * The Feature Story — a broadsheet profile in three columns: a drop-cap lead
@@ -58,20 +60,28 @@ export default function About() {
           const { ICON } = await import('../life/icons');
           if (cancelled) return;
           const grid = root.querySelector('.about-grid');
+          const road = { top: 0, w: 1 };
+          const measureRoad = () => {
+            road.top = grid.getBoundingClientRect().top + scroll.y;
+            road.w = grid.clientWidth - 68;
+          };
+          measureRoad();
           stops = [
             startMarkup(grid),
             handwrite(root.querySelector('.about-margin'), ICON.pencil),
             // the car on the rule: across as the rule climbs the screen
             startCar(grid, {
               pathAt: (x) => ({ x: 34 + x, y: -3, angle: 0 }),
-              length: () => grid.clientWidth - 68,
+              length: () => road.w,
               target: () => {
-                const r = grid.getBoundingClientRect();
-                const vh = window.innerHeight;
-                const p = Math.min(1, Math.max(0, (vh * 0.95 - r.top) / (vh * 0.85)));
-                return p * (grid.clientWidth - 68);
+                // from the rule's cached place on the page (no measuring per frame)
+                const top = road.top - scroll.y;
+                const vh = scroll.vh;
+                const p = Math.min(1, Math.max(0, (vh * 0.95 - top) / (vh * 0.85)));
+                return p * road.w;
               },
             }),
+            onLayout(measureRoad),
           ];
         };
         go();

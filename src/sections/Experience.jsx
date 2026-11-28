@@ -15,12 +15,11 @@ import { onLayout } from '../life/layout';
  * staggers in once; reduced motion just reads it static.
  *
  * As you scroll the ledger, a red line of ink draws itself down the left
- * margin — not ruled straight: it winds down like a snake, and throws one big
- * loop (out to the right, above the date) as it comes to each job (carrying on round in the way it was going, so
- * it never doubles back), pressing a dot in beside it. At the bottom it
+ * margin — not ruled straight: it winds down in long, easy bends like a snake,
+ * pressing a dot in beside each job as it passes. At the bottom it
  * rounds the corner onto the closing rule and runs along it, off the side of
  * the screen. The pen nib rides its very tip, held like a pen — leaning into
- * the stroke, never spinning round the loops (one eased scroll value drives
+ * the stroke, never spinning (one eased scroll value drives
  * line and nib, so they never drift apart); each row is pasted in from the margin and slides off the
  * galley on the way out (src/life/arrive.js), and the headline numbers —
  * marked {{like this}} in the data — count up as they arrive.
@@ -66,8 +65,7 @@ export default function Experience() {
     let marks = []; // arc length at each job's dot
     const CX = 40; // the line's centre inside its strip
     // a snake's path: long, easy S-bends, never a kink
-    const wave = (y) => CX + Math.sin(y * 0.0165) * 17 + Math.sin(y * 0.0061 + 1) * 7;
-    const LOOP = 34; // radius of the loop it throws before each job
+    const wave = (y) => CX + Math.sin(y * 0.0118) * 15 + Math.sin(y * 0.0047 + 1) * 6;
     let segs = []; // the line's cubic pieces: { p1, c1, c2, p2, at, len }
     let exitAt = 0; // the point where it turns onto the closing rule
     let downLen = 1;
@@ -99,7 +97,7 @@ export default function Experience() {
       return { x, y, a: Math.atan2(y1 - y0, x1 - x0) };
     };
 
-    // the line: a meander down the margin with a loop before each job, then
+    // the line: a snake down the margin, then
     // round the corner at the bottom and out along the closing rule
     const build = () => {
       const H = ledger.offsetHeight;
@@ -112,21 +110,8 @@ export default function Experience() {
       svg.style.height = `${H + 4}px`;
       const at = dots.map((d) => d.parentElement.offsetTop + d.offsetTop + d.offsetHeight / 2);
       const raw = [];
-      let next = 0;
       const end = H - 46;
-      for (let y = 0; y <= end; y += 6) {
-        while (next < at.length && y >= at[next] - 66) {
-          // a loop: carrying on down and round to the right (into the empty
-          // paper above the date, never off the edge of the screen), up and
-          // over, and back into the line still heading down — no doubling back
-          const ly = y; // right where the line is now, so it flows straight in
-          const cx = wave(ly) + LOOP;
-          raw.push([wave(y), y]);
-          for (let a = Math.PI - Math.PI / 16; a > -Math.PI; a -= Math.PI / 16) raw.push([cx + Math.cos(a) * LOOP, ly + Math.sin(a) * LOOP * 1.1]);
-          next++;
-        }
-        raw.push([wave(y), y]);
-      }
+      for (let y = 0; y <= end; y += 6) raw.push([wave(y), y]);
       // round the corner onto the closing rule, and out along it, off the side of the screen
       const ex = wave(end);
       const ry = H - 1;
@@ -188,7 +173,7 @@ export default function Experience() {
       const L = p < DOWN ? (p / DOWN) * downLen : downLen + ((p - DOWN) / (1 - DOWN)) * (total - downLen);
       path.style.strokeDashoffset = `${(total - L).toFixed(1)}`;
       const pt = along(L);
-      // the nib doesn't spin round the loops — it's held like a pen, leaning a
+      // the nib doesn't spin with the line — it's held like a pen, leaning a
       // little into the way the line is going, eased so it never twitches
       let dev = pt.a - Math.PI / 2;
       while (dev > Math.PI) dev -= Math.PI * 2;

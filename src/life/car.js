@@ -14,7 +14,9 @@ import { prefs } from './prefs';
  * snapping. While it's moving it puffs little clouds of exhaust that drift
  * back and fade.
  *
- * Only runs while its host is on screen. Reduced motion: parked, no puffs.
+ * Off screen it keeps driving in its head (a few sums, nothing drawn), so it
+ * comes back into view exactly where it would be — never jumping to catch up.
+ * Reduced motion: parked, no puffs.
  *
  *   startCar(host, { pathAt(s) → { x, y, angle }, length(), target() → s, scale, kind })
  *   kind: 'sedan' (the little saloon) | 'van' (a camper with a surfboard on top)
@@ -71,7 +73,7 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   let on = false;
   const state = { s, v: 0, face: 1, x: 0, y: 0, angle: 0 };
 
-  const place = (dt) => {
+  const place = (dt, draw = true) => {
     const len = Math.max(1, length());
     const goal = Math.max(0, Math.min(len, target()));
     if (prefs.reduced || dt === 0) {
@@ -107,6 +109,7 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
     } else faceV = face;
     const p = pathAt(s);
     Object.assign(state, { s, v, face, x: p.x, y: p.y, angle: p.angle });
+    if (!draw) return;
     const k = scale;
     el.style.transform = `translate3d(${(p.x - (W / 2) * k).toFixed(1)}px, ${(p.y - BASE * k - hop).toFixed(1)}px, 0) rotate(${p.angle.toFixed(2)}rad) scaleX(${faceV.toFixed(3)})`;
     body.setAttribute('transform', `rotate(${(pitch * face).toFixed(2)} 16 22)`);
@@ -151,13 +154,10 @@ export function startCar(host, { pathAt, length, target, scale = 1, className = 
   }
 
   const tick = (time, deltaMs) => {
-    if (!on || document.hidden) return;
-    place(Math.min(0.05, deltaMs / 1000));
+    if (document.hidden) return;
+    place(Math.min(0.05, deltaMs / 1000), on);
   };
-  const io = new IntersectionObserver(([e]) => {
-    on = e.isIntersecting;
-    if (on) place(0);
-  });
+  const io = new IntersectionObserver(([e]) => (on = e.isIntersecting));
   io.observe(host);
   gsap.ticker.add(tick);
   place(0);

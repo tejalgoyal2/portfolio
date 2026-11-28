@@ -46,6 +46,8 @@ export function createNotes(host) {
   function show(kind, cube) {
     const n = NOTES[kind];
     if (!n || !host || !cube.seen) return;
+    // one thing said at a time: a milestone clears any bubble
+    hush();
     clearTimeout(timer);
     el?.remove();
     el = document.createElement('div');
@@ -72,7 +74,10 @@ export function createNotes(host) {
       el?.classList.remove('is-on');
       el?.classList.add('is-off');
       const gone = el;
-      setTimeout(() => gone?.remove(), 700);
+      setTimeout(() => {
+        gone?.remove();
+        if (el === gone) el = null;
+      }, 700);
     }, n.life);
     if (kind === 'solved' && !prefs.reduced) confetti(cube);
   }
@@ -195,9 +200,10 @@ export function createNotes(host) {
   let bubbleKind = '';
   let bubbleT = 0;
   let onButton = null;
+  /** Returns false (and says nothing) while a milestone note is up — it waits its turn. */
   function say(kind, cube, onClick = null) {
     const n = SAYS[kind];
-    if (!n || !host) return;
+    if (!n || !host || el) return false;
     hush();
     bubbleKind = kind;
     bubble = document.createElement('div');
@@ -222,6 +228,7 @@ export function createNotes(host) {
     host.appendChild(bubble);
     requestAnimationFrame(() => bubble?.classList.add('is-on'));
     bubbleT = setTimeout(hush, n.life);
+    return true;
   }
   function hush() {
     clearTimeout(bubbleT);
