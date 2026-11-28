@@ -34,7 +34,7 @@ export default function Skills() {
             What I build with
           </KineticHeadline>
           <p className="skills-instruct" data-ink>
-            A working set — security, ML, and the web stack I ship on.
+            A working set — AI, data, and the web stack I ship on.
           </p>
         </header>
 
@@ -45,7 +45,7 @@ export default function Skills() {
               <ul className="skill-list">
                 {cat.items.map((item) => (
                   <li className="skill" key={item}>
-                    {item}
+                    <span className="skill-word">{item}</span>
                   </li>
                 ))}
               </ul>

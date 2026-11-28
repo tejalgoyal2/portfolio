@@ -560,9 +560,10 @@ html.np-handoff .mast-plate { visibility: hidden; }
   object-fit: contain;
   will-change: transform, opacity;
 }
-/* comic pop lines round a slug that just landed */
-.skill-pop { position: absolute; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
-/* pointed at (or a ripple passing): the slug turns into its icon */
+/* pointed at, tapped, or a ripple passing: the word rolls up out of the cell
+   and the icon rolls up into it from below, like a counter turning over */
+.skill { overflow: hidden; }
+.skill-word { display: inline-block; transition: translate 0.42s var(--ease-roll), opacity 0.3s var(--ease-set); }
 .skill-face {
   position: absolute;
   top: 50%;
@@ -572,19 +573,13 @@ html.np-handoff .mast-plate { visibility: hidden; }
   margin: -11px 0 0 -11px;
   object-fit: contain;
   opacity: 0;
-  scale: 0.3;
-  rotate: -25deg;
+  translate: 0 130%;
   pointer-events: none;
-  transition: opacity 0.18s var(--ease-set), scale 0.3s var(--ease-set), rotate 0.3s var(--ease-set);
+  transition: translate 0.42s var(--ease-roll), opacity 0.3s var(--ease-set);
 }
-.skill { transition: color 0.22s var(--ease-set) 0.04s, background-color 0.3s var(--ease-set); }
-.skill.is-icon { color: transparent; transition: color 0.14s var(--ease-set); }
-.skill.is-icon .skill-face {
-  opacity: 1;
-  scale: 1;
-  rotate: 0deg;
-  transition: opacity 0.16s var(--ease-set) 0.05s, scale 0.55s var(--ease-stamp) 0.03s, rotate 0.55s var(--ease-stamp) 0.03s;
-}
+.skill.is-icon .skill-word { translate: 0 -130%; opacity: 0; }
+.skill.is-icon .skill-face { translate: 0 0; opacity: 1; }
+.skill { --ease-roll: cubic-bezier(0.22, 0.9, 0.24, 1); }
 
 @media (max-width: 1024px) {
   .about-grid {
@@ -608,12 +603,13 @@ html.np-handoff .mast-plate { visibility: hidden; }
   margin-bottom: clamp(2.5rem, 6vh, 4rem);
 }
 /* the bug loose in the paper beside the headline (Bug.jsx) */
+.cf-headrow { position: relative; }
 .cf-bugzone {
   position: absolute;
   top: 0;
   right: 0;
+  bottom: 0;
   width: 42%;
-  height: clamp(14rem, 34vh, 22rem);
   z-index: 2;
   pointer-events: none;
 }
@@ -628,8 +624,9 @@ html.np-handoff .mast-plate { visibility: hidden; }
   cursor: pointer;
   will-change: transform;
 }
-.cf-bug > svg:not(.cf-bug-dash) { width: 100%; height: 100%; transition: scale 0.18s var(--ease-stamp), opacity 0.6s var(--ease-set) 1s; }
-.cf-bug.is-squashed > svg:not(.cf-bug-dash) { scale: 1.25 0.3; opacity: 0; color: var(--red); }
+.cf-bug > svg:not(.cf-bug-dash) { width: 100%; height: 100%; transition: opacity 0.45s var(--ease-set); }
+/* caught: it simply goes (its headstone takes its place) */
+.cf-bug.is-squashed > svg:not(.cf-bug-dash) { opacity: 0; }
 /* speed lines behind it while it runs (it walks "up" its own drawing) */
 .cf-bug-dash {
   position: absolute;
@@ -651,7 +648,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   top: 0;
   left: 0;
   /* bottom-centre on its head (see Bug.jsx), slid sideways by --shift near an edge */
-  translate: calc(-50% + var(--shift, 0px)) calc(-100% - 14px);
+  translate: calc(-50% + var(--shift, 0px)) calc(-100% - 12px);
   padding: 0.22rem 0.75rem 0.3rem;
   font-family: var(--font-pen);
   font-size: 1.2rem;
@@ -723,6 +720,158 @@ html.np-handoff .mast-plate { visibility: hidden; }
   letter-spacing: 0.03em;
   color: var(--ink-soft);
   margin: 0;
+}
+
+/* ── The front page: the lead projects as stories (Story.jsx) ─────────────── */
+.cf-front {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(1.6rem, 3vw, 2.8rem);
+  border-top: 3px solid var(--ink);
+  margin-bottom: clamp(2.4rem, 5vh, 3.6rem);
+}
+.story {
+  position: relative;
+  padding: clamp(1.4rem, 2.6vw, 2.2rem) 0 clamp(1.2rem, 2vw, 1.8rem);
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+}
+/* column rules, set in the gutters so every column is the same width */
+.story:not(.story--lead) + .story:not(.story--lead)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(clamp(1.6rem, 3vw, 2.8rem) / -2);
+  border-left: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+}
+.story--lead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(1.4rem, 3vw, 2.8rem);
+  align-items: start;
+  padding-inline: 0;
+  border-bottom: 3px double var(--ink);
+}
+.story-fig { position: relative; margin: 0 0 1.1rem; aspect-ratio: 16 / 10; }
+.story--lead .story-fig { margin: 0; }
+.story-media {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper-deep);
+  border: 1.5px solid var(--ink);
+  transition: opacity 0.6s var(--ease-set) 0.1s;
+}
+.story-loop { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* printing in: the red and blue plates sit off-register, then slide home behind the picture */
+.story-plate {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+  transition: translate 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.story-plate--r { background: var(--red); translate: -10px 7px; }
+.story-plate--b { background: oklch(52% 0.17 260); translate: 9px -6px; }
+.story-fig:not(.is-printed) .story-media { opacity: 0.35; }
+.story-fig.is-printed .story-plate { translate: 0 0; }
+/* a project with nothing public to film: a poster, set in the press's own type */
+.story-poster {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0 9%;
+  color: var(--ink);
+  background: var(--paper-stock);
+}
+.story-poster--dark { color: var(--paper); background: var(--ground); }
+.story-poster-rule { display: block; height: 0; border-top: 3px double currentColor; opacity: 0.6; margin: 0.6rem 0; }
+.story-poster-word { font-family: var(--font-impact); font-size: clamp(2.6rem, 5.4vw, 4.6rem); line-height: 0.92; text-transform: uppercase; }
+.story-poster-line { font-family: var(--font-data); font-size: clamp(0.62rem, 0.9vw, 0.78rem); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
+.story-poster-pen { font-family: var(--font-pen); font-size: clamp(1.2rem, 1.8vw, 1.6rem); font-weight: 700; color: var(--red); rotate: -3deg; }
+.story-poster--dark .story-poster-pen { color: oklch(66% 0.224 27); }
+.story-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.story-no { color: var(--red); }
+.story-kicker .press-stamp { margin-left: auto; font-size: 0.6rem; }
+.story-headline {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-name);
+  font-weight: 800;
+  font-size: clamp(1.45rem, 2.3vw, 2.05rem);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.story--lead .story-headline { font-size: clamp(2.1rem, 4.2vw, 3.7rem); line-height: 0.98; }
+.story-deck { margin: 0 0 1rem; font-family: var(--font-read); font-size: 1rem; line-height: 1.5; color: var(--ink); max-width: 46ch; }
+.story--lead .story-deck { font-size: clamp(1.05rem, 1.3vw, 1.2rem); }
+.story-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 1.1rem; }
+.story-link,
+.story-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  text-decoration: none;
+}
+.story-more { color: var(--ink); cursor: pointer; }
+.story-link:hover,
+.story-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+.story-link:focus-visible,
+.story-more:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.story-file { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s var(--ease-set); }
+.story-file.is-open { grid-template-rows: 1fr; }
+.story-file-inner { overflow: hidden; min-height: 0; }
+.story-long { margin: 1rem 0 0.8rem; font-family: var(--font-read); font-size: 0.95rem; line-height: 1.55; color: var(--ink-soft); max-width: 60ch; }
+.story-tech { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin: 0; }
+.story-tech-label { font-family: var(--font-data); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); margin-right: 0.3rem; }
+.cf-also {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  margin: 0 0 1.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 22%, transparent);
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.cf-also-hint { font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--ink-soft); }
+@media (max-width: 900px) {
+  .cf-front { grid-template-columns: 1fr; }
+  .story--lead { grid-template-columns: 1fr; }
+  .story:not(.story--lead) + .story:not(.story--lead)::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-plate, .story-media, .story-file { transition: none; }
 }
 
 .cf-features {
@@ -1117,6 +1266,31 @@ html.np-handoff .mast-plate { visibility: hidden; }
   position: absolute;
   left: 0;
   color: var(--red);
+}
+/* the rest of a role, folded away until asked for */
+.led-more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s var(--ease-set); }
+.led-more.is-open { grid-template-rows: 1fr; }
+.led-more > .led-dispatches { overflow: hidden; min-height: 0; padding-top: 0; }
+.led-more .led-dispatch { opacity: 0; translate: 0 -6px; transition: opacity 0.3s var(--ease-set), translate 0.4s var(--ease-set); }
+.led-more.is-open .led-dispatch { opacity: 1; translate: 0 0; transition-delay: calc(0.12s + var(--k, 0) * 60ms); }
+.led-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-top: 0.35rem;
+  padding: 0.3rem 0;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+  cursor: pointer;
+}
+.led-more-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.led-more-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .led-more, .led-more .led-dispatch { transition: none; }
 }
 /* the margin rule — Experience.jsx scrubs its scaleY down the ledger */
 .led-rule {
@@ -1542,19 +1716,6 @@ html.np-handoff .mast-plate { visibility: hidden; }
 }
 /* the stamp and its postmark, turning together about the stamp's centre */
 .postage-spin { position: relative; display: block; }
-.postage-whirl {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  overflow: visible;
-  fill: none;
-  stroke: var(--paper);
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .postage:focus-visible { outline: 2px solid var(--paper); outline-offset: 8px; }
 .postage-face {
   display: flex;
