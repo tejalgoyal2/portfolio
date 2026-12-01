@@ -650,7 +650,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
   position: absolute;
   top: 0;
   left: 0;
-  translate: -50% calc(-100% - 10px);
+  /* bottom-centre on its head (see Bug.jsx), slid sideways by --shift near an edge */
+  translate: calc(-50% + var(--shift, 0px)) calc(-100% - 14px);
   padding: 0.22rem 0.75rem 0.3rem;
   font-family: var(--font-pen);
   font-size: 1.2rem;
@@ -663,20 +664,19 @@ html.np-handoff .mast-plate { visibility: hidden; }
   border-radius: 255px 18px 225px 22px / 22px 225px 18px 255px;
   opacity: 0;
   scale: 0.4;
-  transform-origin: 50% 130%;
+  transform-origin: calc(50% - var(--shift, 0px)) 130%;
   pointer-events: none;
 }
 .cf-bug-say::before,
 .cf-bug-say::after {
   content: '';
   position: absolute;
-  left: 46%;
   background: var(--paper);
   border: 2px solid var(--ink);
   border-radius: 50%;
 }
-.cf-bug-say::before { bottom: -11px; width: 9px; height: 8px; }
-.cf-bug-say::after { bottom: -19px; left: 41%; width: 5px; height: 5px; border-width: 1.6px; }
+.cf-bug-say::before { bottom: -11px; left: calc(50% - var(--shift, 0px) - 2px); width: 9px; height: 8px; }
+.cf-bug-say::after { bottom: -19px; left: calc(50% - var(--shift, 0px) - 6px); width: 5px; height: 5px; border-width: 1.6px; }
 .cf-bug-say.is-on { animation: bug-say 0.5s var(--ease-stamp) forwards; }
 @keyframes bug-say {
   0% { opacity: 0; scale: 0.4; rotate: -8deg; }
@@ -1540,6 +1540,8 @@ html.np-handoff .mast-plate { visibility: hidden; }
   filter: drop-shadow(0 6px 10px oklch(15% 0.03 25 / 0.35));
   transition: translate 0.45s var(--ease-stamp);
 }
+/* the stamp and its postmark, turning together about the stamp's centre */
+.postage-spin { position: relative; display: block; }
 .postage-whirl {
   position: absolute;
   top: 50%;
@@ -1547,7 +1549,7 @@ html.np-handoff .mast-plate { visibility: hidden; }
   overflow: visible;
   fill: none;
   stroke: var(--paper);
-  stroke-width: 2;
+  stroke-width: 2.4;
   stroke-linecap: round;
   opacity: 0;
   pointer-events: none;

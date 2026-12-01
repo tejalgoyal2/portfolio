@@ -18,31 +18,26 @@ import { prefs } from '../life/prefs';
 const EMAIL = 'itejalgoyal@gmail.com';
 
 /**
- * Speed lines for a spinning stamp: at each corner, a couple of short arcs
- * trailing back from it along the circle the corner sweeps — the way a comic
- * draws something whirling, without a ring round the whole thing.
+ * Speed lines for a spinning stamp, the comic way: a couple of curved swishes
+ * hugging two opposite corners of the space it whirls in, pointing the way it
+ * turns. They stay put (only the stamp turns), so it's the stamp you see
+ * spinning, not a disc going round beside it.
  */
-function cornerLines(svg, paper) {
+function swishes(svg, paper) {
   const w = paper.offsetWidth;
   const h = paper.offsetHeight;
   const r = Math.hypot(w, h) / 2;
-  const box = Math.ceil(r + 22);
+  const box = Math.ceil(r + 30);
   svg.setAttribute('viewBox', `${-box} ${-box} ${box * 2} ${box * 2}`);
   svg.style.width = svg.style.height = `${box * 2}px`;
   svg.style.margin = `${-box}px 0 0 ${-box}px`;
+  const deg = Math.PI / 180;
   const arc = (rr, from, to) => {
-    const p = (a) => `${(Math.cos(a) * rr).toFixed(1)} ${(Math.sin(a) * rr).toFixed(1)}`;
+    const p = (a) => `${(Math.cos(a * deg) * rr).toFixed(1)} ${(Math.sin(a * deg) * rr).toFixed(1)}`;
     return `M${p(from)}A${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${p(to)}`;
   };
-  const corner = Math.atan2(h, w);
-  const d = [corner, Math.PI - corner, Math.PI + corner, -corner]
-    .map((c) => {
-      // clockwise spin: the trail lies just behind each corner
-      const near = arc(r + 5, c - 0.62, c - 0.08);
-      const far = arc(r + 13, c - 0.42, c - 0.16);
-      return `${near}${far}`;
-    })
-    .join('');
+  // clockwise: over the top right, and under the bottom left; a long stroke and a short one each
+  const d = [-118, 62].map((a) => `${arc(r + 8, a, a + 52)}${arc(r + 18, a + 12, a + 40)}`).join('');
   svg.innerHTML = `<path d="${d}"/>`;
 }
 
@@ -74,10 +69,11 @@ export default function Postage() {
   const spin = () => {
     setStruck(true);
     const paper = ref.current?.querySelector('.postage-paper');
+    const spinEl = ref.current?.querySelector('.postage-spin');
     const lines = ref.current?.querySelector('.postage-whirl');
-    if (!paper || prefs.reduced) return;
+    if (!paper || !spinEl || prefs.reduced) return;
     const sp = spinner.current;
-    if (lines && !lines.childElementCount) cornerLines(lines, paper);
+    if (lines && !lines.childElementCount) swishes(lines, paper);
     sp.push += 430; // deg/s per click
     if (sp.on) return;
     sp.on = true;
@@ -90,15 +86,17 @@ export default function Postage() {
       // friction: drag that grows with speed, and a little that's always there
       sp.v = Math.max(0, sp.v - (0.55 * sp.v + 38) * dt);
       sp.a += sp.v * dt;
-      paper.style.rotate = `${sp.a.toFixed(2)}deg`;
-      if (lines) {
-        const k = Math.min(1, Math.max(0, (sp.v - 260) / 700));
-        lines.style.opacity = k.toFixed(3);
-        lines.style.rotate = `${(sp.a - 4).toFixed(1)}deg`;
-      }
+      // the stamp and its postmark turn together
+      spinEl.style.rotate = `${(sp.a + 5).toFixed(2)}deg`;
+      const k = Math.min(1, Math.max(0, (sp.v - 240) / 700));
+      // a touch of motion blur when it's really going
+      spinEl.style.filter = k > 0.05 ? `blur(${(k * 0.7).toFixed(2)}px)` : '';
+      if (lines) lines.style.opacity = (k * (0.85 + 0.15 * Math.sin(t * 38))).toFixed(3);
       if (sp.v <= 0 && sp.push < 1) {
         sp.on = false;
-        sp.a %= 360;
+        sp.a = ((sp.a + 5) % 360) - 5;
+        spinEl.style.filter = '';
+        if (lines) lines.style.opacity = '0';
         gsap.ticker.remove(tick);
         tickRef.current = null;
       }
@@ -131,39 +129,42 @@ export default function Postage() {
       aria-label={`Copy my email address, ${EMAIL}`}
       data-pen="rocket"
     >
-      {/* comic speed lines trailing off its corners while it whirls (drawn on the first spin) */}
+      {/* comic swishes by its corners while it whirls (drawn on the first spin) */}
       <svg className="postage-whirl" aria-hidden="true" />
-      <span className="postage-paper" aria-hidden="true">
-        <span className="postage-face">
-          <span className="postage-top">FIRST CLASS</span>
-          <svg className="postage-art" viewBox="0 0 60 60">
-            {/* a little cube, in three faces */}
-            <path className="pa-top" d="M30 8 52 19 30 30 8 19Z" />
-            <path className="pa-left" d="M8 19 30 30V54L8 43Z" />
-            <path className="pa-right" d="M52 19 30 30V54L52 43Z" />
-            <path className="pa-grid" d="M15.3 15.3 37.3 26.3M22.7 11.7 44.7 22.7M15.3 22.7 37.3 11.7M22.7 26.3 44.7 15.3M8 27 30 38M8 35 30 46M15.3 22.7V46.7M22.7 26.3V50.3M52 27 30 38M52 35 30 46M44.7 22.7V46.7M37.3 26.3V50.3" />
-          </svg>
-          <span className="postage-value">
-            67<small>¢</small>
+      {/* the stamp and its postmark spin as one */}
+      <span className="postage-spin" aria-hidden="true">
+        <span className="postage-paper" aria-hidden="true">
+          <span className="postage-face">
+            <span className="postage-top">FIRST CLASS</span>
+            <svg className="postage-art" viewBox="0 0 60 60">
+              {/* a little cube, in three faces */}
+              <path className="pa-top" d="M30 8 52 19 30 30 8 19Z" />
+              <path className="pa-left" d="M8 19 30 30V54L8 43Z" />
+              <path className="pa-right" d="M52 19 30 30V54L52 43Z" />
+              <path className="pa-grid" d="M15.3 15.3 37.3 26.3M22.7 11.7 44.7 22.7M15.3 22.7 37.3 11.7M22.7 26.3 44.7 15.3M8 27 30 38M8 35 30 46M15.3 22.7V46.7M22.7 26.3V50.3M52 27 30 38M52 35 30 46M44.7 22.7V46.7M37.3 26.3V50.3" />
+            </svg>
+            <span className="postage-value">
+              67<small>¢</small>
+            </span>
           </span>
         </span>
+        <svg className="postage-mark" viewBox="0 0 150 90" aria-hidden="true">
+          <defs>
+            <path id="pm-ring" d="M45 45m-30 0a30 30 0 1 1 60 0a30 30 0 1 1-60 0" />
+          </defs>
+          <circle cx="45" cy="45" r="36" />
+          <circle cx="45" cy="45" r="25" />
+          <text className="pm-ring-text">
+            <textPath href="#pm-ring" startOffset="2%">
+              THE PERSONAL PRESS · {month} {year} ·
+            </textPath>
+          </text>
+          <text className="pm-centre" x="45" y="50" textAnchor="middle">
+            {copied ? 'COPIED' : 'SENT'}
+          </text>
+          <path className="pm-waves" d="M86 26q8-6 16 0t16 0 16 0M86 38q8-6 16 0t16 0 16 0M86 50q8-6 16 0t16 0 16 0M86 62q8-6 16 0t16 0 16 0" />
+        </svg>
       </span>
-      <svg className="postage-mark" viewBox="0 0 150 90" aria-hidden="true">
-        <defs>
-          <path id="pm-ring" d="M45 45m-30 0a30 30 0 1 1 60 0a30 30 0 1 1-60 0" />
-        </defs>
-        <circle cx="45" cy="45" r="36" />
-        <circle cx="45" cy="45" r="25" />
-        <text className="pm-ring-text">
-          <textPath href="#pm-ring" startOffset="2%">
-            THE PERSONAL PRESS · {month} {year} ·
-          </textPath>
-        </text>
-        <text className="pm-centre" x="45" y="50" textAnchor="middle">
-          {copied ? 'COPIED' : 'SENT'}
-        </text>
-        <path className="pm-waves" d="M86 26q8-6 16 0t16 0 16 0M86 38q8-6 16 0t16 0 16 0M86 50q8-6 16 0t16 0 16 0M86 62q8-6 16 0t16 0 16 0" />
-      </svg>
       <span className="postage-tip" aria-hidden="true">
         {copied ? 'email copied!' : 'click to copy my email'}
       </span>

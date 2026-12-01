@@ -164,8 +164,13 @@ export default function Bug() {
       bug.style.setProperty('--dash', dash.toFixed(2));
       if (sayFor > 0 && say) {
         // kept whole inside the paper beside the headline
-        const sx = Math.max(sayW / 2 + 4, Math.min(W - sayW / 2 - 4, b.x));
-        say.style.transform = `translate3d(${sx.toFixed(1)}px,${(b.y - 30).toFixed(1)}px,0)`;
+        // the bubble's tail sits just over its head (the end it walks with);
+        // near an edge the bubble slides along so it stays whole, the tail doesn't
+        const hx = b.x + Math.cos(b.th) * 14;
+        const hy = b.y + Math.sin(b.th) * 14;
+        const shift = Math.max(sayW / 2 + 4 - hx, Math.min(0, W - sayW / 2 - 4 - hx));
+        say.style.transform = `translate3d(${hx.toFixed(1)}px,${(hy - 12).toFixed(1)}px,0)`;
+        say.style.setProperty('--shift', `${shift.toFixed(1)}px`);
       }
     };
     gsap.ticker.add(tick);
@@ -207,14 +212,14 @@ export default function Bug() {
       stone.style.top = `${b.y}px`;
       zone.appendChild(stone);
       const st = stone.animate(
+        // it simply fades up where it fell, stays a moment, and fades away
         [
-          { transform: 'translateY(10px) scale(0.2, 0)', opacity: 0 },
-          { transform: 'translateY(-2px) scale(1.08, 1.12)', opacity: 1, offset: 0.08 },
-          { transform: 'translateY(0) scale(1)', opacity: 1, offset: 0.14 },
-          { transform: 'translateY(0) scale(1)', opacity: 1, offset: 0.82 },
-          { transform: 'translateY(6px) scale(1, 0.6)', opacity: 0 },
+          { opacity: 0, transform: 'translateY(4px)' },
+          { opacity: 1, transform: 'translateY(0)', offset: 0.14 },
+          { opacity: 1, transform: 'translateY(0)', offset: 0.78 },
+          { opacity: 0, transform: 'translateY(0)' },
         ],
-        { duration: prefs.reduced ? 2400 : 3600, easing: 'ease-out' }
+        { duration: prefs.reduced ? 2400 : 3600, easing: 'ease-in-out' }
       );
       st.onfinish = () => stone.remove();
       clearTimeout(respawn);
